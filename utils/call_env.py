@@ -1,0 +1,38 @@
+import numpy as np
+import torch
+import torch.nn as nn
+import random
+
+from gym_multigrid.envs.fourrooms import FourRooms
+from utils import NoStateDictWrapper, get_grid_tensor
+
+
+def call_env(args):
+    # define the env
+    args.grid_size = 13  # Machado reference
+    dummy_env = FourRooms(
+        grid_size=(args.grid_size, args.grid_size),
+        agent_pos=(5, 5),
+        max_steps=args.episode_len,
+        img_tile_size=args.img_tile_size,
+        highlight=False,
+        partial_observability=False,
+        render_mode="rgb_array",
+    )
+    dummy_env = NoStateDictWrapper(dummy_env, tile_size=args.tile_size)
+
+    _, coords, _ = get_grid_tensor(dummy_env, args.env_seed)
+    x_coord, y_coord = random.choice(coords[0]), random.choice(coords[1])
+
+    env = FourRooms(
+        grid_size=(args.grid_size, args.grid_size),
+        agent_pos=(x_coord, y_coord),
+        max_steps=args.episode_len,
+        img_tile_size=args.img_tile_size,
+        highlight=False,
+        partial_observability=False,
+        render_mode="rgb_array",
+    )
+    env = NoStateDictWrapper(env, tile_size=args.tile_size)
+
+    return env

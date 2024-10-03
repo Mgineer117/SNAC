@@ -1,0 +1,191 @@
+import time
+import os
+import matplotlib.pyplot as plt
+import pickle
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from copy import deepcopy
+from utils.utils import estimate_advantages
+from models.layers.building_blocks import MLP
+from models.layers.sf_networks import ConvNetwork, PsiCritic
+from models.layers.ppo_networks import PPO_Policy, PPO_Critic
+from models.policy.base_policy import BasePolicy
+
+
+class PPO_Learner(BasePolicy):
+    def __init__(
+        self,
+        policy: PPO_Policy,
+        critic: PPO_Critic,
+        convNet: ConvNetwork,
+        policy_lr: float = 5e-4,
+        critic_lr: float = 1e-4,
+        eps: float = 0.2,
+        entropy_scaler: float = 1e-2,
+        gamma: float = 0.99,
+        tau: float = 0.9,
+        K: int = 5,
+        device: str = "cpu",
+    ):
+        super(PPO_Learner, self).__init__()
+
+        # constants
+        self.device = device
+
+        self._entropy_scaler = entropy_scaler
+        self._eps = eps
+        self._gamma = gamma
+        self._tau = tau
+        self._K = K
+        self._forward_steps = 0
+
+        # trainable networks
+        self.policy = policy
+        self.critic = critic
+        self.convNet = convNet
+
+        self.optimizer = torch.optim.Adam(
+            [
+                {"params": self.policy.parameters(), "lr": policy_lr},
+                {"params": self.critic.parameters(), "lr": critic_lr},
+            ]
+        )
+
+        #
+        self.dummy = torch.tensor(0.0)
+        self.to(self.device)
+
+    def to_device(self, device):
+        self.device = device
+        self.to(device)
+
+    def getPhi(self, x):
+        with torch.no_grad():
+            phi, _ = self.convNet(x)
+        return phi
+
+    def forward(self, x, z=None, deterministic=False):
+        self._forward_steps += 1
+        """
+        x is state ~ (7, 7, 3)
+        """
+        if isinstance(x, np.ndarray):
+            x = torch.from_numpy(x)
+        if len(x.shape) == 3:
+            x = x[None, :, :, :]
+        x = x.to(self._dtype).to(self.device)
+        phi = self.getPhi(x)
+
+        dist = self.policy(phi)
+
+        if deterministic:
+            # [N, |O|]
+            a = torch.argmax(dist.probs, dim=-1).to(self._dtype)
+        else:
+            a = dist.sample()
+
+        logprobs = dist.log_prob(a)
+        probs = torch.exp(logprobs)
+
+        return a, {
+            "q": self.dummy,  # dummy
+            "phi": phi,
+            "is_option": False,  # dummy
+            "z": self.dummy.item(),
+            "probs": probs,
+            "logprobs": logprobs,
+            "entropy": dist.entropy(),
+        }
+
+    def learn(self, batch, z=0):
+        self.train()
+        t0 = time.time()
+
+        # Ingredients
+        features = torch.from_numpy(batch["features"]).to(torch.float32).to(self.device)
+        actions = torch.from_numpy(batch["actions"]).to(torch.float32).to(self.device)
+        rewards = torch.from_numpy(batch["rewards"]).to(torch.float32).to(self.device)
+        terminals = torch.from_numpy(batch["terminals"]).to(torch.int32).to(self.device)
+        old_logprobs = (
+            torch.from_numpy(batch["logprobs"]).to(torch.int32).to(self.device)
+        )
+
+        with torch.no_grad():
+            values = self.critic(features)
+            advantages, returns = estimate_advantages(
+                rewards,
+                terminals,
+                values,
+                gamma=self._gamma,
+                tau=self._tau,
+                device=self.device,
+            )
+
+        # K - Loop
+        for _ in range(self._K):
+            # critic ingredients
+            values = self.critic(features)
+            valueLoss = F.mse_loss(returns, values)
+
+            # policy ingredients
+            dist = self.policy(features)
+
+            logprobs = dist.log_prob(actions)
+            entropy = dist.entropy()
+
+            # entropy = -probs * torch.clip(log_probs, 1e-10, 10.0)
+
+            ratios = torch.exp(logprobs - old_logprobs)
+            # policy loss
+            surr1 = ratios * advantages
+            surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * advantages
+            actorLoss = -torch.min(surr1, surr2)
+            entropyLoss = self._entropy_scaler * entropy
+
+            loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
+
+            # step the optimizer
+            self.optimizer.zero_grad()
+            loss.backward()
+            # torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=20.0)
+            grad_dict = self.compute_gradient_norm(
+                [self.policy, self.critic],
+                ["policy", "critic"],
+                dir="PPO",
+                device=self.device,
+            )
+            self.optimizer.step()
+
+        loss_dict = {
+            "PPO/loss": loss.item(),
+            "PPO/actorLoss": torch.mean(actorLoss).item(),
+            "PPO/valueLoss": torch.mean(valueLoss).item(),
+            "PPO/entropyLoss": torch.mean(entropyLoss).item(),
+        }
+        loss_dict.update(grad_dict)
+
+        t1 = time.time()
+        self.eval()
+        return (
+            loss_dict,
+            t1 - t0,
+        )
+
+    def save_model(self, logdir, epoch=None, is_best=False):
+        self.policy = self.policy.cpu()
+        self.critic = self.critic.cpu()
+
+        # save checkpoint
+        if is_best:
+            path = os.path.join(logdir, "best_model.p")
+        else:
+            path = os.path.join(logdir, "model_" + str(epoch) + ".p")
+        pickle.dump(
+            (self.policy, self.critic),
+            open(path, "wb"),
+        )
+        self.policy = self.policy.to(self.device)
+        self.critic = self.critic.to(self.device)
