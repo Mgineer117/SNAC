@@ -39,7 +39,7 @@ def get_args(verbose=True):
 
     # WandB and Logging parameters
     parser.add_argument(
-        "--project", type=str, default="4ROOM", help="WandB project classification"
+        "--project", type=str, default="TEST", help="WandB project classification"
     )
     parser.add_argument(
         "--logdir", type=str, default="log/train_log", help="name of the logging folder"
@@ -59,7 +59,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--algo-name",
         type=str,
-        default="EigenOption",
+        default="CoveringOption",
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
@@ -107,7 +107,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=20,  # 50
+        default=25,  # 50
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(

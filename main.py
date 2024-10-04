@@ -8,6 +8,7 @@ import gymnasium as gym
 
 from algorithms.SNAC import SNAC
 from algorithms.EigenOption import EigenOption
+from algorithms.CoveringOption import CoveringOption
 from algorithms.PPO import PPO
 from gym_multigrid.envs.fourrooms import FourRooms
 
@@ -62,6 +63,15 @@ def train(args, unique_id):
         )
     elif args.algo_name == "EigenOption":
         alg = EigenOption(
+            env=env,
+            buffer=buffer,
+            sampler=sampler,
+            logger=logger,
+            writer=writer,
+            args=args,
+        )
+    elif args.algo_name == "CoveringOption":
+        alg = CoveringOption(
             env=env,
             buffer=buffer,
             sampler=sampler,

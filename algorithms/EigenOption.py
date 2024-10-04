@@ -122,7 +122,7 @@ class EigenOption:
         self.curr_epoch += final_epoch
 
     def train_op(self):
-        self.option_vals, self.options = get_eigenvectors(
+        self.option_vals, self.options, _ = get_eigenvectors(
             self.env,
             self.sf_network,
             self.sampler,

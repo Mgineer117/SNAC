@@ -74,7 +74,7 @@ class OP_Controller(BasePolicy):
         self.optimizers["psiNet"] = torch.optim.AdamW(
             self.psiNet.parameters(), lr=psi_lr
         )
-        self._options = nn.Parameter(self._options)
+        # self._options = self._options
         #
         self.to(self.device)
 
@@ -117,14 +117,12 @@ class OP_Controller(BasePolicy):
         else:
             raise ValueError(f"algo_name is unknown: {self._algo_name}")
 
-        termination = True if torch.all(q <= 0) else False
-
         return a, {
             "q": q,
             "phi": phi,
             "is_option": False,  # dummy
             "z": 0,
-            "termination": termination,
+            "termination": False,
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
         }

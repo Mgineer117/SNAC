@@ -23,6 +23,9 @@ def discover_options(
     classification: str = "top",
     num: int = 10,
     gamma: int = 0.9,
+    num_trj: int = 100,
+    prev_batch: dict | None = None,
+    idx: int | None = None,
     device=torch.device("cpu"),
 ):
     """
@@ -36,9 +39,14 @@ def discover_options(
         mix: all of the above
     """
     # Collect batch
-    option_buffer = TrajectoryBuffer(min_num_trj=100, max_num_trj=200, device=device)
+    is_covering_option = True if idx is not None else False
+    option_buffer = TrajectoryBuffer(
+        min_num_trj=num_trj, max_num_trj=200, device=device
+    )
     while option_buffer.num_trj < option_buffer.min_num_trj:
-        batch, sample_time = sampler.collect_samples(policy, env_seed=env_seed)
+        batch, sample_time = sampler.collect_samples(
+            policy, env_seed=env_seed, idx=idx, is_covering_option=is_covering_option
+        )
         option_buffer.push(batch)
     batch = option_buffer.sample_all()
     option_buffer.wipe()
@@ -109,14 +117,30 @@ def discover_options(
             S = torch.cat((S_r, S_s), axis=0)
             V = torch.cat((V_r, V_s), axis=0)
 
-            return S, V, [S_r, S_s], [V_r, V_s], ["R-feature", "S-feature"]
+            return S, V, [S_r, S_s], [V_r, V_s], ["R-feature", "S-feature"], batch
         else:
             NotImplementedError(f"Not implemented arg {method}")
 
     elif algo_name == "EigenOption" or algo_name == "CoveringOption":
-        # Compute Psi
         with torch.no_grad():
             psi = estimate_psi(features, terminals, gamma)  # operate on cpu
+
+            if prev_batch is not None:
+                prev_features = (
+                    torch.from_numpy(prev_batch["features"])
+                    .to(torch.float32)
+                    .to(device)
+                )
+                prev_terminals = (
+                    torch.from_numpy(prev_batch["terminals"])
+                    .to(torch.float32)
+                    .to(device)
+                )
+                prev_psi = estimate_psi(
+                    prev_features, prev_terminals, gamma
+                )  # operate on cpu
+
+                psi = torch.cat((prev_psi, psi), axis=0)
 
             # to save VRAM
             del features, terminals
@@ -161,7 +185,7 @@ def discover_options(
             S = torch.cat((S, -S), axis=0)
             V = torch.cat((V, -V), axis=0)
 
-            return S, V, [S], [V], ["S-feature"]
+            return S, V, [S], [V], ["S-feature"], batch
         else:
             NotImplementedError(f"Not implemented arg {method}")
     else:
@@ -213,18 +237,29 @@ def cluster_vecvtors(S_list, V_list, k=10):
     )
 
 
-def get_eigenvectors(env, sf_network, sampler, plotter, args, draw_map: bool = False):
+def get_eigenvectors(
+    env,
+    network,
+    sampler,
+    plotter,
+    args,
+    idx: int | None = None,
+    app_trj_num: int = 100,
+    prev_batch: dict | None = None,
+    draw_map: bool = False,
+):
     if args.algo_name == "SNAC":
         print(
             f"Clustering the vector!!!: R:{int(args.num_vector / 2)}  S:{int(args.num_vector / 2)} | Total options: {args.num_vector}"
         )
-        option_vals, options, S_list, V_list, names = discover_options(
-            policy=sf_network,
+        option_vals, options, S_list, V_list, names, batch = discover_options(
+            policy=network,
             sampler=sampler,
             env_seed=args.env_seed,
             algo_name=args.algo_name,
             method="SVD",
             classification="all",
+            num_trj=app_trj_num,
             device=args.device,
         )
 
@@ -242,28 +277,32 @@ def get_eigenvectors(env, sf_network, sampler, plotter, args, draw_map: bool = F
         print(
             f"Selecting top {args.num_vector/ 2} vector!!! | Total options: {args.num_vector}"
         )
-        option_vals, options, S_list, V_list, names = discover_options(
-            policy=sf_network,
+        option_vals, options, S_list, V_list, names, batch = discover_options(
+            policy=network,
             sampler=sampler,
             env_seed=args.env_seed,
             algo_name=args.algo_name,
             method="SVD",
             classification="top",
             num=int(args.num_vector / 2),
+            num_trj=app_trj_num,
             device=args.device,
         )
     elif args.algo_name == "CoveringOption":
         print(
             f"Selecting top 1 (+/-) vector over {int(args.num_vector / 2)} iterations"
         )
-        option_vals, options, S_list, V_list, names = discover_options(
-            policy=sf_network,
+        option_vals, options, S_list, V_list, names, batch = discover_options(
+            policy=network,
             sampler=sampler,
             env_seed=args.env_seed,
             algo_name=args.algo_name,
             method="SVD",
             classification="top",
             num=1,
+            num_trj=app_trj_num,
+            prev_batch=prev_batch,
+            idx=idx,
             device=args.device,
         )
     else:
@@ -272,7 +311,7 @@ def get_eigenvectors(env, sf_network, sampler, plotter, args, draw_map: bool = F
     if draw_map:
         grid_tensor, coords, loc = get_grid_tensor(env, args.env_seed)
         plotter.plotRewardMap(
-            feaNet=sf_network.feaNet,
+            feaNet=network.feaNet,
             S=option_vals,
             V=options,
             feature_dim=args.sf_dim,  # since V = [V, -V]
@@ -296,4 +335,4 @@ def get_eigenvectors(env, sf_network, sampler, plotter, args, draw_map: bool = F
         #     specific_path="randomPsi",
         # )
 
-    return option_vals, options
+    return option_vals, options, batch
