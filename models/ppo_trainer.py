@@ -69,6 +69,7 @@ class PPOTrainer:
 
         # train loop
         self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.
+
         for e in trange(self._init_epoch, self._epoch, desc=f"PPO Epoch"):
 
             # Eval Loop

@@ -102,7 +102,7 @@ class PPO:
                 logger=self.logger,
                 writer=self.writer,
                 evaluator=self.ppo_evaluator,
-                epoch=self.args.PPO_epoch,
+                epoch=self.curr_epoch + self.args.PPO_epoch,
                 init_epoch=self.curr_epoch,
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,

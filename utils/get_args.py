@@ -74,7 +74,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--seeds",
         type=list_of_ints,
-        default=[0],  # 0, 2
+        default=[1, 2, 3, 4, 5],  # 0, 2
         help="seeds for computational stochasticity --seeds 1,3,5,7,9 # without space",
     )
 
