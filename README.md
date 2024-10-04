@@ -5,7 +5,7 @@
 This repository presents a Hierarchical Reinforcement Learning (HRL) approach in Grid World, incorporating **Successor Features (SFs)** with the following enhancements:
 - **Clustering in eigenspace** to prevent information loss by utilizing all computed eigenvectors.
 - **Simultaneous reward and state feature decompositions** to adapt to both the reward structure and navigational diffusion properties of the environment.
-- **Offering intuition and a foundation for deploying Successor Features (SF)**, addressing the gap in the current field where most work focuses on Successor Representation (SR) and lacks comprehensive code and intuition for SF.
+- **Offering intuition and a foundation for Successor Features (SF) Implementation**, addressing the gap in the current field where most work focuses on Successor Representation (SR) and lacks comprehensive code and intuition for SF.
 
 Additionally, this repository includes implementations of previous state-of-the-art (SOTA) methods, such as **EigenOption**, **CoveringOption**, and a naive **PPO** approach, serving as baselines. For further details, please refer to the workshop paper of the older version of [SNAC](https://ala2022.github.io/papers/ALA2022_paper_41.pdf).
 
