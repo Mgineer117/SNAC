@@ -12,7 +12,6 @@ Additionally, this repository includes implementations of previous state-of-the-
 ---
 
 ## Notes on SNAC
-- For the Fourroom environment, only the goal position is stochastic while others remain constant (agent loc, grid). This is to induce the dynamics in the reward structure of the environment as the simplest case.
 - Due to the non-uniqueness of the sign by SVD decomposition, we count one eigenvector as two vectors such that e = (+e/-e).
 
 ## Notes on baselines
@@ -25,12 +24,14 @@ Additionally, this repository includes implementations of previous state-of-the-
 **Fourroom Environment**
 - Time steps: 100
 - Successor Feature (SF) matrix is built using (100 trajectories x feature_dim)
+- Only the goal position is stochastic while others remain constant (agent loc, grid). This is to induce the dynamics in the reward structure of the environment as the simplest case.
 - Singular Value Decomposition (SVD) is applied for eigenpurpose discovery
 - Intrinsic reward is calculated as the dot product of the eigenvector and the feature difference: `eigenvector^T * (next_feature - current_feature)`
 - 
 **CtF**
 - Time steps: ??? (reasonable amount)
 - Successor Feature (SF) matrix is built using (100 trajectories x feature_dim) # I assume still 100 if so no change is required
+- The grid layout, agent's starting position, and enemy agents' positions are fixed, while the enemy agents move dynamically, altering the reward structure.
 
 ## Usage
 
