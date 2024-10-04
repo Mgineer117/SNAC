@@ -10,12 +10,14 @@ Additionally, this repository includes implementations of previous state-of-the-
 
 ---
 
-## Pre-requisites
+## Notes on SNAC
+- For the Fourroom environment, only the goal position is stochastic while others remain constant (agent loc, grid). This is to induce the dynamics in the reward structure of the environment as the simplest case.
+- Due to the non-uniqueness of the sign by SVD decomposition, we count one eigenvector as two vectors such that e = (+e/-e).
+
+## Notes on baselines
 
 - [**EigenOption**](https://openreview.net/pdf?id=Bk8ZcAxR-) selects the top `n` eigenvectors from a diffusive-type matrix (e.g., graph Laplacian, Successor Representation, Successor Features).
 - [**CoveringOption**](https://openreview.net/pdf?id=SkeIyaVtwB) selects the top 1 eigenvector and iteratively updates the diffusive matrix to find a better-explaining matrix, particularly effective in environments with hardly exploratory state-transitions.
-
-In addition, due to the non-uniqueness of the sign by SVD decomposition, we count one eigenvector as two vectors such that e = (+e/-e).
 ---
 
 ## Usage
