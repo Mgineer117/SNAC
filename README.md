@@ -12,13 +12,6 @@ Additionally, this repository includes implementations of previous state-of-the-
 
 ## Pre-requisites
 
-Before using this repository, it is recommended to be familiar with the following papers:
-
-- [EigenOption Discovery with Deep Successor Features](https://openreview.net/pdf?id=Bk8ZcAxR-)
-- [RL with Deep Covering Option](https://openreview.net/pdf?id=SkeIyaVtwB)
-
-### Summary
-
 - [**EigenOption**](https://openreview.net/pdf?id=Bk8ZcAxR-) selects the top `n` eigenvectors from a diffusive-type matrix (e.g., graph Laplacian, Successor Representation, Successor Features).
 - [**CoveringOption**](https://openreview.net/pdf?id=SkeIyaVtwB) selects the top 1 eigenvector and iteratively updates the diffusive matrix to find a better-explaining matrix, particularly effective in environments with hard-to-explore states.
 
