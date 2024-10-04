@@ -59,7 +59,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--algo-name",
         type=str,
-        default="PPO",
+        default="EigenOption",
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(

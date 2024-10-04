@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import gymnasium as gym
 
 from algorithms.SNAC import SNAC
+from algorithms.EigenOption import EigenOption
 from algorithms.PPO import PPO
 from gym_multigrid.envs.fourrooms import FourRooms
 
@@ -52,6 +53,15 @@ def train(args, unique_id):
 
     if args.algo_name == "SNAC":
         alg = SNAC(
+            env=env,
+            buffer=buffer,
+            sampler=sampler,
+            logger=logger,
+            writer=writer,
+            args=args,
+        )
+    elif args.algo_name == "EigenOption":
+        alg = EigenOption(
             env=env,
             buffer=buffer,
             sampler=sampler,
