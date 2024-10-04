@@ -299,6 +299,7 @@ def setup_logger(args, unique_id, seed):
     """
     # Get the current date and time
     now = datetime.now()
+    args.running_seed = seed
 
     # Format the date as "month_day_year"
     formatted_date = now.strftime("%m_%d")
