@@ -21,6 +21,13 @@ Additionally, this repository includes implementations of previous state-of-the-
 - [**CoveringOption**](https://openreview.net/pdf?id=SkeIyaVtwB) selects the top 1 eigenvector and iteratively updates the diffusive matrix to find a better-explaining matrix, particularly effective in environments with hardly exploratory state-transitions.
 ---
 
+## Experimental Design
+**Fourroom Environment**
+- Time steps: 100
+- Successor Feature (SF) matrix is built using (100 trajectories x feature_dim)
+- Singular Value Decomposition (SVD) is applied for eigenpurpose discovery
+- Intrinsic reward is calculated as the dot product of the eigenvector and the feature difference: `eigenvector^T * (next_feature - current_feature)`
+
 ## Usage
 
 To create a conda environment, run the following commands:
