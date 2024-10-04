@@ -9,6 +9,7 @@ from utils import NoStateDictWrapper, get_grid_tensor
 
 def call_env(args):
     # define the env
+    # first call dummy env to find possible location for agent
     args.grid_size = 13  # Machado reference
     dummy_env = FourRooms(
         grid_size=(args.grid_size, args.grid_size),
@@ -21,6 +22,7 @@ def call_env(args):
     )
     dummy_env = NoStateDictWrapper(dummy_env, tile_size=args.tile_size)
 
+    # given possible locations of agent placement, fix it according to env_seed
     _, coords, _ = get_grid_tensor(dummy_env, args.env_seed)
     x_coord, y_coord = random.choice(coords[0]), random.choice(coords[1])
 

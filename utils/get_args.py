@@ -39,7 +39,7 @@ def get_args(verbose=True):
 
     # WandB and Logging parameters
     parser.add_argument(
-        "--project", type=str, default="TEST", help="WandB project classification"
+        "--project", type=str, default="4ROOM", help="WandB project classification"
     )
     parser.add_argument(
         "--logdir", type=str, default="log/train_log", help="name of the logging folder"
@@ -79,47 +79,52 @@ def get_args(verbose=True):
     )
 
     # OpenAI Gym parameters
-    parser.add_argument("--env-name", type=str, default="FourRooms", help="ss")
+    parser.add_argument(
+        "--env-name",
+        type=str,
+        default="FourRooms",
+        help="This specifies which environment one is working with",
+    )
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=250,  # 200
+        default=2,  # 200
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=50,  # 50
-        help="total number of epochs; every epoch it does evaluation",
+        default=2,  # 50
+        help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--RP-epoch",
         type=int,
         default=0,
-        help="total number of epochs; every epoch it does evaluation",
+        help="This is not used. total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=20,  # 25
-        help="total number of epochs; every epoch it does evaluation",
+        default=2,  # 25
+        help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=25,  # 50
+        default=2,  # 50
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--Psi-epoch",
         type=int,
-        default=10,  # 20
+        default=2,  # 20
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--step-per-epoch",
         type=int,
-        default=200,
+        default=2,
         help="number of iterations within one epoch",
     )
     parser.add_argument(
@@ -149,23 +154,45 @@ def get_args(verbose=True):
     )
 
     # some params
-    parser.add_argument("--tile-size", type=int, default=1, help="tensor image size")
-    parser.add_argument("--img-tile-size", type=int, default=32, help="image tile size")
-    parser.add_argument("--a-dim", type=int, default=4)
-
-    # general params
-    parser.add_argument("--fc-dim", type=int, default=64)
-
-    # SF Network parameters
-    parser.add_argument("--conv-fc-dim", type=int, default=256)
-    parser.add_argument("--sf-dim", type=int, default=128)
-
-    parser.add_argument("--policy_fc_hidden_dims", type=tuple, default=(64, 64))
     parser.add_argument(
-        "--policy-output-dim",
+        "--tile-size",
+        type=int,
+        default=1,
+        help="Changing this requires redesign of CNN. tensor image size",
+    )
+    parser.add_argument(
+        "--img-tile-size",
+        type=int,
+        default=32,
+        help="32 is default. This is used for logging the images of training progresses. image tile size",
+    )
+
+    # dimensional params
+    parser.add_argument(
+        "--a-dim",
         type=int,
         default=4,
-        help="This constrains the max action output",
+        help="One can arbitrarily set the max dimension of action when one wants to disregard other useless action components of Minigrid",
+    )
+
+    parser.add_argument(
+        "--fc-dim",
+        type=int,
+        default=64,
+        help="This is general fully connected dimension for most of network this code.",
+    )
+
+    parser.add_argument(
+        "--conv-fc-dim",
+        type=int,
+        default=256,
+        help="This is a dimension of FCL that decodes the output of CNN",
+    )
+    parser.add_argument(
+        "--sf-dim",
+        type=int,
+        default=128,
+        help="This is an feature dimension thus option dimension",
     )
 
     parser.add_argument(
@@ -236,33 +263,24 @@ def get_args(verbose=True):
         "--num-traj",
         type=int,
         default=30,
-        help="embedding dimension both for categorical network and VAE",
+        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
 
     parser.add_argument(
         "--update-iter",
         type=int,
         default=3,
-        help="embedding dimension both for categorical network and VAE",
+        help="For buffer learing, this sets the sub-iterations",
     )
 
     parser.add_argument(
         "--trj-per-iter",
         type=int,
         default=5,
-        help="embedding dimension both for categorical network and VAE",
+        help="This sets the number of trajectories to use for one sub-iteration",
     )
 
     # Algorithmic parameters
-    parser.add_argument(
-        "--normalize-state", type=bool, default=False, help="normalise state input"
-    )
-    parser.add_argument(
-        "--normalize-reward", type=bool, default=False, help="normalise reward input"
-    )
-    parser.add_argument(
-        "--reward-scaler", type=float, default=None, help="reward scaler"
-    )
     parser.add_argument(
         "--rendering",
         type=bool,
@@ -271,6 +289,12 @@ def get_args(verbose=True):
     )
     parser.add_argument(
         "--import-sf-model",
+        type=bool,
+        default=False,
+        help="it imports previously trained model",
+    )
+    parser.add_argument(
+        "--import-ppo-model",
         type=bool,
         default=False,
         help="it imports previously trained model",
@@ -287,12 +311,7 @@ def get_args(verbose=True):
         default=False,
         help="it imports previously trained model",
     )
-    parser.add_argument(
-        "--import-ppo-model",
-        type=bool,
-        default=False,
-        help="it imports previously trained model",
-    )
+
     parser.add_argument("--gpu-idx", type=int, default=0, help="gpu idx to train")
     parser.add_argument("--verbose", type=bool, default=True, help="WandB logging")
 

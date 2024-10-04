@@ -99,9 +99,12 @@ def train(args, unique_id):
 #########################################################
 
 if __name__ == "__main__":
+    # initialize for whole training pipeline
     args = get_args(verbose=False)
     seeds = args.seeds
+    # define unique id for the run
     unique_id = str(uuid.uuid4())[:4]
+    # iterate over seeds
     for seed in seeds:
         args = get_args()
         seed_all(seed)
