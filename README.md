@@ -27,6 +27,10 @@ Additionally, this repository includes implementations of previous state-of-the-
 - Successor Feature (SF) matrix is built using (100 trajectories x feature_dim)
 - Singular Value Decomposition (SVD) is applied for eigenpurpose discovery
 - Intrinsic reward is calculated as the dot product of the eigenvector and the feature difference: `eigenvector^T * (next_feature - current_feature)`
+- 
+**CtF**
+- Time steps: ??? (reasonable amount)
+- Successor Feature (SF) matrix is built using (100 trajectories x feature_dim) # I assume still 100 if so no change is required
 
 ## Usage
 
