@@ -9,7 +9,7 @@ from gym_multigrid.envs.fourrooms import FourRooms
 
 from models.evaulators import (
     SF_Evaluator,
-    OP_Evaluator,
+    OP_Evaluator2,
     UG_Evaluator,
     HC_Evaluator,
 )
@@ -63,7 +63,7 @@ class CoveringOption:
             dir=self.sf_path,
             log_interval=args.log_interval,
         )
-        self.op_evaluator = OP_Evaluator(
+        self.op_evaluator = OP_Evaluator2(
             logger=logger,
             writer=writer,
             training_env=env,

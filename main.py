@@ -88,6 +88,9 @@ def train(args, unique_id):
             writer=writer,
             args=args,
         )
+    else:
+        raise ValueError(f"Unknown algorithm: {args.algo_name}")
+
     alg.run()
 
     wandb.finish()
