@@ -12,7 +12,6 @@ def get_grid_tensor(env, env_seed):
     Can be extended to the multigrid by removing multiple agents
     """
     grid_tensor, _ = env.reset(seed=env_seed)
-    print(grid_tensor.shape)
 
     loc = np.where(grid_tensor[:, :, 0] == 10)
     grid_tensor[loc[0], loc[1], 0] = 1
