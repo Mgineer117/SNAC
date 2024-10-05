@@ -158,7 +158,9 @@ class CoveringOption:
             app_trj_num = int(100 / self.args.num_vector)
 
             ### get first vector with random walk
-            batch = self.collect_batch(self.sf_network, app_trj_num=20, idx=None)
+            batch = self.collect_batch(
+                self.sf_network, app_trj_num=app_trj_num, idx=None
+            )
             with torch.no_grad():
                 S, V = self.get_vector(batch)
 
