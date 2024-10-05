@@ -158,7 +158,7 @@ class CoveringOption:
             app_trj_num = int(100 / self.args.num_vector)
 
             ### get first vector with random walk
-            batch = self.collect_batch(self.sf_network, app_trj_num=100, idx=None)
+            batch = self.collect_batch(self.sf_network, app_trj_num=20, idx=None)
             with torch.no_grad():
                 S, V = self.get_vector(batch)
 
@@ -171,7 +171,6 @@ class CoveringOption:
             )
 
             self.train_op_network(vec_idx=0)
-            batch = None
             for idx in range(1, int(self.args.num_vector / 2)):
                 vec_idx = idx * 2
 
@@ -191,6 +190,19 @@ class CoveringOption:
                     self.options.to(torch.float32).to(self.args.device)
                 )
                 self.train_op_network(vec_idx=vec_idx)
+
+            grid_tensor, coords, loc = get_grid_tensor(self.env, self.args.env_seed)
+            self.plotter.plotRewardMap(
+                feaNet=self.sf_network.feaNet,
+                S=self.option_vals,
+                V=self.options,
+                feature_dim=self.args.sf_dim,  # since V = [V, -V]
+                algo_name=self.args.algo_name,
+                grid_tensor=grid_tensor,
+                coords=coords,
+                loc=loc,
+                dir=self.plotter.log_dir,
+            )
         else:
             final_epoch = self.curr_epoch + self.args.num_vector * self.args.OP_epoch
             self.curr_epoch += final_epoch

@@ -1,15 +1,16 @@
 import torch
-import torch.nn as nn
 
-# Create an example nn.Parameter
-param = nn.Parameter(torch.randn(3, 4))
-print(param)
-param2 = param.cpu()
-# Access the elements like a tensor
-tensor_values = param.data  # or just use .detach() for similar result
+a = torch.tensor(11).to(torch.int32)
+b = torch.tensor(11.00).long()
 
-# Convert to NumPy array if needed
-numpy_array = tensor_values.cpu().numpy()
+# Cast both to integers before comparing
+if a == b:
+    print("They are equal.")
+else:
+    print("They are not equal.")
 
-# Example: print the values
-print(tensor_values)
+# Cast both to integers before comparing
+if int(a) == int(b):
+    print("They are equal.")
+else:
+    print("They are not equal.")

@@ -39,7 +39,7 @@ def get_args(verbose=True):
 
     # WandB and Logging parameters
     parser.add_argument(
-        "--project", type=str, default="4ROOM", help="WandB project classification"
+        "--project", type=str, default="TEST", help="WandB project classification"
     )
     parser.add_argument(
         "--logdir", type=str, default="log/train_log", help="name of the logging folder"
@@ -118,7 +118,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--Psi-epoch",
         type=int,
-        default=10,  # 10
+        default=2,  # 10
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(

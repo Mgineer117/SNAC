@@ -15,8 +15,8 @@ def call_env(args):
         grid_size=(args.grid_size, args.grid_size),
         agent_pos=(5, 5),
         max_steps=args.episode_len,
-        img_tile_size=args.img_tile_size,
-        highlight=False,
+        tile_size=args.img_tile_size,
+        highlight_visible_cells=False,
         partial_observability=False,
         render_mode="rgb_array",
     )
@@ -30,8 +30,8 @@ def call_env(args):
         grid_size=(args.grid_size, args.grid_size),
         agent_pos=(x_coord, y_coord),
         max_steps=args.episode_len,
-        img_tile_size=args.img_tile_size,
-        highlight=False,
+        tile_size=args.img_tile_size,
+        highlight_visible_cells=False,
         partial_observability=False,
         render_mode="rgb_array",
     )

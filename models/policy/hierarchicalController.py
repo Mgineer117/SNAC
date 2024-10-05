@@ -134,7 +134,7 @@ class HC_Controller(BasePolicy):
             z = idx
             metaData = {"probs": None, "logprobs": None}  # dummy
 
-        is_option = False if z == self._num_options else True
+        is_option = True if z < self._num_options else False
         # print(z, is_option, self._num_options)
 
         if is_option:
