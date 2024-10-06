@@ -440,7 +440,7 @@ class Plotter:
         deltaPhi -= features
         deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
 
-        if algo_name == "SNAC-split":
+        if algo_name == "SNAC":
             r_deltaPhi, s_deltaPhi = torch.split(
                 deltaPhi, deltaPhi.size(-1) // 2, dim=-1
             )
@@ -466,8 +466,7 @@ class Plotter:
 
                 for x, y in zip(coords[0], coords[1]):
                     rewards[vec_idx, x, y] += reward[x, y]
-
-        elif algo_name == "SNAC-combined":
+        else:
             for vec_idx in range(num_vec):
                 # deltaPhi ~ [n_possible_states, f]
                 # V ~ [1, f]

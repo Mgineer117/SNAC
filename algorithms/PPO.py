@@ -14,6 +14,10 @@ from utils import *
 
 class PPO:
     def __init__(self, env: gym.Env, buffer, sampler, logger, writer, args):
+        """
+        This is a naive PPO wrapper that includes all necessary training pipelines for HRL.
+        This trains SF network and train PPO according to the extracted features by SF network
+        """
         # object initialization
         self.env = env
         self.buffer = buffer

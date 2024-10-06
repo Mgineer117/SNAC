@@ -55,8 +55,8 @@ class FourRooms(MultiGridEnv):
         grid_size: tuple = (19, 19),
         agent_view_size: int = 7,
         max_steps: int = 100,
-        highlight: bool | None = True,
-        img_tile_size: int = 20,
+        highlight_visible_cells: bool | None = True,
+        tile_size: int = 20,
         partial_observability: bool = False,
         render_mode: Literal["human", "rgb_array"] = "rgb_array",
     ) -> None:
@@ -91,7 +91,6 @@ class FourRooms(MultiGridEnv):
 
         self.grids = {}
         self.grid_imgs = {}
-        self.img_tile_size = img_tile_size
 
         super().__init__(
             width=self.width,
@@ -102,9 +101,10 @@ class FourRooms(MultiGridEnv):
             agent_view_size=agent_view_size,
             actions_set=self.actions_set,
             partial_obs=partial_observability,
-            highlight=highlight,
             world=self.world,
             render_mode=render_mode,
+            highlight_visible_cells=highlight_visible_cells,
+            tile_size=tile_size,
         )
 
     def _gen_grid(self, width, height):
@@ -163,7 +163,6 @@ class FourRooms(MultiGridEnv):
             goal.init_pos, goal.cur_pos = self._goal_default_pos
         else:
             self.place_obj(Goal(self.world, 0))
-        grid_img = self.grid.render(tile_size=self.img_tile_size)
 
         if self._agent_default_pos is not None:
             for agent in self.agents:
@@ -174,8 +173,6 @@ class FourRooms(MultiGridEnv):
             for agent in self.agents:
                 self.place_agent(agent)
 
-        return grid_img
-
     def reset(
         self,
         *,
@@ -184,7 +181,7 @@ class FourRooms(MultiGridEnv):
     ):
         ### intentional to not feed seed since the grid and agent are fixed
         # obs = super().reset(seed=seed, options=options)
-        obs = super().reset(options=options)
+        obs, info = super().reset(options=options)
 
         ### NOTE: not multiagent setting
         self.agent_dir = self.agents[0].dir
@@ -192,7 +189,7 @@ class FourRooms(MultiGridEnv):
 
         ### NOTE: NOT MULTIAGENT SETTING
         observations = {"image": obs[0], "direction": self.agent_dir}
-        return observations, {}
+        return observations, info
 
     def step(self, actions):
         self.step_count += 1
@@ -314,77 +311,6 @@ class FourRooms(MultiGridEnv):
         observations = {"image": obs[0], "direction": self.agent_dir}
 
         return observations, rewards, terminated, truncated, {}
-
-    def render(
-        self, close: bool = False, highlight: bool = False, tile_size: int | None = None
-    ):
-        """
-        Render the whole-grid human view
-        """
-
-        if highlight is None:
-            self.highlight = highlight
-
-        if tile_size is None:
-            tile_size = self.img_tile_size
-
-        if close:
-            if self.window:
-                self.window.close()
-            return
-
-        if self.render_mode == "human" and not self.window:
-            self.window = Window("gym_multigrid")
-            self.window.show(block=False)
-
-        if self.highlight:
-            # Compute which cells are visible to the agent
-            _, vis_masks = self.gen_obs_grid()
-
-            highlight_masks = {
-                (i, j): [] for i in range(self.width) for j in range(self.height)
-            }
-
-            for i, a in enumerate(self.agents):
-                # Compute the world coordinates of the bottom-left corner
-                # of the agent's view area
-                f_vec = a.dir_vec
-                r_vec = a.right_vec
-                top_left = (
-                    a.pos + f_vec * (a.view_size - 1) - r_vec * (a.view_size // 2)
-                )
-
-                # Mask of which cells to highlight
-
-                # For each cell in the visibility mask
-                for vis_j in range(0, a.view_size):
-                    for vis_i in range(0, a.view_size):
-                        # If this cell is not visible, don't highlight it
-                        if not vis_masks[i][vis_i, vis_j]:
-                            continue
-
-                        # Compute the world coordinates of this cell
-                        abs_i, abs_j = top_left - (f_vec * vis_j) + (r_vec * vis_i)
-
-                        if abs_i < 0 or abs_i >= self.width:
-                            continue
-                        if abs_j < 0 or abs_j >= self.height:
-                            continue
-
-                        # Mark this cell to be highlighted
-                        highlight_masks[abs_i, abs_j].append(i)
-
-        # Render the whole grid
-        img = self.grid.render(
-            tile_size,
-            highlight_masks=highlight_masks if self.highlight else None,
-            uncached_object_types=self.uncahed_object_types,
-        )
-
-        if self.render_mode == "human":
-            self.window.show_img(img)
-
-        return img
 
     # def step(self, actions):
     #     self.step_count += 1

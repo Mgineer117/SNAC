@@ -65,7 +65,7 @@ class FRActions(enum.IntEnum):
     right = 2
     down = 3
 
-    
+
 class MazeActions(enum.IntEnum):
     stay = 0
     left = 1

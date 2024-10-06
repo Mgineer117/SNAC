@@ -171,9 +171,7 @@ class OPTrainer:
                 ):
                     # sample batch
                     batch, sampleT = self.sampler.collect_samples(
-                        self.policy,
-                        idx=z,
-                        env_seed=self.env_seed,
+                        self.policy, idx=z, env_seed=self.env_seed
                     )
                     sample_time += sampleT
 
@@ -253,6 +251,7 @@ class OPTrainer2:
         psi_epoch: int = 20,
         step_per_epoch: int = 1000,
         eval_episodes: int = 10,
+        prefix: str = "OP",
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         log_interval: int = 2,
         env_seed: int = 0,
@@ -269,6 +268,8 @@ class OPTrainer2:
         self._init_epoch = init_epoch
         self._psi_epoch = psi_epoch
         self._step_per_epoch = step_per_epoch
+
+        self.prefix = prefix
 
         self._eval_episodes = eval_episodes
         self._scheduling_epoch = int(self._epoch // 10) if self._epoch >= 10 else None
@@ -303,17 +304,17 @@ class OPTrainer2:
                 iter_idx=int(e * self._step_per_epoch),
                 idx=z,
                 name1=self.policy._option_vals[z],
-                dir_name="OP",
+                dir_name=self.prefix,
                 write_log=False,  # since OP needs to write log of average of all options
                 env_seed=self.env_seed,
             )
 
             # manual logging
             eval_dict = {
-                "OP/eval_rew_mean": avg_rew_mean,
-                "OP/eval_rew_std": avg_rew_std,
-                "OP/eval_ln_mean": avg_ln_mean,
-                "OP/eval_ln_std": avg_ln_std,
+                self.prefix + "/eval_rew_mean": avg_rew_mean,
+                self.prefix + "/eval_rew_std": avg_rew_std,
+                self.prefix + "/eval_ln_mean": avg_ln_mean,
+                self.prefix + "/eval_ln_std": avg_ln_std,
             }
             self.evaluator.write_log(eval_dict, iter_idx=int(e * self._step_per_epoch))
 
@@ -342,8 +343,8 @@ class OPTrainer2:
                 loss = self.average_dict_values(policy_loss)
 
                 # Logging further info
-                loss["OP/sample_time"] = sample_time
-                loss["OP/update_time"] = update_time
+                loss[self.prefix + "/sample_time"] = sample_time
+                loss[self.prefix + "/update_time"] = update_time
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 

@@ -264,7 +264,7 @@ def get_eigenvectors(
         )
 
         option_vals, options, metaData = cluster_vecvtors(
-            S_list, V_list, k=args.num_vector
+            S_list, V_list, k=int(args.num_vector / 2)
         )  # replacing original V with cluster centroids
         plotter.plotClusteredVectors(
             V_list=V_list,

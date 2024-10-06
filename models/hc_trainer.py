@@ -90,8 +90,7 @@ class HCTrainer:
             ### training loop
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
-                    self.policy,
-                    env_seed=self.env_seed,
+                    self.policy, env_seed=self.env_seed, is_option=True
                 )
                 loss, update_time = self.policy.learn(batch, prefix=self._prefix)
 

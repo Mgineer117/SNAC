@@ -113,6 +113,7 @@ class Base:
         idx: int = None,
         env_seed: int = 0,
         deterministic: bool = False,
+        is_option: bool = False,
         is_covering_option: bool = False,
     ):
         """
@@ -124,16 +125,19 @@ class Base:
         policy_device = policy.device
         policy.to_device(torch.device("cpu"))
 
-        sample_fn = (
-            self.collect_trajectory4CoveringOption
-            if is_covering_option
-            else self.collect_trajectory
-        )
+        # select appropriate sampler function
+        if is_covering_option and not is_option:
+            sample_fn = self.collect_trajectory4CoveringOption
+        elif is_option and not is_covering_option:
+            sample_fn = self.collect_trajectory4Option
+        else:
+            sample_fn = self.collect_trajectory
 
         queue = multiprocessing.Manager().Queue()
         env_idx = 0
         worker_idx = 0
 
+        # iterate over rounds
         for round_number in range(self.rounds):
             processes = []
             if round_number == self.rounds - 1:
@@ -143,6 +147,7 @@ class Base:
                     env_idx : env_idx + self.num_env_per_round[round_number]
                 ]
 
+            # iterate over envs
             for env in envs:
                 workers_for_env = self.num_workers_per_round[round_number] // len(envs)
                 for i in range(workers_for_env):
@@ -211,6 +216,15 @@ class OnlineSampler(Base):
         num_cores: int = None,
     ) -> None:
         super(Base, self).__init__()
+        """
+        !!! This can even handle multi-envoronments !!!
+        This computes the ""very"" appropriate parameter for the Monte-Carlo sampling
+        given the number of episodes and the given number of cores the runner specified.
+        ---------------------------------------------------------------------------------
+        Rounds: This gives several rounds when the given sampling load exceeds the number of threads
+        the task is assigned. 
+        This assigned appropriate parameters assuming one worker work with 2 trajectories.
+        """
 
         self.state_dim = state_dim
         self.feature_dim = feature_dim
@@ -248,11 +262,102 @@ class OnlineSampler(Base):
         print(f"# Environments each Round : {self.num_env_per_round}")
         print(f"Total number of Worker    : {self.total_num_worker}")
         print(f"Episodes per Worker       : {self.episodes_per_worker}")
-        torch.set_num_threads(
-            1
-        )  # enforce one thread for each worker to avoid CPU overscription.
+
+        # enforce one thread for each worker to avoid CPU overscription.
+        torch.set_num_threads(1)
 
     def collect_trajectory(
+        self,
+        pid,
+        queue,
+        env,
+        policy: nn.Module,
+        thread_batch_size: int,
+        episode_len: int,
+        episode_num: int,
+        idx: int | None = None,
+        env_seed: int = 0,
+        seed: int | None = None,
+        deterministic: bool = False,
+    ):
+        # estimate the batch size to hava a large batch
+        batch_size = thread_batch_size + episode_len
+        data = self.get_reset_data(batch_size=batch_size)  # allocate memory
+
+        current_step = 0
+        ep_num = 0
+
+        # For each episode, apply different seed for stochasticity
+        if seed is None:
+            seed = random.randint(0, 1_000_000)
+
+        if queue is not None:
+            # Apply different seeds for multiprocessor's action stochacity
+            self.set_any_seed(env_seed, seed)
+
+        while current_step < thread_batch_size:
+            if ep_num >= episode_num:
+                break
+
+            # env initialization
+            s, _ = env.reset(seed=env_seed)
+
+            t = 0
+            while t < episode_len:
+                # for t in range(episode_len):
+                # sample action
+                with torch.no_grad():
+                    a, metaData = policy(s, idx, deterministic=deterministic)
+                    a = a.cpu().numpy().squeeze()
+                    feature = metaData["phi"]
+
+                    # env stepping
+                    ns, rew, term, trunc, infos = env.step(a)
+                    t += 1
+                    done = term or trunc
+
+                # saving the data
+                data["states"][current_step + t, :, :, :] = s
+                data["features"][current_step + t, :] = feature
+                data["next_states"][current_step + t, :, :, :] = ns
+                data["actions"][current_step + t, :] = a
+                data["option_actions"][current_step + t, :] = None
+                data["rewards"][current_step + t, :] = rew
+                data["terminals"][current_step + t, :] = done
+                data["logprobs"][current_step + t, :] = (
+                    metaData["logprobs"].detach().numpy()
+                )
+
+                s = ns
+
+                if done:
+                    # clear log
+                    ep_num += 1
+                    current_step += t + 1
+                    break
+
+        memory = dict(
+            states=data["states"].astype(np.float32),
+            features=data["features"].astype(np.float32),
+            actions=data["actions"].astype(np.float32),
+            option_actions=data["option_actions"].astype(np.float32),
+            next_states=data["next_states"].astype(np.float32),
+            rewards=data["rewards"].astype(np.float32),
+            terminals=data["terminals"].astype(np.int32),
+            logprobs=data["logprobs"].astype(np.float32),
+        )
+        end_idx = (
+            current_step if current_step < thread_batch_size else thread_batch_size
+        )
+        for k in memory:
+            memory[k] = memory[k][:end_idx]
+
+        if queue is not None:
+            queue.put([pid, memory])
+        else:
+            return memory
+
+    def collect_trajectory4Option(
         self,
         pid,
         queue,
@@ -287,7 +392,6 @@ class OnlineSampler(Base):
 
             # env initialization
             s, _ = env.reset(seed=env_seed)
-            # s = s["image"]
 
             t = 0
             while t < episode_len:
@@ -324,14 +428,10 @@ class OnlineSampler(Base):
                         t += 1
 
                         op_rew += 0.99**gamma_count * rew
-
                         gamma_count += 1
-
                         option_termination = option_metaData["termination"]
-
                         if gamma_count > 10:
                             option_termination = True
-
                         done = term or trunc
 
                     rew = op_rew
@@ -342,7 +442,6 @@ class OnlineSampler(Base):
                     # env stepping
                     ns, rew, term, trunc, infos = env.step(a)
                     t += 1
-
                     done = term or trunc
 
                 # saving the data
@@ -400,6 +499,14 @@ class OnlineSampler(Base):
         seed: int | None = None,
         deterministic: bool = False,
     ):
+        """
+        This is separately written since the CoveringOption requires
+        iterative update with batch that first uses eigen-teleport to move
+        farthest location and do random walk to capture better diffusion property
+        of the given environment. If it does not make sense, we guide the reader to
+        run the code a blackbox or please refer to section (5.2) of
+        Machado, Marlos C., et al. "Temporal abstraction in reinforcement learning with the successor representation."
+        """
         # estimate the batch size to hava a large batch
         batch_size = thread_batch_size + episode_len
         data = self.get_reset_data(batch_size=batch_size)  # allocate memory
@@ -459,9 +566,7 @@ class OnlineSampler(Base):
                         t += 1
 
                         op_rew += 0.99**gamma_count * rew
-
                         gamma_count += 1
-
                         option_termination = option_metaData["termination"]
 
                         if gamma_count >= 9:
@@ -471,8 +576,6 @@ class OnlineSampler(Base):
 
                     rew = op_rew
                     is_first_iter = False
-                    # print(f"Option time step: {gamma_count}")
-
                 ### Conventional Loop
                 else:
                     # env stepping
