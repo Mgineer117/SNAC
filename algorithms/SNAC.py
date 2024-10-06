@@ -19,6 +19,20 @@ from utils import *
 
 class SNAC:
     def __init__(self, env: gym.Env, buffer, sampler, logger, writer, args):
+        """
+        SNAC Specialized Neurons and Clustering Architecture
+        ---------------------------------------------------------------------------
+        There are several improvements
+            - Clustering in Eigenspace
+            - Simultaneous Reward and State Decomposition
+
+        Training Pipeline:
+            - Train SF network: train CNN (feature extractor)
+            - Obtain Reward and State eigenvectors
+            - Train OP network (Option Policy) for each of intrinsic reward by eigenvectors
+                - PPO is used to train OP network
+            - Train HC network (Hierarchical Controller that alternates between option and random walk)
+        """
         # object initialization
         self.env = env
         self.buffer = buffer
@@ -89,6 +103,15 @@ class SNAC:
         self.train_hc()
 
     def train_sf(self):
+        """
+        This trains the SF netowk. This includes training of CNN as feature extractor
+        and Psi_rw network as a supervised approach as a evaluation metroc for later use.
+        ----------------------------------------------------------------------------------
+        Input:
+            - None
+        Return:
+            - None
+        """
         ### Call network param and run
         self.sf_network = call_sfNetwork(self.args)
         print_model_summary(self.sf_network, model_name="SF model")
@@ -115,6 +138,10 @@ class SNAC:
         self.curr_epoch += final_epoch
 
     def train_op(self):
+        """
+        This discovers the eigenvectors via clustering for each of reward and state decompositions.
+        --------------------------------------------------------------------------------------------
+        """
         self.option_vals, self.options, _ = get_eigenvectors(
             self.env,
             self.sf_network,
@@ -150,6 +177,10 @@ class SNAC:
         self.curr_epoch += final_epoch
 
     def train_hc(self):
+        """
+        Train Hierarchical Controller to compute optimal policy that alternates between
+        options and the random walk.
+        """
         self.hc_network = call_hcNetwork(
             self.sf_network.feaNet, self.op_network, self.args
         )

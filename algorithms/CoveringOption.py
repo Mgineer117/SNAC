@@ -9,7 +9,7 @@ from gym_multigrid.envs.fourrooms import FourRooms
 
 from models.evaulators import (
     SF_Evaluator,
-    OP_Evaluator,
+    OP_Evaluator2,
     UG_Evaluator,
     HC_Evaluator,
 )
@@ -63,7 +63,7 @@ class CoveringOption:
             dir=self.sf_path,
             log_interval=args.log_interval,
         )
-        self.op_evaluator = OP_Evaluator(
+        self.op_evaluator = OP_Evaluator2(
             logger=logger,
             writer=writer,
             training_env=env,
@@ -91,11 +91,23 @@ class CoveringOption:
         )
 
     def run(self):
+        """
+        Consecutively run all pipelines
+        """
         self.train_sf()
         self.train_op()
         self.train_hc()
 
     def train_sf(self):
+        """
+        This trains the SF netowk. This includes training of CNN as feature extractor
+        and Psi_rw network as a supervised approach as a evaluation metroc for later use.
+        ----------------------------------------------------------------------------------
+        Input:
+            - None
+        Return:
+            - None
+        """
         ### Call network param and run
         self.sf_network = call_sfNetwork(self.args)
         print_model_summary(self.sf_network, model_name="SF model")
@@ -122,6 +134,17 @@ class CoveringOption:
         self.curr_epoch += final_epoch
 
     def train_op(self):
+        """
+        This is more sophisticated approach since it has to iteratively update SF matrix
+        ----------------------------------------------
+        High-level idea:
+            - Find the first eigenvectors with pure random walk
+            for i in range(n)
+                - With that eigenvector, collect samples and concat to the original SF matrix
+                    - Decompose cat SF matrix to discover better naviagtional vector
+                - Train OptionPolicy for the vectors
+        ----------------------------------------------
+        """
         self.option_vals = torch.zeros((self.args.num_vector))
         self.options = torch.zeros((self.args.num_vector, self.args.sf_dim))
 
@@ -135,7 +158,9 @@ class CoveringOption:
             app_trj_num = int(100 / self.args.num_vector)
 
             ### get first vector with random walk
-            batch = self.collect_batch(self.sf_network, app_trj_num=100, idx=None)
+            batch = self.collect_batch(
+                self.sf_network, app_trj_num=app_trj_num, idx=None
+            )
             with torch.no_grad():
                 S, V = self.get_vector(batch)
 
@@ -148,7 +173,6 @@ class CoveringOption:
             )
 
             self.train_op_network(vec_idx=0)
-            batch = None
             for idx in range(1, int(self.args.num_vector / 2)):
                 vec_idx = idx * 2
 
@@ -168,11 +192,28 @@ class CoveringOption:
                     self.options.to(torch.float32).to(self.args.device)
                 )
                 self.train_op_network(vec_idx=vec_idx)
+
+            grid_tensor, coords, loc = get_grid_tensor(self.env, self.args.env_seed)
+            self.plotter.plotRewardMap(
+                feaNet=self.sf_network.feaNet,
+                S=self.option_vals,
+                V=self.options,
+                feature_dim=self.args.sf_dim,  # since V = [V, -V]
+                algo_name=self.args.algo_name,
+                grid_tensor=grid_tensor,
+                coords=coords,
+                loc=loc,
+                dir=self.plotter.log_dir,
+            )
         else:
             final_epoch = self.curr_epoch + self.args.num_vector * self.args.OP_epoch
             self.curr_epoch += final_epoch
 
     def train_hc(self):
+        """
+        Train Hierarchical Controller to compute optimal policy that alternates between
+        options and the random walk.
+        """
         self.hc_network = call_hcNetwork(
             self.sf_network.feaNet, self.op_network, self.args
         )
@@ -198,6 +239,16 @@ class CoveringOption:
     def collect_batch(
         self, policy: nn.Module, app_trj_num: int = 10, idx: int | None = None
     ):
+        """
+        Colelct batch with the given policy for the given number of trajectories.
+        -------------------------------------------------------------------------
+        Input:
+            - policy: decision maker (sf: random walk, op: option walk)
+            - idx: if op_network is given, idx denotes the option index to activate
+        Return:
+            - batch: batch collected using option (10 time steps) and remaining as Random walk (90 steps)
+                - To concat the batch to improve the diffusion SF matrix
+        """
         option_buffer = TrajectoryBuffer(
             min_num_trj=app_trj_num, max_num_trj=200, device=self.args.device
         )
@@ -216,6 +267,10 @@ class CoveringOption:
         return batch
 
     def get_vector(self, batch):
+        """
+        This discovers vectors from the feature set given batch.
+        Additionally, we use both (+/-) of vectors (top 1 vector => 2 vectors)
+        """
         features = (
             torch.from_numpy(batch["features"]).to(torch.float32).to(self.args.device)
         )
@@ -239,6 +294,11 @@ class CoveringOption:
         return S, V
 
     def cat_batch(self, batch, new_batch1, new_batch2):
+        """
+        This is to concat the previously collected SF diffusive matrix with newly collected batch
+        to improve its diffusion of the given domain. This is a particular approach of CoveringOption
+        that is usually adopted for hardly-exploratory environments.
+        """
         if batch is None:
             batch = {}
             batch["features"] = np.concatenate(
@@ -261,6 +321,11 @@ class CoveringOption:
         return batch
 
     def train_op_network(self, vec_idx):
+        """
+        This trains the OP network for the given indices. Initially, the OP network is set with zero eigenvectors,
+        but as we discover and update new vectors, we continuously refine them.
+        The OP network is trained to identify a more effective diffusion matrix over time
+        """
         for z in range(vec_idx, vec_idx + 2):
             op_trainer = OPTrainer2(
                 policy=self.op_network,
@@ -273,9 +338,10 @@ class CoveringOption:
                 psi_epoch=self.args.Psi_epoch,
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
+                prefix="OP/" + str(z),
                 log_interval=self.args.log_interval,
                 env_seed=self.args.env_seed,
             )
 
-            epoch = op_trainer.train(z)
-            self.curr_epoch += epoch
+            op_trainer.train(z)
+            self.curr_epoch += self.args.OP_epoch
