@@ -112,7 +112,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=100,  # 50
+        default=500,  # 50
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
