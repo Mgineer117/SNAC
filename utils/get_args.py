@@ -112,7 +112,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=30,  # 30
+        default=100,  # 50
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -247,7 +247,7 @@ def get_args(verbose=True):
         default=0.95,
         help="Used in advantage estimation for numerical stability",
     )
-    parser.add_argument("--gamma", type=float, default=0.9, help="discount parameters")
+    parser.add_argument("--gamma", type=float, default=0.99, help="discount parameters")
     parser.add_argument(
         "--sigma-min",
         type=float,
@@ -290,7 +290,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(
@@ -302,7 +302,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-op-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(
