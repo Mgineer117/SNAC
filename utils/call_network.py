@@ -155,9 +155,9 @@ def call_ppoNetwork(sf_network: nn.Module, args):
 
 def call_opNetwork(
     sf_network: nn.Module,
-    option_vals: torch.Tensor,
-    options: torch.Tensor,
     args,
+    option_vals: torch.Tensor | None = None,
+    options: torch.Tensor | None = None,
 ):
     from models.policy import OP_Controller
 
