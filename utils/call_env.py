@@ -6,6 +6,7 @@ import random
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.ctf import Ctf1v1Env
 from utils import NoStateDictWrapper, get_grid_tensor
+from utils.wrappers import NoStateDictCtfWrapper
 
 
 def call_env(args):
@@ -47,4 +48,5 @@ def call_env_ctf(args):
     map_path: str = "assets/ctf_avoid_obj.txt"
     observation_option: str = "pos_map_flattened"
     env = Ctf1v1Env(map_path=map_path, observation_option=observation_option)
+    env = NoStateDictCtfWrapper(env, tile_size=args.tile_size)
     return env

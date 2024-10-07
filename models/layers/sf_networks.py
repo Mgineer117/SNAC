@@ -424,8 +424,8 @@ class VAE(nn.Module):
         """
         Input = x: 4D tensor arrays
         """
-        # out = self.flatter(x)
-        out = self.encoder(out) if x.dim() > 1 else self.en_vae(x)
+        out = self.flatter(x)
+        out = self.encoder(out)
 
         mu = self.mu(out)
         logstd = self.logstd(out)
