@@ -197,17 +197,18 @@ class CoveringOption:
                 self.train_op_network(vec_idx=vec_idx)
 
             grid_tensor, coords, loc = get_grid_tensor(self.env, self.args.env_seed)
-            self.plotter.plotRewardMap(
-                feaNet=self.sf_network.feaNet,
-                S=self.option_vals,
-                V=self.options,
-                feature_dim=self.args.sf_dim,  # since V = [V, -V]
-                algo_name=self.args.algo_name,
-                grid_tensor=grid_tensor,
-                coords=coords,
-                loc=loc,
-                dir=self.plotter.log_dir,
-            )
+            if self.args.draw_map:
+                self.plotter.plotRewardMap(
+                    feaNet=self.sf_network.feaNet,
+                    S=self.option_vals,
+                    V=self.options,
+                    feature_dim=self.args.sf_dim,  # since V = [V, -V]
+                    algo_name=self.args.algo_name,
+                    grid_tensor=grid_tensor,
+                    coords=coords,
+                    loc=loc,
+                    dir=self.plotter.log_dir,
+                )
         else:
             final_epoch = self.curr_epoch + self.args.num_vector * self.args.OP_epoch
             self.curr_epoch += final_epoch

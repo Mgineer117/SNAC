@@ -190,7 +190,7 @@ class ConvNetwork(nn.Module):
 
         self.en_feature = MLP(
             input_dim=flat_dim,
-            hidden_dims=(fc_dim, fc_dim),
+            hidden_dims=(fc_dim, fc_dim, fc_dim),
             output_dim=sf_dim,
             activation=self.act,
         )
@@ -204,11 +204,13 @@ class ConvNetwork(nn.Module):
         ### Decoding module
         # preprocess
         self.de_action = MLP(
-            input_dim=action_dim, hidden_dims=(fc_dim,), activation=self.act
+            input_dim=action_dim, hidden_dims=(fc_dim, fc_dim), activation=self.act
         )
 
         self.de_state_feature = MLP(
-            input_dim=decoder_inpuit_dim, hidden_dims=(fc_dim,), activation=self.act
+            input_dim=decoder_inpuit_dim,
+            hidden_dims=(fc_dim, fc_dim),
+            activation=self.act,
         )
         # self.de_state_feature = MLP(
         #     input_dim=sf_dim, hidden_dims=(fc_dim,), activation=self.act
@@ -413,6 +415,8 @@ class VAE(nn.Module):
         """
         Input = x: 4D tensor arrays
         """
+        if len(x.shape) == 1:
+            x = x[None, :]
         out = self.flatter(x)
         out = self.encoder(out)
 

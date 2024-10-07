@@ -59,7 +59,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--algo-name",
         type=str,
-        default="CoveringOption",
+        default="SNAC",
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
@@ -280,12 +280,18 @@ def get_args(verbose=True):
         help="This sets the number of trajectories to use for one sub-iteration",
     )
 
-    # Algorithmic parameters
+    # Misc. parameters
     parser.add_argument(
         "--rendering",
         type=bool,
         default=True,
         help="saves the rendering during evaluation",
+    )
+    parser.add_argument(
+        "--draw-map",
+        type=bool,
+        default=False,
+        help="Turn off plotting reward map. ONly works for FourRoom",
     )
     parser.add_argument(
         "--import-sf-model",
