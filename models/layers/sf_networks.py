@@ -39,7 +39,10 @@ class Reshape(nn.Module):
 
     def forward(self, x):
         N = x.shape[0]
-        return x.view(N, -1, self.reduced_feature_dim, self.reduced_feature_dim)
+        if torch.numel(x) < N * self.reduced_feature_dim * self.reduced_feature_dim:
+            return x.view(N, -1, self.reduced_feature_dim, 1)
+        else:
+            return x.view(N, -1, self.reduced_feature_dim, self.reduced_feature_dim)
 
 
 class EncoderLastAct(nn.Module):
