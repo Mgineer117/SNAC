@@ -87,7 +87,7 @@ class CoveringOption:
             plotter=self.plotter,
             dir=self.hc_path,
             log_interval=args.log_interval,
-            eval_ep_num=5,
+            eval_ep_num=10,
         )
 
     def run(self):
@@ -150,7 +150,10 @@ class CoveringOption:
 
         # train two vec only
         self.op_network = call_opNetwork(
-            self.sf_network, self.option_vals, self.options, self.args
+            self.sf_network,
+            self.args,
+            self.option_vals,
+            self.options,
         )
         print_model_summary(self.op_network, model_name="OP model")
 

@@ -1,6 +1,6 @@
 ![SNAC logo](snac_logo.png)
 
-# SNAC: Specialized Neurons and Clustering Architecture
+# SNAC: Specialized Neurons and Architecture with Clustering
 
 This repository presents a Hierarchical Reinforcement Learning (HRL) approach in Grid World, incorporating **Successor Features (SFs)** with the following enhancements:
 - **Clustering in eigenspace** to prevent information loss by utilizing all computed eigenvectors.

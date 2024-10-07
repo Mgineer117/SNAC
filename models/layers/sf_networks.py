@@ -417,20 +417,20 @@ class VAE(nn.Module):
         out = self.encoder(out)
 
         mu = self.mu(out)
+        logstd = self.logstd(out)
+
+        std = torch.exp(logstd + 1e-7)
+        cov = torch.diag_embed(std)
+
+        dist = MultivariateNormal(loc=mu, covariance_matrix=cov)
 
         if deterministic:
             feature = mu
-            kl_loss = torch.tensor(0.0)
         else:
-            logstd = self.logstd(out)
-            std = torch.exp(logstd + 1e-7)
-            cov = torch.diag_embed(std)
-
-            dist = MultivariateNormal(loc=mu, covariance_matrix=cov)
             feature = dist.rsample()
 
-            kl = std**2 + mu**2 - torch.log(std) - 0.5
-            kl_loss = torch.mean(torch.mean(kl, axis=-1), axis=-1)
+        kl = std**2 + mu**2 - torch.log(std) - 0.5
+        kl_loss = torch.mean(torch.mean(kl, axis=-1), axis=-1)
 
         return feature, {"loss": kl_loss}
 

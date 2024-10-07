@@ -94,7 +94,7 @@ class SNAC:
             plotter=self.plotter,
             dir=self.hc_path,
             log_interval=args.log_interval,
-            eval_ep_num=5,
+            eval_ep_num=10,
         )
 
     def run(self):
@@ -142,20 +142,21 @@ class SNAC:
         This discovers the eigenvectors via clustering for each of reward and state decompositions.
         --------------------------------------------------------------------------------------------
         """
-        self.option_vals, self.options, _ = get_eigenvectors(
-            self.env,
-            self.sf_network,
-            self.sampler,
-            self.plotter,
-            self.args,
-            draw_map=True,
-        )
 
-        self.op_network = call_opNetwork(
-            self.sf_network, self.option_vals, self.options, self.args
-        )
-        print_model_summary(self.op_network, model_name="OP model")
         if not self.args.import_op_model:
+            self.option_vals, self.options, _ = get_eigenvectors(
+                self.env,
+                self.sf_network,
+                self.sampler,
+                self.plotter,
+                self.args,
+                draw_map=True,
+            )
+            self.op_network = call_opNetwork(
+                self.sf_network, self.args, self.option_vals, self.options
+            )
+            print_model_summary(self.op_network, model_name="OP model")
+
             op_trainer = OPTrainer(
                 policy=self.op_network,
                 sampler=self.sampler,
@@ -173,6 +174,7 @@ class SNAC:
             )
             final_epoch = op_trainer.train()
         else:
+            self.op_network = call_opNetwork(self.sf_network, self.args)
             final_epoch = self.curr_epoch + self.args.OP_epoch + self.args.Psi_epoch
         self.curr_epoch += final_epoch
 

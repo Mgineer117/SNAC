@@ -94,7 +94,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=50,  # 50
+        default=100,  # 100
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -106,13 +106,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=25,  # 25
+        default=50,  # 50
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=30,  # 30
+        default=500,  # 500
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -247,7 +247,7 @@ def get_args(verbose=True):
         default=0.95,
         help="Used in advantage estimation for numerical stability",
     )
-    parser.add_argument("--gamma", type=float, default=0.9, help="discount parameters")
+    parser.add_argument("--gamma", type=float, default=0.99, help="discount parameters")
     parser.add_argument(
         "--sigma-min",
         type=float,
