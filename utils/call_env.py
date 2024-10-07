@@ -4,6 +4,7 @@ import torch.nn as nn
 import random
 
 from gym_multigrid.envs.fourrooms import FourRooms
+from gym_multigrid.envs.ctf import Ctf1v1Env
 from utils import NoStateDictWrapper, get_grid_tensor
 
 
@@ -37,4 +38,13 @@ def call_env(args):
     )
     env = NoStateDictWrapper(env, tile_size=args.tile_size)
 
+    return env
+
+
+def call_env_ctf(args):
+    args.grid_size = 12
+    args.feat_net_type = "VAE"
+    map_path: str = "assets/ctf_avoid_obj.txt"
+    observation_option: str = "pos_map_flattened"
+    env = Ctf1v1Env(map_path=map_path, observation_option=observation_option)
     return env

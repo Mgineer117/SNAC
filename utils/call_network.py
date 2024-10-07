@@ -35,23 +35,6 @@ def call_sfNetwork(args):
                 open("log/eval_log/model_for_eval/sf_model.p", "rb")
             )
         else:
-            convNet = ConvNetwork(
-                state_dim=args.s_dim,
-                action_dim=args.a_dim,
-                fc_dim=args.conv_fc_dim,
-                sf_dim=args.sf_dim,
-                decoder_inpuit_dim=int(args.sf_dim / 2),
-                activation=nn.Tanh(),
-            )
-
-            feaNet = VAE(
-                state_dim=args.s_dim,
-                action_dim=args.a_dim,
-                fc_dim=args.conv_fc_dim,
-                sf_dim=args.sf_dim,
-                decoder_inpuit_dim=int(args.sf_dim / 2),
-                activation=nn.Tanh(),
-            )
 
             psiNet = PsiCritic(
                 fc_dim=args.fc_dim,
@@ -62,8 +45,27 @@ def call_sfNetwork(args):
 
             options = None
 
+            if hasattr(args, "feat_net_type") and args.feat_net_type == "VAE":
+                feaNet = VAE(
+                    state_dim=args.s_dim,
+                    action_dim=args.a_dim,
+                    fc_dim=args.conv_fc_dim,
+                    sf_dim=args.sf_dim,
+                    decoder_inpuit_dim=int(args.sf_dim / 2),
+                    activation=nn.Tanh(),
+                )
+            else:
+                feaNet = ConvNetwork(
+                    state_dim=args.s_dim,
+                    action_dim=args.a_dim,
+                    fc_dim=args.conv_fc_dim,
+                    sf_dim=args.sf_dim,
+                    decoder_inpuit_dim=int(args.sf_dim / 2),
+                    activation=nn.Tanh(),
+                )
+
         policy = SF_Split(
-            feaNet=convNet,
+            feaNet=feaNet,
             psiNet=psiNet,
             options=options,
             feature_lr=args.feature_lr,

@@ -327,7 +327,18 @@ class VAE(nn.Module):
     ):
         super(VAE, self).__init__()
 
-        first_dim, second_dim, in_channels = state_dim
+        first_dim: int
+        second_dim: int
+        in_channels: int
+        if len(state_dim) == 3:
+            first_dim, second_dim, in_channels = state_dim
+        elif len(state_dim) == 1:
+            first_dim = state_dim[0]
+            second_dim = 1
+            in_channels = 1
+        else:
+            raise ValueError("State dimension is not correct.")
+
         input_dim = int(first_dim * second_dim * in_channels)
 
         # Parameters
@@ -413,8 +424,8 @@ class VAE(nn.Module):
         """
         Input = x: 4D tensor arrays
         """
-        out = self.flatter(x)
-        out = self.encoder(out)
+        # out = self.flatter(x)
+        out = self.encoder(out) if x.dim() > 1 else self.en_vae(x)
 
         mu = self.mu(out)
         logstd = self.logstd(out)
