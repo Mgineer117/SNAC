@@ -68,7 +68,7 @@ class HC_Controller(BasePolicy):
         critic_lr: float = 1e-4,
         eps: float = 0.2,
         entropy_scaler: float = 1e-3,
-        gamma: float = 0.9,
+        gamma: float = 0.99,
         tau: float = 0.95,
         K: int = 5,
         device: str = "cpu",
@@ -93,7 +93,7 @@ class HC_Controller(BasePolicy):
         self.optionPolicy = optionPolicy
         self.convNet = convNet
 
-        self.optimizer = torch.optim.Adam(
+        self.optimizer = torch.optim.AdamW(
             [
                 {"params": self.policy.parameters(), "lr": policy_lr},
                 {"params": self.critic.parameters(), "lr": critic_lr},

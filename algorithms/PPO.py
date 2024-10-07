@@ -62,7 +62,7 @@ class PPO:
             plotter=self.plotter,
             dir=self.op_path,
             log_interval=args.log_interval,
-            eval_ep_num=5,
+            eval_ep_num=10,
         )
 
     def run(self):

@@ -142,6 +142,10 @@ def call_ppoNetwork(sf_network: nn.Module, args):
         convNet=sf_network.feaNet,
         policy_lr=args.policy_lr,
         critic_lr=args.critic_lr,
+        entropy_scaler=args.entropy_scaler,
+        eps=args.eps_clip,
+        tau=args.tau,
+        gamma=args.gamma,
         K=args.K_epochs,
         device=args.device,
     )
@@ -151,9 +155,9 @@ def call_ppoNetwork(sf_network: nn.Module, args):
 
 def call_opNetwork(
     sf_network: nn.Module,
-    option_vals: torch.Tensor,
-    options: torch.Tensor,
     args,
+    option_vals: torch.Tensor | None = None,
+    options: torch.Tensor | None = None,
 ):
     from models.policy import OP_Controller
 
@@ -196,6 +200,10 @@ def call_opNetwork(
         policy_lr=args.policy_lr,
         critic_lr=args.critic_lr,
         psi_lr=args.psi_lr,
+        entropy_scaler=args.entropy_scaler,
+        eps=args.eps_clip,
+        tau=args.tau,
+        gamma=args.gamma,
         K=args.K_epochs,
         device=args.device,
     )
@@ -256,6 +264,10 @@ def call_hcNetwork(convNet, optionPolicy, args):
         a_dim=args.a_dim,
         policy_lr=args.policy_lr,
         critic_lr=args.critic_lr,
+        entropy_scaler=args.entropy_scaler,
+        eps=args.eps_clip,
+        tau=args.tau,
+        gamma=args.gamma,
         K=args.K_epochs,
         device=args.device,
     )
