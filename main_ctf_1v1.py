@@ -99,10 +99,10 @@ if __name__ == "__main__":
         args = get_args()
         args.algo_name: str = "SNAC"
 
-        args.SF_epoch = 1
-        args.OP_epoch = 1
-        args.step_per_epoch = 1
-        args.HC_epoch = 1
+        # args.SF_epoch = 1
+        # args.OP_epoch = 1
+        # args.step_per_epoch = 1
+        # args.HC_epoch = 1
 
         # args.draw_map: bool = True
         seed_all(seed)

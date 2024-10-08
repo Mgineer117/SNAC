@@ -165,7 +165,7 @@ class NoStateDictCtfWrapper(gym.Wrapper):
     def reset(self, **kwargs):
         observation: NDArray
         observation, _ = self.env.reset(**kwargs)
-        observation = observation.reshape(-1, 1, 1)
+        # observation = observation.reshape(-1, 1, 1)
         observation = np.repeat(
             np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
         )
@@ -174,7 +174,7 @@ class NoStateDictCtfWrapper(gym.Wrapper):
     def step(self, action):
         # Call the original step method
         observation, reward, termination, truncation, info = self.env.step(action)
-        observation = observation.reshape(-1, 1, 1)
+        # observation = observation.reshape(-1, 1, 1)
         observation = np.repeat(
             np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
         )
