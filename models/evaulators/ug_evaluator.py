@@ -106,7 +106,12 @@ class UG_Evaluator(Evaluator):
                 ep_length += 1
 
                 if self.gridCriteria:
-                    path.append(env.get_wrapper_attr("agent_pos"))
+                    if hasattr(env.env, "agent_pos"):
+                        self.path.append(env.get_wrapper_attr("agent_pos"))
+                    elif hasattr(env.env, "agents"):
+                        self.path.append(env.get_wrapper_attr("agents")[0].pos)
+                    else:
+                        raise ValueError("No agent position information.")
 
                 # Update the render
                 if self.renderCriteria:

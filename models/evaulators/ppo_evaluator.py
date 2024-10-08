@@ -110,8 +110,14 @@ class PPO_Evaluator(Evaluator):
 
                 # Update the grid
                 if self.eigenCriteria:
+                    if hasattr(env.env, "agent_pos"):
+                        agent_pos = env.get_wrapper_attr("agent_pos")
+                    elif hasattr(env.env, "agents"):
+                        agent_pos = env.get_wrapper_attr("agents")[0].pos
+                    else:
+                        raise ValueError("No agent position information.")
                     self.update_grid(
-                        env.get_wrapper_attr("agent_pos"),
+                        agent_pos,
                         phi_dict["phi_r"],
                         phi_dict["phi_s"],
                         phi_dict["q"],
