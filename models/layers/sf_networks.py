@@ -39,7 +39,10 @@ class Reshape(nn.Module):
 
     def forward(self, x):
         N = x.shape[0]
-        return x.view(N, -1, self.reduced_feature_dim, self.reduced_feature_dim)
+        if torch.numel(x) < N * self.reduced_feature_dim * self.reduced_feature_dim:
+            return x.view(N, -1, self.reduced_feature_dim, 1)
+        else:
+            return x.view(N, -1, self.reduced_feature_dim, self.reduced_feature_dim)
 
 
 class EncoderLastAct(nn.Module):
@@ -323,7 +326,18 @@ class VAE(nn.Module):
     ):
         super(VAE, self).__init__()
 
-        first_dim, second_dim, in_channels = state_dim
+        first_dim: int
+        second_dim: int
+        in_channels: int
+        if len(state_dim) == 3:
+            first_dim, second_dim, in_channels = state_dim
+        elif len(state_dim) == 1:
+            first_dim = state_dim[0]
+            second_dim = 1
+            in_channels = 1
+        else:
+            raise ValueError("State dimension is not correct.")
+
         input_dim = int(first_dim * second_dim * in_channels)
 
         # Parameters

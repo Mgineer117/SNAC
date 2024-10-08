@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.typing import NDArray
 import gymnasium as gym
 from gymnasium import logger, spaces
 from gymnasium.core import ObservationWrapper
@@ -150,6 +151,30 @@ class NoStateDictWrapper(gym.Wrapper):
         # Call the original step method
         observation, reward, termination, truncation, info = self.env.step(action)
         observation = observation["image"][:, :, 0:1]
+        observation = np.repeat(
+            np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
+        )
+        return observation, reward, termination, truncation, info
+
+
+class NoStateDictCtfWrapper(gym.Wrapper):
+    def __init__(self, env: gym.Env, tile_size: int = 1):
+        super().__init__(env)
+        self.tile_size = tile_size
+
+    def reset(self, **kwargs):
+        observation: NDArray
+        observation, _ = self.env.reset(**kwargs)
+        observation = observation.reshape(-1, 1, 1)
+        observation = np.repeat(
+            np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
+        )
+        return observation, {}
+
+    def step(self, action):
+        # Call the original step method
+        observation, reward, termination, truncation, info = self.env.step(action)
+        observation = observation.reshape(-1, 1, 1)
         observation = np.repeat(
             np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
         )

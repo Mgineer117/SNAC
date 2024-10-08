@@ -24,3 +24,4 @@ tensorboard-data-server==0.7.2
 torch==2.2.2
 tqdm==4.66.4
 wandb==0.17.5
+gym-multigrid @ git+https://github.com/Tran-Research-Group/gym-multigrid.git@dev
