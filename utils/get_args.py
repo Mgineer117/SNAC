@@ -290,8 +290,8 @@ def get_args(verbose=True):
     parser.add_argument(
         "--draw-map",
         type=bool,
-        default=False,
-        help="Turn off plotting reward map. ONly works for FourRoom",
+        default=True,
+        help="Turn off plotting reward map. Only works for FourRoom",
     )
     parser.add_argument(
         "--import-sf-model",
