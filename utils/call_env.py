@@ -45,6 +45,7 @@ def call_env(args):
 def call_env_ctf(args):
     args.grid_size = 12
     args.env_name = "Ctf1v1"
+    args.a_dim = 5
     map_path: str = "assets/ctf_avoid_obj.txt"
     observation_option: str = "tensor"
     env = Ctf1v1Env(map_path=map_path, observation_option=observation_option)
