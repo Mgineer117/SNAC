@@ -97,45 +97,48 @@ class ConvNetwork(nn.Module):
         conv_layers = [
             {
                 "type": "conv",
-                "kernel_size": 2,
-                "stride": 1,
-                "padding": 0,
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 2,
                 "activation": nn.Tanh(),
                 "in_filters": in_channels,
-                "out_filters": 8,
+                "out_filters": 16,
             },  # Halve the spatial dimensions
             {
-                "type": "pool",
-                "kernel_size": 2,
-                "stride": 2,
-                "padding": 0,
-            },  # Max Pooling, reduce spatial dimensions by half
-            {
                 "type": "conv",
-                "kernel_size": 2,
+                "kernel_size": 3,
                 "stride": 1,
                 "padding": 0,
                 "activation": nn.Tanh(),
-                "in_filters": 8,
-                "out_filters": 16,
+                "in_filters": 16,
+                "out_filters": 32,
             },  # Halve spatial dimensions again
             # {
             #     "type": "pool",
             #     "kernel_size": 2,
-            #     "stride": 2,
-            #     "padding": 0,
+            #     "stride": 1,
+            #     "padding": 1,
             # },  # Max Pooling, reduce spatial dimensions by half
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 0,
+                "activation": nn.Tanh(),
+                "in_filters": 32,
+                "out_filters": 64,
+            },  # Halve spatial dimensions again
             # {
             #     "type": "pool",
             #     "kernel_size": 2,
             #     "stride": 1,
-            #     "padding": 0,
+            #     "padding": 1,
             # },  # Max Pooling, reduce spatial dimensions by half
             # {
             #     "type": "conv",
-            #     "kernel_size": 4,
-            #     "stride": 2,
-            #     "padding": 2,
+            #     "kernel_size": 3,
+            #     "stride": 1,
+            #     "padding": 0,
             #     "activation": nn.Tanh(),
             #     "in_filters": 32,
             #     "out_filters": 64,
@@ -146,15 +149,6 @@ class ConvNetwork(nn.Module):
             #     "stride": 1,
             #     "padding": 0,
             # },  # Max Pooling, reduce spatial dimensions by half
-            # {
-            #     "type": "conv",
-            #     "kernel_size": 4,
-            #     "stride": 2,
-            #     "padding": 2,
-            #     "activation": nn.Tanh(),
-            #     "in_filters": 64,
-            #     "out_filters": 128,
-            # },  # Halve spatial dimensions again
         ]
 
         results = check_output_padding_needed(conv_layers, s_dim)
