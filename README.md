@@ -54,22 +54,22 @@ For the execution of each algorithms presented here, run the following command
 
 The training sequence proceeds as follows: SFs (Successor Features) -> OP (Option Training) -> HC (Hierarchical Training). Throughout this process, models are saved periodically in:
 
-`log/train_log/`
+```log/train_log/```
 
 Inside this folder, you'll find subdirectories such as `SF`, `OP`, `HC`, etc., where the trained models are stored. To import a trained model for evaluation, move the desired model from the appropriate subfolder to:
 
-`log/eval_log/model_for_eval/`
+```log/eval_log/model_for_eval/```
 
 After moving the model, rename the file (e.g., `model_n.p` or `best_model.p`) to match one of the following, depending on its type:
-- `sf_model`
-- `op_model`
-- `hc_model`
+- sf_model
+- op_model
+- hc_model
 
 Finally, enable the appropriate model import flags in the argparse file:
 
-`import-sf-model`  
-`import-op-model`  
-`import-hc-model`
+```import-sf-model```
+```import-op-model```  
+```import-hc-model```
 
 Make sure to import the OP model, as the SF model is a prerequisite.
 
