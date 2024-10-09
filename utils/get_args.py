@@ -88,7 +88,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=400,  # 250
+        default=600,  # 600
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -220,7 +220,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--feature-lr",
         type=float,
-        default=5e-4,
+        default=7e-4,
         help="CNN lr where scheduler is used so can be high",
     )
     parser.add_argument(
