@@ -45,9 +45,6 @@ Then, install the required packages using pip:
 ```
 pip install -r requirements.txt
 ```
-For the execution of each algorithms presented here, run the following command
-
-```
 
 
 ## How to Import Pre-Trained Model
