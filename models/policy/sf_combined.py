@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import matplotlib
 
-from utils import estimate_psi
+from utils.utils import estimate_psi
 from models.layers import MLP, ConvNetwork, PsiCritic
 from models.policy.base_policy import BasePolicy
 
@@ -289,9 +289,16 @@ class SF_Combined(BasePolicy):
         t0 = time.time()
 
         buffer_batch = buffer.sample(self._trj_per_iter)
-        states, _, actions_oh, next_states, rewards, terminals, _ = (
-            self.preprocess_batch(buffer_batch, self.device)
-        )
+        (
+            states,
+            _,
+            _,
+            actions_oh,
+            next_states,
+            rewards,
+            _,
+            _,
+        ) = self.preprocess_batch(buffer_batch, self.device)
 
         phi_loss, phi_loss_dict = self._phi_Loss(
             states, actions_oh, next_states, rewards

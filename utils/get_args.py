@@ -83,18 +83,18 @@ def get_args(verbose=True):
         "--env-name",
         type=str,
         default="FourRooms",
-        help="This specifies which environment one is working with",
+        help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
     )
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=250,  # 250
+        default=400,  # 250
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=100,  # 100
+        default=500,  # 100
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -118,7 +118,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--Psi-epoch",
         type=int,
-        default=2,  # 10
+        default=0,  # 10
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -167,6 +167,14 @@ def get_args(verbose=True):
         help="32 is default. This is used for logging the images of training progresses. image tile size",
     )
 
+    # network params
+    parser.add_argument(
+        "--feaNet-type",
+        type=str,
+        default="CNN",
+        help="CNN or VAE",
+    )
+
     # dimensional params
     parser.add_argument(
         "--a-dim",
@@ -185,14 +193,14 @@ def get_args(verbose=True):
     parser.add_argument(
         "--conv-fc-dim",
         type=int,
-        default=256,
+        default=512,
         help="This is a dimension of FCL that decodes the output of CNN",
     )
     parser.add_argument(
         "--sf-dim",
         type=int,
-        default=128,
-        help="This is an feature dimension thus option dimension",
+        default=64,
+        help="This is an feature dimension thus option dimension. 32 / 64",
     )
 
     parser.add_argument(
@@ -204,16 +212,16 @@ def get_args(verbose=True):
 
     # learning rates
     parser.add_argument(
-        "--policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+        "--policy-lr", type=float, default=5e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
-        "--critic-lr", type=float, default=5e-4, help="PPO-critic learning rate"
+        "--critic-lr", type=float, default=7e-4, help="PPO-critic learning rate"
     )
     parser.add_argument(
         "--feature-lr",
         type=float,
-        default=3e-4,
-        help="Intermediate-level model learning rate",
+        default=5e-4,
+        help="CNN lr where scheduler is used so can be high",
     )
     parser.add_argument(
         "--psi-lr",
@@ -238,7 +246,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-3,
+        default=1e-2,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(

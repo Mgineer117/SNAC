@@ -97,10 +97,11 @@ class OP_Controller(BasePolicy):
         if len(x.shape) == 3:
             x = x[None, :, :, :]
         x = x.to(self._dtype).to(self.device)
-
+        raw_state = x.reshape(x.shape[0], -1)
         phi = self.getPhi(x)
 
-        a, metaData = self.optionPolicy(phi, z, deterministic)
+        # a, metaData = self.optionPolicy(phi, z, deterministic)
+        a, metaData = self.optionPolicy(raw_state, z, deterministic)
 
         # compute q
         psi, _ = self.psiNet(phi, z)
@@ -153,19 +154,28 @@ class OP_Controller(BasePolicy):
         t0 = time.time()
 
         # Ingredients
-        _, features, actions_oh, next_states, _, terminals, old_logprobs = (
-            self.preprocess_batch(batch, self.device)
-        )
+        (
+            states,
+            features,
+            actions,
+            _,
+            next_states,
+            rewards,
+            terminals,
+            old_logprobs,
+        ) = self.preprocess_batch(batch, self.device)
+
+        raw_states = states.reshape(states.shape[0], -1)
 
         phi = features
         next_phi = self.getPhi(next_states)
 
-        actions = torch.argmax(actions_oh, dim=-1)
         rewards = self._intricsicReward(phi, next_phi, z)
 
         ### LEARN PPO ###
         with torch.no_grad():
-            values, _ = self.optionCritic(phi, z)
+            # values, _ = self.optionCritic(phi, z)
+            values, _ = self.optionCritic(raw_states, z)
 
             advantages, returns = estimate_advantages(
                 rewards,
@@ -178,11 +188,12 @@ class OP_Controller(BasePolicy):
 
         # K - Loop
         for _ in range(self._K):
-            values, _ = self.optionCritic(phi, z)
+            # values, _ = self.optionCritic(phi, z)
+            values, _ = self.optionCritic(raw_states, z)
             valueLoss = F.mse_loss(returns, values)
 
-            # _, metaData = self.optionPolicy(states, z)
-            _, metaData = self.optionPolicy(phi, z)
+            # _, metaData = self.optionPolicy(phi, z)
+            _, metaData = self.optionPolicy(raw_states, z)
             dist = metaData["dist"]
 
             logprobs = dist.log_prob(actions.squeeze()).unsqueeze(-1)
@@ -214,6 +225,7 @@ class OP_Controller(BasePolicy):
             "OP/actorLoss": torch.mean(actorLoss).item(),
             "OP/valueLoss": torch.mean(valueLoss).item(),
             "OP/entropyLoss": torch.mean(entropyLoss).item(),
+            "OP/intrinsicAvgReward": (torch.mean(rewards) / rewards.shape[0]).item(),
         }
         loss_dict.update(grad_dict)
 

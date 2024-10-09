@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 from copy import deepcopy
-from utils import estimate_psi
+from utils.utils import estimate_psi
 from models.layers import MLP, ConvNetwork, PsiCritic
 from models.policy.base_policy import BasePolicy
 
@@ -149,14 +149,14 @@ class SF_Split(BasePolicy):
                 )
             ).to(self.device)
 
-        self.feature_optims = torch.optim.AdamW(
+        self.feature_optims = torch.optim.Adam(
             [
                 {"params": self.feaNet.parameters(), "lr": feature_lr},
                 {"params": self._options, "lr": option_lr},
             ]
         )
 
-        self.psi_optim = torch.optim.AdamW(params=self.psiNet.parameters(), lr=psi_lr)
+        self.psi_optim = torch.optim.Adam(params=self.psiNet.parameters(), lr=psi_lr)
 
         #
         self.dummy = torch.tensor(0.0)
@@ -317,9 +317,16 @@ class SF_Split(BasePolicy):
         t0 = time.time()
 
         buffer_batch = buffer.sample(self._trj_per_iter)
-        states, _, actions_oh, next_states, rewards, terminals, _ = (
-            self.preprocess_batch(buffer_batch, self.device)
-        )
+        (
+            states,
+            _,
+            _,
+            actions_oh,
+            next_states,
+            rewards,
+            _,
+            _,
+        ) = self.preprocess_batch(buffer_batch, self.device)
 
         phi_loss, phi_loss_dict = self._phi_Loss(
             states, actions_oh, next_states, rewards

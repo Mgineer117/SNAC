@@ -15,6 +15,7 @@ from models.evaulators import (
 )
 from models import SFTrainer, OPTrainer2, HCTrainer
 from utils import *
+from utils.call_env import call_env
 
 
 class CoveringOption:
@@ -25,17 +26,44 @@ class CoveringOption:
             - this heuristics ignores other info of eigs
     """
 
-    def __init__(self, env: gym.Env, buffer, sampler, logger, writer, args):
+    def __init__(self, sf_network: nn.Module, prev_epoch: int, logger, writer, args):
+        self.env = call_env(args, fix_agent_pos=True)
+        save_dim_to_args(self.env, args)  # given env, save its state and action dim
+
+        # define buffers and sampler for Monte-Carlo sampling
+        self.buffer = TrajectoryBuffer(
+            min_num_trj=args.update_iter * args.trj_per_iter, max_num_trj=args.num_traj
+        )
+        self.sampler = OnlineSampler(
+            training_envs=self.env,
+            state_dim=args.s_dim,
+            feature_dim=args.sf_dim,
+            action_dim=args.a_dim,
+            episode_len=args.episode_len,
+            episode_num=args.episode_num,
+            num_cores=args.num_cores,
+        )
+        # define buffers and sampler for Monte-Carlo sampling
+        self.buffer = TrajectoryBuffer(
+            min_num_trj=args.update_iter * args.trj_per_iter, max_num_trj=args.num_traj
+        )
+        self.sampler = OnlineSampler(
+            training_envs=self.env,
+            state_dim=args.s_dim,
+            feature_dim=args.sf_dim,
+            action_dim=args.a_dim,
+            episode_len=args.episode_len,
+            episode_num=args.episode_num,
+            num_cores=args.num_cores,
+        )
         # object initialization
-        self.env = env
-        self.buffer = buffer
-        self.sampler = sampler
+        self.sf_network = sf_network
         self.logger = logger
         self.writer = writer
         self.args = args
 
         # param initialization
-        self.curr_epoch = 0
+        self.curr_epoch = prev_epoch
 
         # SF checkpoint b/c plotter will only be used
         self.sf_path, self.ppo_path, self.op_path, self.ug_path, self.hc_path = (
@@ -55,18 +83,10 @@ class CoveringOption:
 
         ### Define evaulators tailored for each process
         # each evaluator has slight deviations
-        self.sf_evaluator = SF_Evaluator(
-            logger=logger,
-            writer=writer,
-            training_env=env,
-            plotter=self.plotter,
-            dir=self.sf_path,
-            log_interval=args.log_interval,
-        )
         self.op_evaluator = OP_Evaluator2(
             logger=logger,
             writer=writer,
-            training_env=env,
+            training_env=self.env,
             plotter=self.plotter,
             dir=self.op_path,
             log_interval=args.log_interval,
@@ -75,7 +95,7 @@ class CoveringOption:
         self.ug_evaluator = UG_Evaluator(
             logger=logger,
             writer=writer,
-            training_env=env,
+            training_env=self.env,
             plotter=self.plotter,
             dir=self.ug_path,
             log_interval=args.log_interval,
@@ -83,7 +103,7 @@ class CoveringOption:
         self.hc_evaluator = HC_Evaluator(
             logger=logger,
             writer=writer,
-            training_env=env,
+            training_env=self.env,
             plotter=self.plotter,
             dir=self.hc_path,
             log_interval=args.log_interval,
@@ -94,44 +114,8 @@ class CoveringOption:
         """
         Consecutively run all pipelines
         """
-        self.train_sf()
         self.train_op()
         self.train_hc()
-
-    def train_sf(self):
-        """
-        This trains the SF netowk. This includes training of CNN as feature extractor
-        and Psi_rw network as a supervised approach as a evaluation metroc for later use.
-        ----------------------------------------------------------------------------------
-        Input:
-            - None
-        Return:
-            - None
-        """
-        ### Call network param and run
-        self.sf_network = call_sfNetwork(self.args)
-        print_model_summary(self.sf_network, model_name="SF model")
-        if not self.args.import_sf_model:
-            sf_trainer = SFTrainer(
-                policy=self.sf_network,
-                sampler=self.sampler,
-                buffer=self.buffer,
-                logger=self.logger,
-                writer=self.writer,
-                evaluator=self.sf_evaluator,
-                epoch=self.args.SF_epoch,
-                init_epoch=self.curr_epoch,
-                psi_epoch=self.args.Psi_epoch,
-                step_per_epoch=self.args.step_per_epoch,
-                eval_episodes=self.args.eval_episodes,
-                log_interval=self.args.log_interval,
-                env_seed=self.args.env_seed,
-            )
-            final_epoch = sf_trainer.train()
-        else:
-            final_epoch = self.curr_epoch + self.args.SF_epoch + self.args.Psi_epoch
-
-        self.curr_epoch += final_epoch
 
     def train_op(self):
         """

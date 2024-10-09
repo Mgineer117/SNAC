@@ -327,7 +327,6 @@ class OPTrainer2:
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 sample_time = 0
                 update_time = 0
-                policy_loss = []
 
                 # sample batch
                 batch, sampleT = self.sampler.collect_samples(
@@ -337,16 +336,13 @@ class OPTrainer2:
 
                 # update params
                 loss_dict, updateT = self.policy.learn(batch, z)
-                policy_loss.append(loss_dict)
                 update_time += updateT
 
-                loss = self.average_dict_values(policy_loss)
-
                 # Logging further info
-                loss[self.prefix + "/sample_time"] = sample_time
-                loss[self.prefix + "/update_time"] = update_time
+                loss_dict[self.prefix + "/sample_time"] = sample_time
+                loss_dict[self.prefix + "/update_time"] = update_time
 
-                self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
+                self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
 
             torch.cuda.empty_cache()
 

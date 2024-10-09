@@ -123,13 +123,15 @@ class HC_Controller(BasePolicy):
         if len(x.shape) == 3:
             x = x[None, :, :, :]
         x = x.to(self._dtype).to(self.device)
+        raw_state = x.reshape(x.shape[0], -1)
 
         # if not self._is_randomWalk:
         phi = self.getPhi(x)
         # x = x.view(x.size(0), -1)
 
         if idx is None:
-            z, metaData = self.policy(phi, deterministic)
+            # z, metaData = self.policy(phi, deterministic)
+            z, metaData = self.policy(raw_state, deterministic)
         else:
             z = idx
             metaData = {"probs": None, "logprobs": None}  # dummy
@@ -139,6 +141,7 @@ class HC_Controller(BasePolicy):
 
         if is_option:
             # option selection
+            # x automatically converted in the optionpolicy
             a, option_metaData = self.optionPolicy(x, z, deterministic=deterministic)
             termination = option_metaData["termination"]
         else:
@@ -167,6 +170,7 @@ class HC_Controller(BasePolicy):
         t0 = time.time()
 
         # Ingredients
+        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
         actions = (
             torch.from_numpy(batch["option_actions"]).to(self._dtype).to(self.device)
@@ -177,9 +181,11 @@ class HC_Controller(BasePolicy):
             torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
         )
 
+        raw_states = states.reshape(states.shape[0], -1)
+
         with torch.no_grad():
-            # values, _ = self.critic(states)
-            values, _ = self.critic(features)
+            # values, _ = self.critic(features)
+            values, _ = self.critic(raw_states)
 
             advantages, returns = estimate_advantages(
                 rewards,
@@ -192,10 +198,12 @@ class HC_Controller(BasePolicy):
 
         # K - Loop
         for _ in range(self._K):
-            values, _ = self.critic(features)
+            # values, _ = self.critic(features)
+            values, _ = self.critic(raw_states)
             valueLoss = F.mse_loss(returns, values)
 
-            _, metaData = self.policy(features)
+            # _, metaData = self.policy(features)
+            _, metaData = self.policy(raw_states)
             dist = metaData["dist"]
 
             logprobs = dist.log_prob(actions.squeeze()).unsqueeze(-1)
