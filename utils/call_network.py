@@ -34,6 +34,7 @@ def call_sfNetwork(args):
             convNet, psiNet, options = pickle.load(
                 open("log/eval_log/model_for_eval/sf_model.p", "rb")
             )
+            feaNet = convNet
         else:
 
             psiNet = PsiCritic(
