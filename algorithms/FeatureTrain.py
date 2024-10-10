@@ -130,5 +130,5 @@ class FeatureTrain:
             final_epoch = self.curr_epoch + self.args.SF_epoch + self.args.Psi_epoch
 
         self.curr_epoch += final_epoch
-
+        self.buffer.wipe()
         return sf_network, self.curr_epoch
