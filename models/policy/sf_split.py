@@ -251,6 +251,7 @@ class SF_Split(BasePolicy):
             "phi_r_loss": phi_r_loss,
             "phi_s_loss": phi_s_loss,
             "phi_norm": phi_norm,
+            "phi_regul": 1e-6 * l2_norm,
         }
 
     def _psi_Loss(self, features, actions, terminals):
@@ -341,7 +342,7 @@ class SF_Split(BasePolicy):
 
         self.feature_optims.zero_grad()
         phi_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=10.0)
         phi_grad_dict = self.compute_gradient_norm(
             [self.feaNet, self._options],
             ["feaNet", "options"],
@@ -363,6 +364,7 @@ class SF_Split(BasePolicy):
             "SF/phi_r_loss": phi_loss_dict["phi_r_loss"].item(),
             "SF/phi_s_loss": phi_loss_dict["phi_s_loss"].item(),
             "SF/phiOutNorm": phi_loss_dict["phi_norm"].item(),
+            "SF/phiParamLoss": phi_loss_dict["phi_regul"].item(),
         }
         loss_dict.update(norm_dict)
         loss_dict.update(phi_grad_dict)

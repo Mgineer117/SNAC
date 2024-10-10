@@ -88,7 +88,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=200,  # 500
+        default=100,  # 500
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
