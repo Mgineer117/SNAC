@@ -68,10 +68,8 @@ class PPOTrainer:
         self.last_reward_std = deque(maxlen=3)
 
         # train loop
-        self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.
-
         for e in trange(self._init_epoch, self._epoch, desc=f"PPO Epoch"):
-
+            self.policy.eval()
             # Eval Loop
             rew_mean, rew_std, _, _ = self.evaluator(
                 self.policy,
@@ -87,6 +85,7 @@ class PPOTrainer:
             self.save_model(e)
 
             ### training loop
+            self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
                     self.policy,
@@ -107,6 +106,7 @@ class PPOTrainer:
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
+        self.policy.eval()
         self.logger.print(
             "total PPO training time: {:.2f} hours".format(
                 (time.time() - start_time) / 3600

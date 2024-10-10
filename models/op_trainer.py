@@ -80,11 +80,12 @@ class OPTrainer:
         self.last_reward_std = deque(maxlen=3)
 
         # train loop
-        self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.
 
         first_init_epoch = self._init_epoch
         first_final_epoch = self._epoch
         for e in trange(first_init_epoch, first_final_epoch, desc=f"OP PPO Epoch"):
+            self.policy.eval()
+
             # Eval Loop
             rew_mean = np.zeros((self.policy._num_options,))
             rew_std = np.zeros((self.policy._num_options,))
@@ -126,6 +127,7 @@ class OPTrainer:
             self.save_model(e)
 
             ### training loop
+            self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 sample_time = 0
                 update_time = 0
@@ -161,6 +163,7 @@ class OPTrainer:
             self.save_model(e)
 
             ### training loop
+            self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 sample_time = 0
                 update_time = 0
@@ -189,6 +192,8 @@ class OPTrainer:
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 
             torch.cuda.empty_cache()
+
+        self.policy.eval()
 
         self.logger.print(
             "total OP training time: {:.2f} hours".format(

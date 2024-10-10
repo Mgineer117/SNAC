@@ -72,13 +72,13 @@ class SFTrainer:
         start_time = time.time()
 
         # train loop
-        self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.
         sample_time = self.warm_buffer()
 
         first_init_epoch = self._init_epoch
         first_final_epoch = self._epoch
 
         for e in trange(first_init_epoch, first_final_epoch, desc=f"SF Phi Epoch"):
+            self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.
             self.evaluator(
                 self.policy,
                 epoch=e,
@@ -89,6 +89,7 @@ class SFTrainer:
             self.save_model(e)
 
             ### training loop
+            self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 loss, update_time = self.policy.learn(self.buffer)
 
@@ -116,6 +117,7 @@ class SFTrainer:
             desc=f"SF Psi Epoch",
         ):
             self.save_model(e)
+            self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
                     self.policy, env_seed=self.env_seed
@@ -131,6 +133,8 @@ class SFTrainer:
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
                 torch.cuda.empty_cache()
+
+        self.policy.eval()
 
         self.buffer.wipe()
         self.logger.print(
