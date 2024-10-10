@@ -14,7 +14,7 @@ from utils.call_env import call_env
 
 
 class PPO:
-    def __init__(self, sf_network: nn.Module, prev_epoch: int, logger, writer, args):
+    def __init__(self, logger, writer, args):
         """
         This is a naive PPO wrapper that includes all necessary training pipelines for HRL.
         This trains SF network and train PPO according to the extracted features by SF network
@@ -23,9 +23,6 @@ class PPO:
         save_dim_to_args(self.env, args)  # given env, save its state and action dim
 
         # define buffers and sampler for Monte-Carlo sampling
-        self.buffer = TrajectoryBuffer(
-            min_num_trj=args.update_iter * args.trj_per_iter, max_num_trj=args.num_traj
-        )
         self.sampler = OnlineSampler(
             training_envs=self.env,
             state_dim=args.s_dim,
@@ -37,13 +34,12 @@ class PPO:
         )
 
         # object initialization
-        self.sf_network = sf_network
         self.logger = logger
         self.writer = writer
         self.args = args
 
         # param initialization
-        self.curr_epoch = prev_epoch
+        self.curr_epoch = 0
 
         # SF checkpoint b/c plotter will only be used
         self.sf_path, self.ppo_path, self.op_path, self.ug_path, self.hc_path = (
@@ -78,7 +74,7 @@ class PPO:
 
     def train_ppo(self):
         ### Call network param and run
-        self.ppo_network = call_ppoNetwork(self.sf_network, self.args)
+        self.ppo_network = call_ppoNetwork(self.args)
         print_model_summary(self.ppo_network, model_name="PPO model")
         if not self.args.import_ppo_model:
             ppo_trainer = PPOTrainer(

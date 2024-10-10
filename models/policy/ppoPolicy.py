@@ -20,7 +20,6 @@ class PPO_Learner(BasePolicy):
         self,
         policy: PPO_Policy,
         critic: PPO_Critic,
-        convNet: ConvNetwork,
         policy_lr: float = 3e-4,
         critic_lr: float = 5e-4,
         eps: float = 0.2,
@@ -46,7 +45,6 @@ class PPO_Learner(BasePolicy):
         # trainable networks
         self.policy = policy
         self.critic = critic
-        self.convNet = convNet
 
         self.optimizer = torch.optim.AdamW(
             [
@@ -63,10 +61,10 @@ class PPO_Learner(BasePolicy):
         self.device = device
         self.to(device)
 
-    def getPhi(self, x):
-        with torch.no_grad():
-            phi, _ = self.convNet(x)
-        return phi
+    # def getPhi(self, x):
+    #     with torch.no_grad():
+    #         phi, _ = self.convNet(x)
+    #     return phi
 
     def forward(self, x, z=None, deterministic=False):
         self._forward_steps += 1
@@ -79,7 +77,7 @@ class PPO_Learner(BasePolicy):
             x = x[None, :, :, :]
         x = x.to(self._dtype).to(self.device)
         raw_state = x.reshape(x.shape[0], -1)
-        phi = self.getPhi(x)
+        # phi = self.getPhi(x)
 
         # dist = self.policy(phi)
         dist = self.policy(raw_state)
@@ -95,7 +93,7 @@ class PPO_Learner(BasePolicy):
 
         return a, {
             "q": self.dummy,  # dummy
-            "phi": phi,
+            "phi": self.dummy,
             "is_option": False,  # dummy
             "z": self.dummy.item(),
             "probs": probs,

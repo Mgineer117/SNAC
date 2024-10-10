@@ -357,7 +357,7 @@ def call_sfNetwork(args):
     return policy
 
 
-def call_ppoNetwork(sf_network: nn.Module, args):
+def call_ppoNetwork(args):
     from models.policy import PPO_Learner
 
     if args.import_ppo_model:
@@ -381,7 +381,6 @@ def call_ppoNetwork(sf_network: nn.Module, args):
     policy = PPO_Learner(
         policy=optionPolicy,
         critic=optionCritic,
-        convNet=sf_network.feaNet,
         policy_lr=args.policy_lr,
         critic_lr=args.critic_lr,
         entropy_scaler=args.entropy_scaler,

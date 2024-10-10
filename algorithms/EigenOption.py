@@ -31,9 +31,6 @@ class EigenOption:
         save_dim_to_args(self.env, args)  # given env, save its state and action dim
 
         # define buffers and sampler for Monte-Carlo sampling
-        self.buffer = TrajectoryBuffer(
-            min_num_trj=args.update_iter * args.trj_per_iter, max_num_trj=args.num_traj
-        )
         self.sampler = OnlineSampler(
             training_envs=self.env,
             state_dim=args.s_dim,

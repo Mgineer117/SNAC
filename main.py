@@ -62,8 +62,6 @@ def train(args, unique_id):
         )
     elif args.algo_name == "PPO":
         alg = PPO(
-            sf_network=sf_network,
-            prev_epoch=prev_epoch,
             logger=logger,
             writer=writer,
             args=args,
