@@ -64,7 +64,6 @@ class SF_Combined(BasePolicy):
         feature_lr: float = 3e-4,
         psi_lr: float = 5e-4,
         option_lr: float = 1e-4,
-        update_iter: int = 5,
         trj_per_iter: int = 10,
         decision_mode: str = "random",
         gamma: float = 0.99,
@@ -82,7 +81,6 @@ class SF_Combined(BasePolicy):
         self.decision_mode = decision_mode
         self.device = device
 
-        self._update_iter = update_iter
         self._trj_per_iter = trj_per_iter
         self._a_dim = a_dim
         self._fc_dim = feaNet._fc_dim

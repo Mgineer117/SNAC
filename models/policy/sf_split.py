@@ -106,7 +106,6 @@ class SF_Split(BasePolicy):
         feature_lr: float = 3e-4,
         option_lr: float = 1e-4,
         psi_lr: float = 5e-4,
-        update_iter: int = 5,
         trj_per_iter: int = 10,
         gamma: float = 0.99,
         phi_loss_r_scaler: float = 1.0,
@@ -120,7 +119,6 @@ class SF_Split(BasePolicy):
         # constants
         self.device = device
 
-        self._update_iter = update_iter
         self._trj_per_iter = trj_per_iter
         self._a_dim = a_dim
         self._fc_dim = feaNet._fc_dim
