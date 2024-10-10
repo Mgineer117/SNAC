@@ -187,8 +187,8 @@ class SF_Combined(BasePolicy):
             "q": torch.mean(self.compute_q(phi), axis=-1),  # for plotting
             "a_oh": a_oh,
             "phi": phi,  # for plotting
-            "phi_r": self.dummy,  # dummy
-            "phi_s": self.dummy,  # dummy
+            "phi_r": phi,  # for plotting
+            "phi_s": phi,  # for plotting
             "conv_dict": conv_dict,
             "z": 0,  # dummy
             "termination": True,  # dummy

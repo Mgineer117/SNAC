@@ -194,8 +194,8 @@ class FourRooms(MultiGridEnv):
         options: dict | None = None,
     ):
         ### intentional to not feed seed since the grid and agent are fixed
-        # obs, info = super().reset(seed=seed, options=options)
-        obs, info = super().reset(options=options)
+        obs, info = super().reset(seed=seed, options=options)
+        # obs, info = super().reset(options=options)
 
         ### NOTE: not multiagent setting
         self.agent_dir = self.agents[0].dir
