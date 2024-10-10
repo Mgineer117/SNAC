@@ -186,7 +186,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--fc-dim",
         type=int,
-        default=64,
+        default=128,
         help="This is general fully connected dimension for most of network this code.",
     )
 
@@ -199,7 +199,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sf-dim",
         type=int,
-        default=64,
+        default=128,
         help="This is an feature dimension thus option dimension. 32 / 64",
     )
 
@@ -268,23 +268,22 @@ def get_args(verbose=True):
 
     # Training parameters
     parser.add_argument(
-        "--num-traj",
+        "--max-num-traj",
         type=int,
-        default=30,
+        default=200,
         help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
-
     parser.add_argument(
-        "--update-iter",
+        "--min-num-traj",
         type=int,
-        default=3,
-        help="For buffer learing, this sets the sub-iterations",
+        default=100,
+        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
 
     parser.add_argument(
         "--trj-per-iter",
         type=int,
-        default=5,
+        default=10,
         help="This sets the number of trajectories to use for one sub-iteration",
     )
 

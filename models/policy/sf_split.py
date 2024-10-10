@@ -110,7 +110,7 @@ class SF_Split(BasePolicy):
         trj_per_iter: int = 10,
         gamma: float = 0.99,
         phi_loss_r_scaler: float = 1.0,
-        phi_loss_s_scaler: float = 1.0,
+        phi_loss_s_scaler: float = 0.1,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
         device: str = "cpu",
@@ -228,7 +228,7 @@ class SF_Split(BasePolicy):
         phi_r_loss = self._phi_loss_r_scaler * self.huber_loss(rewards, reward_pred)
 
         state_pred = self.feaNet.decode(phi_s, actions, conv_dict)
-        phi_s_loss = self._phi_loss_s_scaler * self.huber_loss(next_states, state_pred)
+        phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
         # loc_diff = next_states[0, :, :, 0] - state_pred[0, :, :, 0]
         # print(torch.norm(loc_diff))
 

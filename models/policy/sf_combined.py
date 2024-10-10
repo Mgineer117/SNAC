@@ -203,7 +203,7 @@ class SF_Combined(BasePolicy):
         phi, conv_dict = self.feaNet(states, deterministic=False)
 
         state_pred = self.feaNet.decode(phi, actions, conv_dict)
-        phi_s_loss = self._phi_loss_s_scaler * self.huber_loss(next_states, state_pred)
+        phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
 
         l2_norm = 0
         for param in self.feaNet.parameters():

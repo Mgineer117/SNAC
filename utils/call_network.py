@@ -30,39 +30,57 @@ def get_conv_layer(args):
                 "kernel_size": 4,
                 "stride": 2,
                 "padding": 2,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": in_channels,
                 "out_filters": 16,
             },  # Halve the spatial dimensions
-            {
-                "type": "pool",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-            },  # Halve the spatial dimensions
+            # {
+            #     "type": "pool",
+            #     "kernel_size": 3,
+            #     "stride": 1,
+            #     "padding": 1,
+            # },  # Halve the spatial dimensions
             {
                 "type": "conv",
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": 16,
                 "out_filters": 32,
             },  # Halve spatial dimensions again
-            {
-                "type": "pool",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-            },  # Halve the spatial dimensions
+            # {
+            #     "type": "pool",
+            #     "kernel_size": 3,
+            #     "stride": 1,
+            #     "padding": 1,
+            # },  # Halve the spatial dimensions
             {
                 "type": "conv",
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": 32,
                 "out_filters": 64,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 128,
             },  # Halve spatial dimensions again
         ]
 
@@ -72,7 +90,7 @@ def get_conv_layer(args):
                 "kernel_size": 4,
                 "stride": 2,
                 "padding": 2,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": in_channels,
                 "out_filters": 16,
             },  # Halve the spatial dimensions
@@ -81,7 +99,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": 16,
                 "out_filters": 32,
             },  # Halve spatial dimensions again
@@ -90,9 +108,27 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": 32,
                 "out_filters": 64,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 128,
             },  # Halve spatial dimensions again
         ]
     elif args.env_name == "CtF1v1" or "CtF1v2":
@@ -102,39 +138,57 @@ def get_conv_layer(args):
                 "kernel_size": 4,
                 "stride": 2,
                 "padding": 2,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": in_channels,
                 "out_filters": 16,
             },  # Halve the spatial dimensions
-            {
-                "type": "pool",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-            },  # Halve the spatial dimensions
+            # {
+            #     "type": "pool",
+            #     "kernel_size": 3,
+            #     "stride": 1,
+            #     "padding": 1,
+            # },  # Halve the spatial dimensions
             {
                 "type": "conv",
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": 16,
                 "out_filters": 32,
             },  # Halve spatial dimensions again
-            {
-                "type": "pool",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-            },  # Halve the spatial dimensions
+            # {
+            #     "type": "pool",
+            #     "kernel_size": 3,
+            #     "stride": 1,
+            #     "padding": 1,
+            # },  # Halve the spatial dimensions
             {
                 "type": "conv",
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": 32,
                 "out_filters": 64,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 128,
             },  # Halve spatial dimensions again
         ]
 
@@ -144,7 +198,7 @@ def get_conv_layer(args):
                 "kernel_size": 4,
                 "stride": 2,
                 "padding": 2,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": in_channels,
                 "out_filters": 16,
             },  # Halve the spatial dimensions
@@ -153,7 +207,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": 16,
                 "out_filters": 32,
             },  # Halve spatial dimensions again
@@ -162,9 +216,27 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.Tanh(),
+                "activation": nn.ELU(),
                 "in_filters": 32,
                 "out_filters": 64,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 128,
             },  # Halve spatial dimensions again
         ]
     else:
