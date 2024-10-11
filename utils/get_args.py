@@ -39,7 +39,7 @@ def get_args(verbose=True):
 
     # WandB and Logging parameters
     parser.add_argument(
-        "--project", type=str, default="TEST", help="WandB project classification"
+        "--project", type=str, default="FourRoom", help="WandB project classification"
     )
     parser.add_argument(
         "--logdir", type=str, default="log/train_log", help="name of the logging folder"
@@ -186,7 +186,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--fc-dim",
         type=int,
-        default=64,
+        default=128,
         help="This is general fully connected dimension for most of network this code.",
     )
 
@@ -202,7 +202,6 @@ def get_args(verbose=True):
         default=64,
         help="This is an feature dimension thus option dimension. 32 / 64",
     )
-
     parser.add_argument(
         "--num-vector",
         type=int,
@@ -212,7 +211,7 @@ def get_args(verbose=True):
 
     # learning rates
     parser.add_argument(
-        "--policy-lr", type=float, default=5e-4, help="PPO-actor learning rate"
+        "--policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--critic-lr", type=float, default=7e-4, help="PPO-critic learning rate"

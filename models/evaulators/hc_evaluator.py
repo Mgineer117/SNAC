@@ -25,11 +25,11 @@ class HC_Evaluator(Evaluator):
         testing_env=None,
         dir: str = None,
         gridPlot: bool = True,
-        renderPlot: bool = True,
+        renderPlot: bool = False,
         eval_ep_num: int = 1,
         log_interval: int = 1,
     ):
-        super().__init__(
+        super(HC_Evaluator, self).__init__(
             logger=logger,
             writer=writer,
             training_env=training_env,

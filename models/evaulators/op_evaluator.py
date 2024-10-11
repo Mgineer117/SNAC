@@ -25,7 +25,7 @@ class OP_Evaluator(Evaluator):
         testing_env=None,
         dir: str = None,
         gridPlot: bool = True,
-        renderPlot: bool = True,
+        renderPlot: bool = False,
         eval_ep_num: int = 1,
         log_interval: int = 1,
     ):
