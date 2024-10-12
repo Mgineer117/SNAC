@@ -82,13 +82,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--env-name",
         type=str,
-        default="FourRooms",
+        default="CtF1v1",
         help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
     )
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=100,  # 600
+        default=250,  # 600
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -193,7 +193,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--conv-fc-dim",
         type=int,
-        default=512,
+        default=256,
         help="This is a dimension of FCL that decodes the output of CNN",
     )
     parser.add_argument(
@@ -232,7 +232,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--option-lr",
         type=float,
-        default=1e-4,
+        default=3e-4,
         help="Intermediate-level model learning rate",
     )
 

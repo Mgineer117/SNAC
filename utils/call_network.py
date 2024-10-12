@@ -142,15 +142,6 @@ def get_conv_layer(args):
                 "in_filters": 32,
                 "out_filters": 64,
             },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 64,
-                "out_filters": 128,
-            },  # Halve spatial dimensions again
         ]
 
         decoder_conv_layers = [
@@ -180,15 +171,6 @@ def get_conv_layer(args):
                 "activation": nn.Tanh(),
                 "in_filters": 32,
                 "out_filters": 64,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 64,
-                "out_filters": 128,
             },  # Halve spatial dimensions again
         ]
     else:

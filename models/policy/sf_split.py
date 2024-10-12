@@ -109,7 +109,7 @@ class SF_Split(BasePolicy):
         trj_per_iter: int = 10,
         gamma: float = 0.99,
         phi_loss_r_scaler: float = 1.0,
-        phi_loss_s_scaler: float = 0.1,
+        phi_loss_s_scaler: float = 0.5,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
         device: str = "cpu",
@@ -138,22 +138,21 @@ class SF_Split(BasePolicy):
             self._options = options
         else:
             self._options = nn.Parameter(
-                #     torch.normal(
-                #         mean=0.0,
-                #         std=1.0,
-                #         size=(1, int(self._sf_dim / 2)),
-                #         dtype=self._dtype,
-                #         device=self.device,
-                #     )
-                # ).to(self.device)
-                torch.zeros(
+                torch.normal(
+                    mean=0.0,
+                    std=1.0,
                     size=(1, int(self._sf_dim / 2)),
                     dtype=self._dtype,
                     device=self.device,
                 )
             ).to(self.device)
+            # torch.zeros(
+            #     size=(1, int(self._sf_dim / 2)),
+            #     dtype=self._dtype,
+            #     device=self.device,
+            # )
 
-        self.feature_optims = torch.optim.Adam(
+        self.feature_optims = torch.optim.AdamW(
             [
                 {"params": self.feaNet.parameters(), "lr": feature_lr},
                 {"params": self._options, "lr": option_lr},

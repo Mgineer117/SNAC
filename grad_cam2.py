@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import random
+import cv2
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -95,6 +95,63 @@ def get_grid(env, args):
     return grid, pos
 
 
+def plot(img, heatmap, i):
+
+    ### Figure
+    # fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+    # img = img**5
+    # axes[0].imshow(img[0, :, :, :])
+    # axes[0].set_title("Original")
+
+    # # Plot the second heatmap
+    # axes[1].matshow(heatmap)
+    # axes[1].set_title("Heatmap")
+    # axes[1].colorbar = plt.colorbar(plt.cm.ScalarMappable(), ax=axes[1])
+
+    # # draw the heatmap
+    # plt.axis("off")
+    # plt.savefig(f"heatmap/{i}.png")
+    # print(f"{i} th figure saved")
+    # plt.close()
+
+    img = img.numpy()
+    for j in range(img.shape[-1]):
+        min_val = img[0, :, :, j].min()
+        max_val = img[0, :, :, j].max()
+        img[0, :, :, j] = (img[0, :, :, j] - min_val) / (max_val - min_val + 1e-7)
+
+    heatmap = heatmap.numpy()
+
+    ### Figure
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    axes[0].imshow(img[0, :, :, :])
+    axes[0].set_title("Original")
+
+    # Plot the second heatmap
+    axes[1].matshow(heatmap)
+    axes[1].set_title("Heatmap")
+    axes[1].colorbar = plt.colorbar(plt.cm.ScalarMappable(), ax=axes[1])
+
+    # Plot the second heatmap
+    alpha = 0.5
+    heatmap = cv2.resize(heatmap, (img.shape[2], img.shape[1]))
+    heatmap = np.uint8(255 * heatmap)
+    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    heatmap = np.float32(heatmap / 255)
+    superimposed_img = heatmap * alpha + img[0, :, :, :] * (1 - alpha)
+
+    axes[2].matshow(superimposed_img)
+    axes[2].set_title("Super-imposed")
+
+    # draw the heatmap
+    plt.axis("off")
+    plt.savefig(f"heatmap/{i}.png")
+    print(f"{i} th figure saved")
+    plt.close()
+
+
 def run_loop(grid, pos, target="s"):
     for i in range(pos.shape[0]):
         x, y = pos[i, 0], pos[i, 1]
@@ -123,25 +180,8 @@ def run_loop(grid, pos, target="s"):
         max_val = torch.max(heatmap)
 
         heatmap = (heatmap - min_val) / (max_val - min_val + 1e-8)
-        heatmap = heatmap.numpy()
 
-        ### Figure
-        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-
-        img = img**5
-        axes[0].imshow(img[0, :, :, :])
-        axes[0].set_title("Original")
-
-        # Plot the second heatmap
-        axes[1].matshow(heatmap)
-        axes[1].set_title("Heatmap")
-        axes[1].colorbar = plt.colorbar(plt.cm.ScalarMappable(), ax=axes[1])
-
-        # draw the heatmap
-        plt.axis("off")
-        plt.savefig(f"heatmap/{i}.png")
-        print(f"{i} th figure saved")
-        plt.close()
+        plot(img, heatmap, i)
 
 
 if __name__ == "__main__":
@@ -157,7 +197,7 @@ if __name__ == "__main__":
     args.import_sf_model = True
     sf_network = call_sfNetwork(args)
     gradCam = GradCam(sf_network=sf_network, algo_name=args.algo_name)
-    target = "r"
+    target = "s"
     print(f"target Algorithm: {args.algo_name} | target: {target}")
 
     # call env
