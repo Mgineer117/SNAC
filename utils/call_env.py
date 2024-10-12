@@ -4,8 +4,8 @@ import torch.nn as nn
 import random
 
 from gym_multigrid.envs.fourrooms import FourRooms
-from gym_multigrid.envs.ctf import Ctf1v1Env
-from gym_multigrid.policy.ctf.heuristic import 
+from gym_multigrid.envs.ctf import Ctf1v1Env, CtfMvNEnv
+from gym_multigrid.policy.ctf.heuristic import RoombaPolicy
 from utils import NoStateDictWrapper, get_grid_tensor
 from utils.wrappers import NoStateDictCtfWrapper
 
@@ -59,9 +59,24 @@ def call_env(args, fix_agent_pos: bool = True):
         map_path: str = "assets/ctf_avoid_obj.txt"
         observation_option: str = "tensor"
         if args.env_name == "CtF1v1":
-            env = Ctf1v1Env(map_path=map_path, observation_option=observation_option)
+            env = Ctf1v1Env(
+                map_path=map_path,
+                max_steps=100,
+                observation_option=observation_option,
+                enemy_policies=RoombaPolicy(),
+            )
+        elif args.env_name == "CtF1v2":
+            env = CtfMvNEnv(
+                map_path=map_path,
+                num_blue_agents=1,
+                num_red_agents=2,
+                max_steps=150,
+                observation_option=observation_option,
+                enemy_policies=RoombaPolicy(),
+            )
         else:
-            raise NotImplementedError(f"{args.env_name} not implemented")
+            raise ValueError(f"Unknown environment: {args.env_name}")
+
         env = NoStateDictCtfWrapper(env, tile_size=args.tile_size)
 
     return env

@@ -81,7 +81,7 @@ if __name__ == "__main__":
     for seed in seeds:
         args = get_args()
         args.algo_name: str = "SNAC"
-        args.env_name = "CtF1v1"
+        args.env_name = "CtF1v2"
 
         # args.SF_epoch = 1
         # args.OP_epoch = 1
