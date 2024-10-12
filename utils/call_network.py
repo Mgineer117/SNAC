@@ -124,12 +124,6 @@ def get_conv_layer(args):
                 "in_filters": in_channels,
                 "out_filters": 16,
             },  # Halve the spatial dimensions
-            # {
-            #     "type": "pool",
-            #     "kernel_size": 3,
-            #     "stride": 1,
-            #     "padding": 1,
-            # },  # Halve the spatial dimensions
             {
                 "type": "conv",
                 "kernel_size": 3,
@@ -139,12 +133,6 @@ def get_conv_layer(args):
                 "in_filters": 16,
                 "out_filters": 32,
             },  # Halve spatial dimensions again
-            # {
-            #     "type": "pool",
-            #     "kernel_size": 3,
-            #     "stride": 1,
-            #     "padding": 1,
-            # },  # Halve the spatial dimensions
             {
                 "type": "conv",
                 "kernel_size": 3,

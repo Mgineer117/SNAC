@@ -197,6 +197,24 @@ class ConvNetwork(nn.Module):
 
         self.de_pmt = Permute((0, 2, 3, 1))
 
+    def pre_grad_cam(self, x: torch.Tensor):
+        """
+        For grad-cam to visualize the feature activation
+        """
+        out = self.en_pmt(x)
+        for fn in self.conv:
+            out, _ = fn(out)
+        return out
+
+    def post_grad_cam(self, x: torch.Tensor):
+        """
+        For grad-cam to visualize the feature activation
+        """
+        out = self.en_flatter(x)
+        out = self.en_feature(out)
+        out = self.en_last_act(out)
+        return out
+
     def forward(self, x, deterministic=True):
         indices = []
         sizes = []
