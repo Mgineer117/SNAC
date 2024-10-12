@@ -5,6 +5,7 @@ import random
 
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.ctf import Ctf1v1Env
+from gym_multigrid.policy.ctf.heuristic import 
 from utils import NoStateDictWrapper, get_grid_tensor
 from utils.wrappers import NoStateDictCtfWrapper
 

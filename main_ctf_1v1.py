@@ -93,6 +93,7 @@ def train(args, unique_id):
 
 if __name__ == "__main__":
     args = get_args(verbose=False)
+    args.seeds = [1, 2, 3]
     seeds = args.seeds
     unique_id = str(uuid.uuid4())[:4]
     for seed in seeds:
