@@ -147,7 +147,7 @@ class OP_Controller(BasePolicy):
 
         # N x 1
         rew = self.multiply_options(deltaPhi, option)
-        rew = rew * 1e3  # the scale is too small so entropy dominates reward
+        # rew = rew * 1e3  # the scale is too small so entropy dominates reward
         return rew
 
     def learn(self, batch, z):
