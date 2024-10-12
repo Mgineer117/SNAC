@@ -162,15 +162,19 @@ class OP_Controller(BasePolicy):
         t0 = time.time()
 
         # Ingredients
-        states = torch.from_numpy(states).to(self._dtype).to(self.device)
-        actions = torch.from_numpy(actions).to(self._dtype).to(self.device)
-        next_states = torch.from_numpy(next_states).to(self._dtype).to(self.device)
-        agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
-        next_agent_pos = (
-            torch.from_numpy(next_agent_pos).to(self._dtype).to(self.device)
+        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
+        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
+        next_states = (
+            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
         )
-        terminals = torch.from_numpy(terminals).to(self._dtype).to(self.device)
-        old_logprobs = torch.from_numpy(logprobs).to(self._dtype).to(self.device)
+        agent_pos = torch.from_numpy(batch["agent_pos"]).to(self._dtype).to(self.device)
+        next_agent_pos = (
+            torch.from_numpy(batch["next_agent_pos"]).to(self._dtype).to(self.device)
+        )
+        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
+        old_logprobs = (
+            torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
+        )
 
         raw_states = states.reshape(states.shape[0], -1)
 
