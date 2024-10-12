@@ -132,7 +132,7 @@ class ConvNetwork(nn.Module):
 
         self.en_feature = MLP(
             input_dim=flat_dim + 2,  # agent pos concat
-            hidden_dims=(fc_dim,),
+            hidden_dims=(fc_dim, fc_dim),
             output_dim=sf_dim,
             activation=self.act,
         )
@@ -197,6 +197,25 @@ class ConvNetwork(nn.Module):
 
         self.de_pmt = Permute((0, 2, 3, 1))
 
+    def pre_grad_cam(self, x: torch.Tensor):
+        """
+        For grad-cam to visualize the feature activation
+        """
+        out = self.en_pmt(x)
+        for fn in self.conv:
+            out, _ = fn(out)
+        return out
+
+    def post_grad_cam(self, x: torch.Tensor, agent_pos: torch.Tensor):
+        """
+        For grad-cam to visualize the feature activation
+        """
+        out = self.en_flatter(x)
+        out = torch.cat((out, agent_pos), axis=-1)
+        out = self.en_feature(out)
+        out = self.en_last_act(out)
+        return out
+
     def forward(
         self, x: torch.Tensor, agent_pos: torch.Tensor, deterministic: bool = True
     ):
@@ -218,9 +237,7 @@ class ConvNetwork(nn.Module):
         out = self.en_flatter(out)
         out = torch.cat((out, agent_pos), axis=-1)
         out = self.en_feature(out)
-        # print(out.shape)
         out = self.en_last_act(out)
-        # print(out.shape)
         return out, {"indices": indices, "output_dim": sizes, "loss": torch.tensor(0.0)}
 
     def decode(self, features, actions, conv_dict):

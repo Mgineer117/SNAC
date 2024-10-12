@@ -102,18 +102,18 @@ class SF_Combined(BasePolicy):
             self._options = options
         else:
             self._options = nn.Parameter(
-                # torch.normal(
-                #     mean=0.0,
-                #     std=1.0,
-                #     size=(1, int(self._sf_dim)),
-                #     dtype=self._dtype,
-                #     device=self.device,
-                # )
-                torch.zeros(
+                torch.normal(
+                    mean=0.0,
+                    std=1.0,
                     size=(1, int(self._sf_dim)),
                     dtype=self._dtype,
                     device=self.device,
                 )
+                # torch.zeros(
+                #     size=(1, int(self._sf_dim)),
+                #     dtype=self._dtype,
+                #     device=self.device,
+                # )
             ).to(self.device)
 
         self.feature_optims = torch.optim.AdamW(

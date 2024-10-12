@@ -88,7 +88,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=100,  # 500
+        default=200,  # 500
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -231,7 +231,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--option-lr",
         type=float,
-        default=1e-4,
+        default=3e-4,
         help="Intermediate-level model learning rate",
     )
 

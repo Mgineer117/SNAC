@@ -68,7 +68,7 @@ class TrajectoryBuffer:
         self.trajectories = []
         self.num_trj = 0
 
-    def push(self, batch: dict) -> None:
+    def push(self, batch: dict, sort: str | None = None) -> None:
         """
         Method: Push the batch into the data buffer. This saves it as a trajectory
         --------------------------------------------------------------------------------------------
@@ -77,6 +77,20 @@ class TrajectoryBuffer:
         Output: None
         """
         trajs = self.decompose(batch)
+        temp_trajs = []
+
+        if sort == "reward":
+            stack = 0
+            for trj in trajs:
+                if np.any(trj["rewards"] != 0):
+                    temp_trajs.append(trj)
+                    reward_sum = np.sum(trj["rewards"])
+                    # print(f"tfj reward sum: {reward_sum}")
+                    stack += 1
+
+            # print(f"sorted {len(temp_trajs)}/{len(trajs)}")
+
+            trajs = temp_trajs
 
         for traj in trajs:
             if self.num_trj < self.max_num_trj:

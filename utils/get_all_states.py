@@ -27,6 +27,25 @@ def get_grid_tensor(env, env_seed):
     return grid_tensor, (x_coords, y_coords), loc
 
 
+def get_grid_tensor2(env, env_seed):
+    """
+    Can be extended to the multigrid by removing multiple agents
+    """
+    obs, _ = env.reset(seed=env_seed)
+
+    grid_tensor = obs
+
+    loc = np.where(grid_tensor[:, :, 1] == 1)
+    grid_tensor[loc[0], loc[1], 1] = 0
+    env.close()
+
+    x_coords, y_coords = np.where(
+        (grid_tensor[:, :, 0] != 0) & (grid_tensor[:, :, 1] != 2)
+    )  # find idx where not wall
+
+    return grid_tensor, (x_coords, y_coords), loc
+
+
 def generate_possible_states(env, path, args):
     # Check if the given render mode is not human
     if env.render_mode != "rgb_array":

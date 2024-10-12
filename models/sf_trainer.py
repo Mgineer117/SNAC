@@ -107,7 +107,7 @@ class SFTrainer:
             batch, sample_time = self.sampler.collect_samples(
                 self.policy, env_seed=self.env_seed
             )
-            self.buffer.push(batch)
+            self.buffer.push(batch, sort="reward")
 
         second_init_epoch = self._epoch
         second_final_epoch = self._epoch + self._psi_epoch
@@ -164,7 +164,7 @@ class SFTrainer:
             batch, sample_time = self.sampler.collect_samples(
                 self.policy, env_seed=self.env_seed
             )
-            self.buffer.push(batch)
+            self.buffer.push(batch, sort="reward")
             print(
                 f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
                 end="",

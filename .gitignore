@@ -161,3 +161,6 @@ nohup.out
 
 # Ignore VS Code settings (entire .vscode folder)
 .vscode/
+
+# Ignore VS Code settings (entire .vscode folder)
+heatmap/

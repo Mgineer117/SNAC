@@ -20,11 +20,17 @@ from utils.get_all_states import (
     generate_possible_states,
     generate_possible_tensors,
     get_grid_tensor,
+    get_grid_tensor2,
 )
 from utils.buffer import TrajectoryBuffer
 from utils.sampler import OnlineSampler
 from utils.plotter import Plotter
-from utils.wrappers import StateImageWrapper, StateTensorWrapper, NoStateDictWrapper
+from utils.wrappers import (
+    StateImageWrapper,
+    StateTensorWrapper,
+    NoStateDictWrapper,
+    NoStateDictCtfWrapper,
+)
 
 
 __all__ = [
@@ -52,4 +58,6 @@ __all__ = [
     "get_args",
     "estimate_advantages",
     "estimate_psi",
+    "NoStateDictCtfWrapper",
+    "get_grid_tensor2",
 ]
