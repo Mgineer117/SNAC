@@ -288,6 +288,8 @@ def save_dim_to_args(env, args):
     if args.a_dim is None:
         args.a_dim = a_dim
 
+    args.s_flat_dim = np.prod(args.s_dim)
+
     print(f"Problem dimension (|S|/|A|): {args.s_dim}/{args.a_dim}")
     env.close()
 

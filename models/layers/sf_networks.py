@@ -72,7 +72,9 @@ class ConvNetwork(nn.Module):
     def __init__(
         self,
         state_dim: tuple,
-        action_dim,
+        action_dim: int,
+        encoder_conv_layers: list,
+        decoder_conv_layers: list,
         fc_dim: int = 256,
         sf_dim: int = 256,
         decoder_inpuit_dim: int = 256,
@@ -94,74 +96,17 @@ class ConvNetwork(nn.Module):
         self.en_pmt = Permute((0, 3, 1, 2))
 
         ### conv structure
-        conv_layers = [
-            {
-                "type": "conv",
-                "kernel_size": 4,
-                "stride": 2,
-                "padding": 2,
-                "activation": nn.Tanh(),
-                "in_filters": in_channels,
-                "out_filters": 16,
-            },  # Halve the spatial dimensions
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 0,
-                "activation": nn.Tanh(),
-                "in_filters": 16,
-                "out_filters": 32,
-            },  # Halve spatial dimensions again
-            # {
-            #     "type": "pool",
-            #     "kernel_size": 2,
-            #     "stride": 1,
-            #     "padding": 1,
-            # },  # Max Pooling, reduce spatial dimensions by half
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 0,
-                "activation": nn.Tanh(),
-                "in_filters": 32,
-                "out_filters": 64,
-            },  # Halve spatial dimensions again
-            # {
-            #     "type": "pool",
-            #     "kernel_size": 2,
-            #     "stride": 1,
-            #     "padding": 1,
-            # },  # Max Pooling, reduce spatial dimensions by half
-            # {
-            #     "type": "conv",
-            #     "kernel_size": 3,
-            #     "stride": 1,
-            #     "padding": 0,
-            #     "activation": nn.Tanh(),
-            #     "in_filters": 32,
-            #     "out_filters": 64,
-            # },  # Halve spatial dimensions again
-            # {
-            #     "type": "pool",
-            #     "kernel_size": 2,
-            #     "stride": 1,
-            #     "padding": 0,
-            # },  # Max Pooling, reduce spatial dimensions by half
-        ]
-
-        results = check_output_padding_needed(conv_layers, s_dim)
+        results = check_output_padding_needed(encoder_conv_layers, s_dim)
         # Print the results
 
         self.output_paddings = [x["output_padding"] for x in results][::-1]
 
         # Define the fully connected layers
-        flat_dim, output_shape = calculate_flatten_size(state_dim, conv_layers)
+        flat_dim, output_shape = calculate_flatten_size(state_dim, encoder_conv_layers)
         reduced_feature_dim = output_shape[0]
 
         self.conv = nn.ModuleList()
-        for layer in conv_layers:
+        for layer in encoder_conv_layers:
             if layer["type"] == "conv":
                 element = Conv(
                     in_channels=in_channels,
@@ -187,26 +132,26 @@ class ConvNetwork(nn.Module):
 
         self.en_feature = MLP(
             input_dim=flat_dim,
-            hidden_dims=(fc_dim, fc_dim, fc_dim),
+            hidden_dims=(fc_dim,),
             output_dim=sf_dim,
             activation=self.act,
         )
 
-        # self.en_last_act = nn.ReLU()
+        self.en_last_act = nn.ReLU()
         # self.en_last_act = nn.Tanh()
-        self.en_last_act = nn.Sigmoid()
+        # self.en_last_act = nn.Sigmoid()
         # self.en_last_act = nn.Identity()
         # self.en_last_act = EncoderLastAct(alpha=1.0)
 
         ### Decoding module
         # preprocess
         self.de_action = MLP(
-            input_dim=action_dim, hidden_dims=(fc_dim, fc_dim), activation=self.act
+            input_dim=action_dim, hidden_dims=(fc_dim,), activation=self.act
         )
 
         self.de_state_feature = MLP(
             input_dim=decoder_inpuit_dim,
-            hidden_dims=(fc_dim, fc_dim),
+            hidden_dims=(fc_dim,),
             activation=self.act,
         )
         # self.de_state_feature = MLP(
@@ -222,7 +167,7 @@ class ConvNetwork(nn.Module):
 
         self.de_conv = nn.ModuleList()
         i = 0
-        for layer in conv_layers[::-1]:
+        for layer in decoder_conv_layers[::-1]:
             if layer["type"] == "conv":
                 element = DeConv(
                     in_channels=in_channels,
@@ -251,6 +196,24 @@ class ConvNetwork(nn.Module):
         # self.de_last_act = EncoderLastAct(alpha=1.0)
 
         self.de_pmt = Permute((0, 2, 3, 1))
+
+    def pre_grad_cam(self, x: torch.Tensor):
+        """
+        For grad-cam to visualize the feature activation
+        """
+        out = self.en_pmt(x)
+        for fn in self.conv:
+            out, _ = fn(out)
+        return out
+
+    def post_grad_cam(self, x: torch.Tensor):
+        """
+        For grad-cam to visualize the feature activation
+        """
+        out = self.en_flatter(x)
+        out = self.en_feature(out)
+        out = self.en_last_act(out)
+        return out
 
     def forward(self, x, deterministic=True):
         indices = []
@@ -291,7 +254,7 @@ class ConvNetwork(nn.Module):
         out = torch.cat((features, actions), axis=-1)
         out = self.de_concat(out)
         out = self.reshape(out)
-
+        # print(out.shape)
         i = 0
         for fn in self.de_conv:
             if isinstance(fn, nn.MaxUnpool2d):

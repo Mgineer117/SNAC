@@ -20,6 +20,182 @@ from models.layers import (
 )
 
 
+def get_conv_layer(args):
+    _, _, in_channels = args.s_dim
+
+    if args.env_name == "FourRooms":
+        encoder_conv_layers = [
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 2,
+                "activation": nn.Tanh(),
+                "in_filters": in_channels,
+                "out_filters": 16,
+            },  # Halve the spatial dimensions
+            # {
+            #     "type": "pool",
+            #     "kernel_size": 3,
+            #     "stride": 1,
+            #     "padding": 1,
+            # },  # Halve the spatial dimensions
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 16,
+                "out_filters": 32,
+            },  # Halve spatial dimensions again
+            # {
+            #     "type": "pool",
+            #     "kernel_size": 3,
+            #     "stride": 1,
+            #     "padding": 1,
+            # },  # Halve the spatial dimensions
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 32,
+                "out_filters": 64,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # Halve spatial dimensions again
+        ]
+
+        decoder_conv_layers = [
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 2,
+                "activation": nn.Tanh(),
+                "in_filters": in_channels,
+                "out_filters": 16,
+            },  # Halve the spatial dimensions
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 16,
+                "out_filters": 32,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 32,
+                "out_filters": 64,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # Halve spatial dimensions again
+        ]
+    elif args.env_name == "CtF1v1" or "CtF1v2":
+        encoder_conv_layers = [
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 2,
+                "activation": nn.Tanh(),
+                "in_filters": in_channels,
+                "out_filters": 16,
+            },  # Halve the spatial dimensions
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 16,
+                "out_filters": 32,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 32,
+                "out_filters": 64,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # Halve spatial dimensions again
+        ]
+
+        decoder_conv_layers = [
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 2,
+                "activation": nn.Tanh(),
+                "in_filters": in_channels,
+                "out_filters": 16,
+            },  # Halve the spatial dimensions
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 16,
+                "out_filters": 32,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 32,
+                "out_filters": 64,
+            },  # Halve spatial dimensions again
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "activation": nn.Tanh(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # Halve spatial dimensions again
+        ]
+    else:
+        raise NotImplementedError(f"{args.env_name} is not implemented")
+    return encoder_conv_layers, decoder_conv_layers
+
+
 def check_all_devices(module):
     devices = {param.device for param in module.parameters()}  # Get all unique devices
     return devices
@@ -31,7 +207,7 @@ def call_sfNetwork(args):
     if args.algo_name == "SNAC":
         if args.import_sf_model:
             print("Loading previous SF parameters....")
-            convNet, psiNet, options = pickle.load(
+            feaNet, psiNet, options = pickle.load(
                 open("log/eval_log/model_for_eval/sf_model.p", "rb")
             )
             feaNet = convNet
@@ -46,7 +222,7 @@ def call_sfNetwork(args):
 
             options = None
 
-            if hasattr(args, "feat_net_type") and args.feat_net_type == "VAE":
+            if args.feaNet_type == "VAE":
                 feaNet = VAE(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
@@ -55,15 +231,20 @@ def call_sfNetwork(args):
                     decoder_inpuit_dim=int(args.sf_dim / 2),
                     activation=nn.Tanh(),
                 )
-            else:
+            elif args.feaNet_type == "CNN":
+                encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
                 feaNet = ConvNetwork(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
+                    encoder_conv_layers=encoder_conv_layers,
+                    decoder_conv_layers=decoder_conv_layers,
                     fc_dim=args.conv_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=int(args.sf_dim / 2),
                     activation=nn.Tanh(),
                 )
+            else:
+                raise ValueError(f"Unknown feature net: {args.feaNet_type}")
 
         policy = SF_Split(
             feaNet=feaNet,
@@ -72,7 +253,6 @@ def call_sfNetwork(args):
             feature_lr=args.feature_lr,
             option_lr=args.option_lr,
             psi_lr=args.psi_lr,
-            update_iter=args.update_iter,
             trj_per_iter=args.trj_per_iter,
             a_dim=args.a_dim,
             device=args.device,
@@ -80,18 +260,31 @@ def call_sfNetwork(args):
     else:
         if args.import_sf_model:
             print("Loading previous SF parameters....")
-            convNet, psiNet, options = pickle.load(
+            feaNet, psiNet, options = pickle.load(
                 open("log/eval_log/model_for_eval/sf_model.p", "rb")
             )
         else:
-            convNet = ConvNetwork(
-                state_dim=args.s_dim,
-                action_dim=args.a_dim,
-                fc_dim=args.conv_fc_dim,
-                sf_dim=args.sf_dim,
-                decoder_inpuit_dim=args.sf_dim,
-                activation=nn.Tanh(),
-            )
+            if args.feaNet_type == "VAE":
+                feaNet = VAE(
+                    state_dim=args.s_dim,
+                    action_dim=args.a_dim,
+                    fc_dim=args.conv_fc_dim,
+                    sf_dim=args.sf_dim,
+                    decoder_inpuit_dim=int(args.sf_dim / 2),
+                    activation=nn.Tanh(),
+                )
+            elif args.feaNet_type == "CNN":
+                encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
+                feaNet = ConvNetwork(
+                    state_dim=args.s_dim,
+                    action_dim=args.a_dim,
+                    encoder_conv_layers=encoder_conv_layers,
+                    decoder_conv_layers=decoder_conv_layers,
+                    fc_dim=args.conv_fc_dim,
+                    sf_dim=args.sf_dim,
+                    decoder_inpuit_dim=args.sf_dim,
+                    activation=nn.Tanh(),
+                )
 
             psiNet = PsiCritic(
                 fc_dim=args.fc_dim,
@@ -103,13 +296,12 @@ def call_sfNetwork(args):
             options = None
 
         policy = SF_Combined(
-            feaNet=convNet,
+            feaNet=feaNet,
             psiNet=psiNet,
             options=options,
             feature_lr=args.feature_lr,
             option_lr=args.option_lr,
             psi_lr=args.psi_lr,
-            update_iter=args.update_iter,
             trj_per_iter=args.trj_per_iter,
             a_dim=args.a_dim,
             device=args.device,
@@ -118,7 +310,7 @@ def call_sfNetwork(args):
     return policy
 
 
-def call_ppoNetwork(sf_network: nn.Module, args):
+def call_ppoNetwork(args):
     from models.policy import PPO_Learner
 
     if args.import_ppo_model:
@@ -128,13 +320,13 @@ def call_ppoNetwork(sf_network: nn.Module, args):
         )
     else:
         optionPolicy = PPO_Policy(
-            input_dim=args.sf_dim,
+            input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             a_dim=args.a_dim,
             activation=nn.Tanh(),
         )
         optionCritic = PPO_Critic(
-            input_dim=args.sf_dim,
+            input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             activation=nn.Tanh(),
         )
@@ -142,7 +334,6 @@ def call_ppoNetwork(sf_network: nn.Module, args):
     policy = PPO_Learner(
         policy=optionPolicy,
         critic=optionCritic,
-        convNet=sf_network.feaNet,
         policy_lr=args.policy_lr,
         critic_lr=args.critic_lr,
         entropy_scaler=args.entropy_scaler,
@@ -171,14 +362,14 @@ def call_opNetwork(
         )
     else:
         optionPolicy = OptionPolicy(
-            input_dim=args.sf_dim,
+            input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             a_dim=args.a_dim,
             num_options=options.shape[0],
             activation=nn.Tanh(),
         )
         optionCritic = OptionCritic(
-            input_dim=args.sf_dim,
+            input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             num_options=options.shape[0],
             activation=nn.Tanh(),
@@ -239,21 +430,21 @@ def call_hcNetwork(convNet, optionPolicy, args):
     else:
         policy = HC_Policy(
             # input_dim=np.prod(args.s_dim),
-            input_dim=args.sf_dim,
+            input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             num_options=optionPolicy._num_options,
             activation=nn.Tanh(),
         )
         primitivePolicy = HC_PrimitivePolicy(
             # input_dim=np.prod(args.s_dim),
-            input_dim=args.sf_dim,
+            input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             a_dim=args.a_dim,
             activation=nn.Tanh(),
         )
         critic = HC_Critic(
             # input_dim=np.prod(args.s_dim),
-            input_dim=args.sf_dim,
+            input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             activation=nn.Tanh(),
         )

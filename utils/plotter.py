@@ -436,7 +436,6 @@ class Plotter:
                         deltaPhi[agent_dir, x, y, :] += features[x, y, :]
 
         # sum all connected next_phi - current phi
-        deltaPhi /= 4
         deltaPhi -= features
         deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
 
@@ -483,13 +482,13 @@ class Plotter:
                 for x, y in zip(coords[0], coords[1]):
                     rewards[vec_idx, x, y] += reward[x, y]
 
-        r_min = torch.min(rewards.reshape(rewards.shape[0], -1), axis=-1)[0]
-        r_max = torch.max(rewards.reshape(rewards.shape[0], -1), axis=-1)[0]
+        # r_min = torch.min(rewards.reshape(rewards.shape[0], -1), axis=-1)[0]
+        # r_max = torch.max(rewards.reshape(rewards.shape[0], -1), axis=-1)[0]
 
-        r_min = r_min[:, None, None]
-        r_max = r_max[:, None, None]
+        # r_min = r_min[:, None, None]
+        # r_max = r_max[:, None, None]
 
-        rewards = (rewards - r_min) / (r_max - r_min + 1e-10)
+        # rewards = (rewards - r_min) / (r_max - r_min + 1e-10)
 
         vec_dir_path = os.path.join(dir, "rewardMap")
         os.mkdir(vec_dir_path)

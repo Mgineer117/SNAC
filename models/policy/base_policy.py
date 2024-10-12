@@ -60,7 +60,16 @@ class BasePolicy(nn.Module):
         terminals = torch.from_numpy(terminals).to(torch.int32).to(device)
         logprobs = torch.from_numpy(logprobs).to(self._dtype).to(device)
 
-        return states, features, actions_oh, next_states, rewards, terminals, logprobs
+        return (
+            states,
+            features,
+            actions,
+            actions_oh,
+            next_states,
+            rewards,
+            terminals,
+            logprobs,
+        )
 
     def compute_gradient_norm(self, models, names, device, dir="None", norm_type=2):
         grad_dict = {}

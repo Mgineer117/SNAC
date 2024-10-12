@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 from copy import deepcopy
-from utils import estimate_psi
+from utils.utils import estimate_psi
 from models.layers import MLP, ConvNetwork, PsiCritic
 from models.policy.base_policy import BasePolicy
 
@@ -106,11 +106,10 @@ class SF_Split(BasePolicy):
         feature_lr: float = 3e-4,
         option_lr: float = 1e-4,
         psi_lr: float = 5e-4,
-        update_iter: int = 5,
         trj_per_iter: int = 10,
         gamma: float = 0.99,
         phi_loss_r_scaler: float = 1.0,
-        phi_loss_s_scaler: float = 1.0,
+        phi_loss_s_scaler: float = 0.1,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
         device: str = "cpu",
@@ -120,7 +119,6 @@ class SF_Split(BasePolicy):
         # constants
         self.device = device
 
-        self._update_iter = update_iter
         self._trj_per_iter = trj_per_iter
         self._a_dim = a_dim
         self._fc_dim = feaNet._fc_dim
@@ -140,23 +138,29 @@ class SF_Split(BasePolicy):
             self._options = options
         else:
             self._options = nn.Parameter(
-                torch.normal(
-                    mean=0.0,
-                    std=1.0,
+                #     torch.normal(
+                #         mean=0.0,
+                #         std=1.0,
+                #         size=(1, int(self._sf_dim / 2)),
+                #         dtype=self._dtype,
+                #         device=self.device,
+                #     )
+                # ).to(self.device)
+                torch.zeros(
                     size=(1, int(self._sf_dim / 2)),
                     dtype=self._dtype,
                     device=self.device,
                 )
             ).to(self.device)
 
-        self.feature_optims = torch.optim.AdamW(
+        self.feature_optims = torch.optim.Adam(
             [
                 {"params": self.feaNet.parameters(), "lr": feature_lr},
                 {"params": self._options, "lr": option_lr},
             ]
         )
 
-        self.psi_optim = torch.optim.AdamW(params=self.psiNet.parameters(), lr=psi_lr)
+        self.psi_optim = torch.optim.Adam(params=self.psiNet.parameters(), lr=psi_lr)
 
         #
         self.dummy = torch.tensor(0.0)
@@ -228,7 +232,7 @@ class SF_Split(BasePolicy):
         phi_r_loss = self._phi_loss_r_scaler * self.huber_loss(rewards, reward_pred)
 
         state_pred = self.feaNet.decode(phi_s, actions, conv_dict)
-        phi_s_loss = self._phi_loss_s_scaler * self.huber_loss(next_states, state_pred)
+        phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
         # loc_diff = next_states[0, :, :, 0] - state_pred[0, :, :, 0]
         # print(torch.norm(loc_diff))
 
@@ -317,9 +321,16 @@ class SF_Split(BasePolicy):
         t0 = time.time()
 
         buffer_batch = buffer.sample(self._trj_per_iter)
-        states, _, actions_oh, next_states, rewards, terminals, _ = (
-            self.preprocess_batch(buffer_batch, self.device)
-        )
+        (
+            states,
+            _,
+            _,
+            actions_oh,
+            next_states,
+            rewards,
+            _,
+            _,
+        ) = self.preprocess_batch(buffer_batch, self.device)
 
         phi_loss, phi_loss_dict = self._phi_Loss(
             states, actions_oh, next_states, rewards

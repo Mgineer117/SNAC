@@ -10,10 +10,10 @@ from algorithms.SNAC import SNAC
 from algorithms.EigenOption import EigenOption
 from algorithms.CoveringOption import CoveringOption
 from algorithms.PPO import PPO
+from algorithms.FeatureTrain import FeatureTrain
 from gym_multigrid.envs.fourrooms import FourRooms
 
 from utils import *
-from utils.call_env import call_env
 
 import wandb
 
@@ -32,58 +32,36 @@ def train(args, unique_id):
     # call logger
     logger, writer = setup_logger(args, unique_id, seed)
 
-    ### define essential componenets for project
-    ### env here must be grid & agent fixed while others stochastic
-    # get the possible coordinates for agent allocation
-    env = call_env(args)
-    save_dim_to_args(env, args)  # given env, save its state and action dim
-
-    # define buffers and sampler for Monte-Carlo sampling
-    buffer = TrajectoryBuffer(
-        min_num_trj=args.update_iter * args.trj_per_iter, max_num_trj=args.num_traj
-    )
-    sampler = OnlineSampler(
-        training_envs=env,
-        state_dim=args.s_dim,
-        feature_dim=args.sf_dim,
-        action_dim=args.a_dim,
-        episode_len=args.episode_len,
-        episode_num=args.episode_num,
-        num_cores=args.num_cores,
-    )
+    # start the sf training or import it
+    ft = FeatureTrain(logger=logger, writer=writer, args=args)
+    sf_network, prev_epoch = ft.train()
 
     if args.algo_name == "SNAC":
         alg = SNAC(
-            env=env,
-            buffer=buffer,
-            sampler=sampler,
+            sf_network=sf_network,
+            prev_epoch=prev_epoch,
             logger=logger,
             writer=writer,
             args=args,
         )
     elif args.algo_name == "EigenOption":
         alg = EigenOption(
-            env=env,
-            buffer=buffer,
-            sampler=sampler,
+            sf_network=sf_network,
+            prev_epoch=prev_epoch,
             logger=logger,
             writer=writer,
             args=args,
         )
     elif args.algo_name == "CoveringOption":
         alg = CoveringOption(
-            env=env,
-            buffer=buffer,
-            sampler=sampler,
+            sf_network=sf_network,
+            prev_epoch=prev_epoch,
             logger=logger,
             writer=writer,
             args=args,
         )
     elif args.algo_name == "PPO":
         alg = PPO(
-            env=env,
-            buffer=buffer,
-            sampler=sampler,
             logger=logger,
             writer=writer,
             args=args,

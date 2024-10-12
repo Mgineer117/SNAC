@@ -6,6 +6,7 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from copy import deepcopy
 
 from utils.plotter import Plotter
 from utils.utils import generate_2d_heatmap_image

@@ -22,17 +22,6 @@ from utils.buffer import TrajectoryBuffer
 from models.evaulators.sf_evaluator import Evaluator
 
 
-# # Custom scheduler logic for different parameter groups
-# def custom_lr_scheduler(optimizer, epoch, scheduling_epoch=1):
-#     if epoch % scheduling_epoch == 0:
-#         optimizer["phi_optim"].param_groups[0][
-#             "lr"
-#         ] *= 0.7  # Reduce learning rate for phi
-#         # optimizer.param_groups[1]["lr"] *= 0.99  # Reduce learning rate for psi
-#         # optimizer.param_groups[2]["lr"] *= 0.8  # Reduce learning rate for option
-#     # pass
-
-
 # model-free policy trainer
 class SFTrainer:
     def __init__(
@@ -43,6 +32,7 @@ class SFTrainer:
         logger: WandbLogger,
         writer: SummaryWriter,
         evaluator: Evaluator,
+        scheduler: torch.optim.lr_scheduler,
         ### Parmaterers ###
         epoch: int = 1000,
         init_epoch: int = 0,
@@ -59,6 +49,8 @@ class SFTrainer:
 
         self.logger = logger
         self.writer = writer
+
+        self.scheduler = scheduler
 
         # training parameters
         self._init_epoch = init_epoch
@@ -102,10 +94,14 @@ class SFTrainer:
 
                 loss["SF/sample_time"] = sample_time
                 loss["SF/update_time"] = update_time
+                loss["SF/lr"] = self.policy.feature_optims.param_groups[0]["lr"]
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
                 sample_time = 0
                 torch.cuda.empty_cache()
+
+            if self.scheduler is not None:
+                self.scheduler.step()
 
             batch, sample_time = self.sampler.collect_samples(
                 self.policy, env_seed=self.env_seed

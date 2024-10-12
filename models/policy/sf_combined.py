@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import matplotlib
 
-from utils import estimate_psi
+from utils.utils import estimate_psi
 from models.layers import MLP, ConvNetwork, PsiCritic
 from models.policy.base_policy import BasePolicy
 
@@ -64,7 +64,6 @@ class SF_Combined(BasePolicy):
         feature_lr: float = 3e-4,
         psi_lr: float = 5e-4,
         option_lr: float = 1e-4,
-        update_iter: int = 5,
         trj_per_iter: int = 10,
         decision_mode: str = "random",
         gamma: float = 0.99,
@@ -82,7 +81,6 @@ class SF_Combined(BasePolicy):
         self.decision_mode = decision_mode
         self.device = device
 
-        self._update_iter = update_iter
         self._trj_per_iter = trj_per_iter
         self._a_dim = a_dim
         self._fc_dim = feaNet._fc_dim
@@ -104,6 +102,13 @@ class SF_Combined(BasePolicy):
             self._options = options
         else:
             self._options = nn.Parameter(
+                # torch.normal(
+                #     mean=0.0,
+                #     std=1.0,
+                #     size=(1, int(self._sf_dim)),
+                #     dtype=self._dtype,
+                #     device=self.device,
+                # )
                 torch.normal(
                     mean=0.0,
                     std=1.0,
@@ -203,7 +208,7 @@ class SF_Combined(BasePolicy):
         phi, conv_dict = self.feaNet(states, deterministic=False)
 
         state_pred = self.feaNet.decode(phi, actions, conv_dict)
-        phi_s_loss = self._phi_loss_s_scaler * self.huber_loss(next_states, state_pred)
+        phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
 
         l2_norm = 0
         for param in self.feaNet.parameters():
@@ -289,9 +294,16 @@ class SF_Combined(BasePolicy):
         t0 = time.time()
 
         buffer_batch = buffer.sample(self._trj_per_iter)
-        states, _, actions_oh, next_states, rewards, terminals, _ = (
-            self.preprocess_batch(buffer_batch, self.device)
-        )
+        (
+            states,
+            _,
+            _,
+            actions_oh,
+            next_states,
+            rewards,
+            _,
+            _,
+        ) = self.preprocess_batch(buffer_batch, self.device)
 
         phi_loss, phi_loss_dict = self._phi_Loss(
             states, actions_oh, next_states, rewards

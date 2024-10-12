@@ -20,9 +20,8 @@ class PPO_Learner(BasePolicy):
         self,
         policy: PPO_Policy,
         critic: PPO_Critic,
-        convNet: ConvNetwork,
-        policy_lr: float = 5e-4,
-        critic_lr: float = 1e-4,
+        policy_lr: float = 3e-4,
+        critic_lr: float = 5e-4,
         eps: float = 0.2,
         entropy_scaler: float = 1e-2,
         gamma: float = 0.99,
@@ -35,6 +34,7 @@ class PPO_Learner(BasePolicy):
         # constants
         self.device = device
 
+        self._a_dim = policy._a_dim
         self._entropy_scaler = entropy_scaler
         self._eps = eps
         self._gamma = gamma
@@ -45,9 +45,8 @@ class PPO_Learner(BasePolicy):
         # trainable networks
         self.policy = policy
         self.critic = critic
-        self.convNet = convNet
 
-        self.optimizer = torch.optim.Adam(
+        self.optimizer = torch.optim.AdamW(
             [
                 {"params": self.policy.parameters(), "lr": policy_lr},
                 {"params": self.critic.parameters(), "lr": critic_lr},
@@ -62,10 +61,10 @@ class PPO_Learner(BasePolicy):
         self.device = device
         self.to(device)
 
-    def getPhi(self, x):
-        with torch.no_grad():
-            phi, _ = self.convNet(x)
-        return phi
+    # def getPhi(self, x):
+    #     with torch.no_grad():
+    #         phi, _ = self.convNet(x)
+    #     return phi
 
     def forward(self, x, z=None, deterministic=False):
         self._forward_steps += 1
@@ -77,9 +76,11 @@ class PPO_Learner(BasePolicy):
         if len(x.shape) == 3:
             x = x[None, :, :, :]
         x = x.to(self._dtype).to(self.device)
-        phi = self.getPhi(x)
+        raw_state = x.reshape(x.shape[0], -1)
+        # phi = self.getPhi(x)
 
-        dist = self.policy(phi)
+        # dist = self.policy(phi)
+        dist = self.policy(raw_state)
 
         if deterministic:
             # [N, |O|]
@@ -92,7 +93,7 @@ class PPO_Learner(BasePolicy):
 
         return a, {
             "q": self.dummy,  # dummy
-            "phi": phi,
+            "phi": self.dummy,
             "is_option": False,  # dummy
             "z": self.dummy.item(),
             "probs": probs,
@@ -105,16 +106,22 @@ class PPO_Learner(BasePolicy):
         t0 = time.time()
 
         # Ingredients
-        features = torch.from_numpy(batch["features"]).to(torch.float32).to(self.device)
-        actions = torch.from_numpy(batch["actions"]).to(torch.float32).to(self.device)
-        rewards = torch.from_numpy(batch["rewards"]).to(torch.float32).to(self.device)
-        terminals = torch.from_numpy(batch["terminals"]).to(torch.int32).to(self.device)
-        old_logprobs = (
-            torch.from_numpy(batch["logprobs"]).to(torch.int32).to(self.device)
-        )
+        (
+            states,
+            features,
+            actions,
+            _,
+            _,
+            rewards,
+            terminals,
+            old_logprobs,
+        ) = self.preprocess_batch(batch, self.device)
+
+        raw_states = states.reshape(states.shape[0], -1)
 
         with torch.no_grad():
-            values = self.critic(features)
+            # values = self.critic(features)
+            values = self.critic(raw_states)
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
@@ -127,16 +134,16 @@ class PPO_Learner(BasePolicy):
         # K - Loop
         for _ in range(self._K):
             # critic ingredients
-            values = self.critic(features)
+            # values = self.critic(features)
+            values = self.critic(raw_states)
             valueLoss = F.mse_loss(returns, values)
 
             # policy ingredients
-            dist = self.policy(features)
+            # dist = self.policy(features)
+            dist = self.policy(raw_states)
 
-            logprobs = dist.log_prob(actions)
-            entropy = dist.entropy()
-
-            # entropy = -probs * torch.clip(log_probs, 1e-10, 10.0)
+            logprobs = dist.log_prob(actions.squeeze()).unsqueeze(-1)
+            entropy = dist.entropy().unsqueeze(-1)
 
             ratios = torch.exp(logprobs - old_logprobs)
             # policy loss
@@ -146,7 +153,16 @@ class PPO_Learner(BasePolicy):
             entropyLoss = self._entropy_scaler * entropy
 
             loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
-
+            # print(
+            #     old_logprobs.shape,
+            #     logprobs.shape,
+            #     ratios.shape,
+            #     surr1.shape,
+            #     surr2.shape,
+            #     actorLoss.shape,
+            #     entropyLoss.shape,
+            #     loss.shape,
+            # )
             # step the optimizer
             self.optimizer.zero_grad()
             loss.backward()
