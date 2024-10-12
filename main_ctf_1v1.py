@@ -104,6 +104,9 @@ if __name__ == "__main__":
         # args.step_per_epoch = 1
         # args.HC_epoch = 1
 
+        # args.import_sf_model = True
+        # args.import_op_model = True
+
         # args.draw_map: bool = True
         seed_all(seed)
         train(args, unique_id)
