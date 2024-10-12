@@ -154,6 +154,7 @@ class OP_Controller(BasePolicy):
 
         # N x 1
         rew = self.multiply_options(deltaPhi, option)
+        rew = rew * 1e3  # the scale is too small so entropy dominates reward
         return rew
 
     def learn(self, batch, z):
@@ -161,18 +162,15 @@ class OP_Controller(BasePolicy):
         t0 = time.time()
 
         # Ingredients
-        (
-            states,
-            _,
-            actions,
-            _,
-            next_states,
-            agent_pos,
-            next_agent_pos,
-            rewards,
-            terminals,
-            old_logprobs,
-        ) = self.preprocess_batch(batch, self.device)
+        states = torch.from_numpy(states).to(self._dtype).to(self.device)
+        actions = torch.from_numpy(actions).to(self._dtype).to(self.device)
+        next_states = torch.from_numpy(next_states).to(self._dtype).to(self.device)
+        agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
+        next_agent_pos = (
+            torch.from_numpy(next_agent_pos).to(self._dtype).to(self.device)
+        )
+        terminals = torch.from_numpy(terminals).to(self._dtype).to(self.device)
+        old_logprobs = torch.from_numpy(logprobs).to(self._dtype).to(self.device)
 
         raw_states = states.reshape(states.shape[0], -1)
 
