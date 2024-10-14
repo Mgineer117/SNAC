@@ -478,7 +478,6 @@ class Plotter:
                     axis=-1,
                 )
 
-                # rewards[vec_idx, :, :] = reward
                 # center the rew min to 0
                 rew_min = torch.min(reward.reshape(-1))
                 reward -= rew_min

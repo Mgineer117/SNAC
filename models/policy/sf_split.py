@@ -109,7 +109,7 @@ class SF_Split(BasePolicy):
         trj_per_iter: int = 10,
         gamma: float = 0.99,
         phi_loss_r_scaler: float = 1.0,
-        phi_loss_s_scaler: float = 0.1,
+        phi_loss_s_scaler: float = 0.5,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
         device: str = "cpu",

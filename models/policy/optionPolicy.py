@@ -142,19 +142,22 @@ class OP_Controller(BasePolicy):
         if self._algo_name == "SNAC":
             # divide phi in half
             phi_r, phi_s = self.split(phi)
-            next_phi_r, next_phi_s = self.split(next_phi)
+            # next_phi_r, next_phi_s = self.split(next_phi)
 
             if z < int(self._num_options / 2):
-                deltaPhi = next_phi_r - phi_r  # N x F/2
+                # deltaPhi = next_phi_r - phi_r  # N x F/2
+                deltaPhi = phi_r  # N x F/2
             else:
-                deltaPhi = next_phi_s - phi_s  # N x F/2
+                # deltaPhi = next_phi_s - phi_s  # N x F/2
+                deltaPhi = phi_s  # N x F/2
 
         elif self._algo_name == "EigenOption" or self._algo_name == "CoveringOption":
-            deltaPhi = next_phi - phi  # N x F
+            # deltaPhi = next_phi - phi  # N x F
+            deltaPhi = phi  # N x F
 
         # N x 1
         rew = self.multiply_options(deltaPhi, option)
-        rew = rew * 1e3  # the scale is too small so entropy dominates reward
+
         return rew
 
     def learn(self, batch, z):
@@ -236,7 +239,7 @@ class OP_Controller(BasePolicy):
             "OP/actorLoss": torch.mean(actorLoss).item(),
             "OP/valueLoss": torch.mean(valueLoss).item(),
             "OP/entropyLoss": torch.mean(entropyLoss).item(),
-            "OP/intrinsicAvgReward": (torch.mean(rewards) / rewards.shape[0]).item(),
+            "OP/intrinsicTrjReward": (torch.sum(rewards) / rewards.shape[0]).item(),
         }
         loss_dict.update(grad_dict)
 
