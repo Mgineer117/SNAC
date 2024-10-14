@@ -59,7 +59,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--algo-name",
         type=str,
-        default="SNAC",
+        default="EigenOption",
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
@@ -106,13 +106,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=20,  # 50
+        default=10,  # 50
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=500,  # 500
+        default=300,  # 500
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -205,33 +205,33 @@ def get_args(verbose=True):
     parser.add_argument(
         "--num-vector",
         type=int,
-        default=10,
+        default=6,
         help="Must be divided by 2. ex) 10, 20, 30",
     )
 
     # learning rates
     parser.add_argument(
-        "--policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+        "--policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
-        "--critic-lr", type=float, default=7e-4, help="PPO-critic learning rate"
+        "--critic-lr", type=float, default=3e-4, help="PPO-critic learning rate"
     )
     parser.add_argument(
         "--feature-lr",
         type=float,
-        default=4e-4,
+        default=2e-4,
         help="CNN lr where scheduler is used so can be high",
     )
     parser.add_argument(
         "--psi-lr",
         type=float,
-        default=5e-4,
+        default=3e-4,
         help="Intermediate-level model learning rate",
     )
     parser.add_argument(
         "--option-lr",
         type=float,
-        default=3e-4,
+        default=2e-4,
         help="Intermediate-level model learning rate",
     )
 
@@ -245,7 +245,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-2,
+        default=1e-4,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
@@ -303,7 +303,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(

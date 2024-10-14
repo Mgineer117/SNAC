@@ -70,7 +70,7 @@ class SF_Combined(BasePolicy):
         epsilon: float = 0.2,
         anneal: float = 1e-5,
         phi_loss_r_scaler: float = 1.0,
-        phi_loss_s_scaler: float = 0.5,
+        phi_loss_s_scaler: float = 0.1,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
         device: str = "cpu",
@@ -220,7 +220,10 @@ class SF_Combined(BasePolicy):
             if param.requires_grad:  # Only include parameters that require gradients
                 l2_norm += torch.norm(param, p=2)  # L
 
-        phi_loss = conv_dict["loss"] + phi_s_loss + 1e-6 * l2_norm
+        option_loss_scaler = 0.0
+        option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
+
+        phi_loss = conv_dict["loss"] + phi_s_loss + option_loss + 1e-6 * l2_norm
 
         phi_norm = torch.norm(phi.detach())
         return phi_loss, {
@@ -228,6 +231,7 @@ class SF_Combined(BasePolicy):
             "loss": conv_dict["loss"],
             "phi_r_loss": self.dummy,
             "phi_s_loss": phi_s_loss,
+            "option_loss": option_loss,
             "phi_norm": phi_norm,
             "phi_regul": 1e-6 * l2_norm,
         }
@@ -340,6 +344,7 @@ class SF_Combined(BasePolicy):
             "SF/kl_loss": phi_loss_dict["loss"].item(),
             "SF/phi_r_loss": phi_loss_dict["phi_r_loss"].item(),
             "SF/phi_s_loss": phi_loss_dict["phi_s_loss"].item(),
+            "SF/option_loss": phi_loss_dict["option_loss"].item(),
             "SF/phiOutNorm": phi_loss_dict["phi_norm"].item(),
             "SF/phiParamLoss": phi_loss_dict["phi_regul"].item(),
         }

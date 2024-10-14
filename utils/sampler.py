@@ -309,7 +309,6 @@ class OnlineSampler(Base):
             t = 0
             while t < episode_len:
                 # for t in range(episode_len):
-                # sample action
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
@@ -320,7 +319,6 @@ class OnlineSampler(Base):
                     ns = next_obs["observation"]
                     next_agent_pos = next_obs["agent_pos"]
 
-                    t += 1
                     done = term or trunc
 
                 # saving the data
@@ -341,10 +339,13 @@ class OnlineSampler(Base):
                 s = ns
                 agent_pos = next_agent_pos
 
+                t += 1
+
                 if done:
                     # clear log
                     ep_num += 1
                     current_step += t + 1
+                    t = 0
                     break
 
         memory = dict(
@@ -359,6 +360,7 @@ class OnlineSampler(Base):
             terminals=data["terminals"].astype(np.int32),
             logprobs=data["logprobs"].astype(np.float32),
         )
+
         end_idx = (
             current_step if current_step < thread_batch_size else thread_batch_size
         )
@@ -425,13 +427,12 @@ class OnlineSampler(Base):
                     ns = next_obs["observation"]
                     next_agent_pos = next_obs["agent_pos"]
 
-                    t += 1
                     done = term or trunc
 
                     option_termination = metaData["termination"]
 
                     op_rew = rew
-                    gamma_count = 1
+                    step_count = 1
 
                     while not (done or option_termination):
                         option_s = next_obs
@@ -446,12 +447,10 @@ class OnlineSampler(Base):
                         ns = next_obs["observation"]
                         next_agent_pos = next_obs["agent_pos"]
 
-                        t += 1
-
-                        op_rew += 0.99**gamma_count * rew
-                        gamma_count += 1
+                        op_rew += 0.99**step_count * rew
+                        step_count += 1
                         option_termination = option_metaData["termination"]
-                        if gamma_count > 10:
+                        if step_count > 9:
                             option_termination = True
                         done = term or trunc
 
@@ -459,12 +458,12 @@ class OnlineSampler(Base):
 
                 ### Conventional Loop
                 else:
+                    step_count = 1  # dummy
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
                     ns = next_obs["observation"]
                     next_agent_pos = next_obs["agent_pos"]
 
-                    t += 1
                     done = term or trunc
 
                 # saving the data
@@ -485,10 +484,13 @@ class OnlineSampler(Base):
                 s = ns
                 agent_pos = next_agent_pos
 
+                t += step_count
+
                 if done:
                     # clear log
                     ep_num += 1
                     current_step += t + 1
+                    t = 0
                     break
 
         memory = dict(
@@ -578,13 +580,12 @@ class OnlineSampler(Base):
                     ns = next_obs["observation"]
                     next_agent_pos = next_obs["agent_pos"]
 
-                    t += 1
                     done = term or trunc
 
                     option_termination = metaData["termination"]
 
                     op_rew = rew
-                    gamma_count = 1
+                    step_count = 1
 
                     while not (done or option_termination):
                         option_s = next_obs
@@ -599,13 +600,11 @@ class OnlineSampler(Base):
                         ns = next_obs["observation"]
                         next_agent_pos = next_obs["agent_pos"]
 
-                        t += 1
-
-                        op_rew += 0.99**gamma_count * rew
-                        gamma_count += 1
+                        op_rew += 0.99**step_count * rew
+                        step_count += 1
                         option_termination = option_metaData["termination"]
 
-                        if gamma_count >= 9:
+                        if step_count > 9:
                             option_termination = True
 
                         done = term or trunc
@@ -614,14 +613,13 @@ class OnlineSampler(Base):
                     is_first_iter = False
                 ### Conventional Loop
                 else:
+                    step_count = 1
                     # env stepping
                     # forcing random walk after option activation
                     a = torch.randint(0, 4, (1,))
                     next_obs, rew, term, trunc, infos = env.step(a)
                     ns = next_obs["observation"]
                     next_agent_pos = next_obs["agent_pos"]
-
-                    t += 1
 
                     done = term or trunc
 
@@ -643,10 +641,13 @@ class OnlineSampler(Base):
                 s = ns
                 agent_pos = next_agent_pos
 
+                t += step_count
+
                 if done:
                     # clear log
                     ep_num += 1
                     current_step += t + 1
+                    t = 0
                     break
 
         memory = dict(

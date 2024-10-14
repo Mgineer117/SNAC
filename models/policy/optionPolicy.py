@@ -65,7 +65,7 @@ class OP_Controller(BasePolicy):
 
         self.optimizers = {}
 
-        self.optimizers["ppo"] = torch.optim.AdamW(
+        self.optimizers["ppo"] = torch.optim.Adam(
             [
                 {"params": self.optionPolicy.parameters(), "lr": policy_lr},
                 {"params": self.optionCritic.parameters(), "lr": critic_lr},
@@ -142,18 +142,18 @@ class OP_Controller(BasePolicy):
         if self._algo_name == "SNAC":
             # divide phi in half
             phi_r, phi_s = self.split(phi)
-            # next_phi_r, next_phi_s = self.split(next_phi)
+            next_phi_r, next_phi_s = self.split(next_phi)
 
             if z < int(self._num_options / 2):
-                # deltaPhi = next_phi_r - phi_r  # N x F/2
-                deltaPhi = phi_r  # N x F/2
+                deltaPhi = next_phi_r - phi_r  # N x F/2
+                # deltaPhi = phi_r  # N x F/2
             else:
-                # deltaPhi = next_phi_s - phi_s  # N x F/2
-                deltaPhi = phi_s  # N x F/2
+                deltaPhi = next_phi_s - phi_s  # N x F/2
+                # deltaPhi = phi_s  # N x F/2
 
         elif self._algo_name == "EigenOption" or self._algo_name == "CoveringOption":
-            # deltaPhi = next_phi - phi  # N x F
-            deltaPhi = phi  # N x F
+            deltaPhi = next_phi - phi  # N x F
+            # deltaPhi = phi  # N x F
 
         # N x 1
         rew = self.multiply_options(deltaPhi, option)
@@ -179,7 +179,8 @@ class OP_Controller(BasePolicy):
             torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
         )
 
-        raw_states = states.reshape(states.shape[0], -1)
+        n, w, h, c = states.shape
+        raw_states = states.reshape(n, w * h * c)
 
         phi = self.getPhi(states, agent_pos)
         next_phi = self.getPhi(next_states, next_agent_pos)
@@ -199,12 +200,25 @@ class OP_Controller(BasePolicy):
                 tau=self._tau,
                 device=self.device,
             )
+            # print(torch.norm(returns, p=2))
+
+        # print()
+        # print(
+        #     z,
+        #     values[0].clone().detach().cpu().numpy(),
+        #     returns[0].clone().detach().cpu().numpy(),
+        #     (
+        #         values[0].clone().detach().cpu().numpy()
+        #         - returns[0].clone().detach().cpu().numpy()
+        #     )
+        #     ** 2,
+        # )
 
         # K - Loop
         for _ in range(self._K):
             # values, _ = self.optionCritic(phi, z)
             values, _ = self.optionCritic(raw_states, z)
-            valueLoss = F.mse_loss(returns, values)
+            valueLoss = self.mse_loss(returns, values)
 
             # _, metaData = self.optionPolicy(phi, z)
             _, metaData = self.optionPolicy(raw_states, z)
@@ -219,13 +233,14 @@ class OP_Controller(BasePolicy):
             surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * advantages
 
             actorLoss = -torch.min(surr1, surr2)
-            entropyLoss = self._entropy_scaler * entropy
+            # additional 0.1 multiplied since intrinsic reward is too small
+            entropyLoss = 0.1 * self._entropy_scaler * entropy
 
             loss = torch.mean(actorLoss + 0.5 * valueLoss + entropyLoss)
 
             self.optimizers["ppo"].zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=10.0)
             grad_dict = self.compute_gradient_norm(
                 [self.optionPolicy, self.optionCritic],
                 ["optionPolicy", "optionCritic"],
@@ -233,6 +248,13 @@ class OP_Controller(BasePolicy):
                 device=self.device,
             )
             self.optimizers["ppo"].step()
+
+        norm_dict = self.compute_weight_norm(
+            [self.optionPolicy, self.optionCritic],
+            ["policy", "critic"],
+            dir="OP",
+            device=self.device,
+        )
 
         loss_dict = {
             "OP/loss": loss.item(),
@@ -242,6 +264,7 @@ class OP_Controller(BasePolicy):
             "OP/intrinsicTrjReward": (torch.mean(rewards) / rewards.shape[0]).item(),
         }
         loss_dict.update(grad_dict)
+        loss_dict.update(norm_dict)
 
         t1 = time.time()
         self.eval()

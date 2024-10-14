@@ -92,7 +92,14 @@ class OptionCritic(nn.Module):
         return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
 
     def forward(self, x: torch.Tensor, z: int):
-        value = self.models[z](x.clone())
+        value = self.models[z](x)
+        # for name, param in self.models[z].named_parameters():
+        #     if "weight" in name:
+        #         print(torch.norm(param.data, p=2).detach().cpu().numpy(), end=" ")
+        #     if "bias" in name:
+        #         print(torch.norm(param.data, p=2).detach().cpu().numpy(), end=" ")
+        # print(torch.norm(value, p=2).clone().detach().cpu().numpy())
+
         return value, {"z": z}
 
 
