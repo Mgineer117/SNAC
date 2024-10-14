@@ -1,8 +1,8 @@
 {
     "project": "TEST",
-    "logdir": "log/train_log/10_11-c1a6",
-    "group": "10_11-c1a6",
-    "name": "SNAC-CtF1v1-c1a6-seed:1",
+    "logdir": "log/train_log/10_12-0578",
+    "group": "10_12-0578",
+    "name": "SNAC-CtF1v1-0578-seed:1",
     "algo_name": "SNAC",
     "log_interval": 1,
     "env_seed": 0,
@@ -14,7 +14,7 @@
         5
     ],
     "env_name": "CtF1v1",
-    "SF_epoch": 100,
+    "SF_epoch": 250,
     "PPO_epoch": 500,
     "RP_epoch": 0,
     "OP_epoch": 50,
