@@ -219,7 +219,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--feature-lr",
         type=float,
-        default=6e-4,
+        default=4e-4,
         help="CNN lr where scheduler is used so can be high",
     )
     parser.add_argument(
