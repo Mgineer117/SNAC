@@ -94,7 +94,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=500,  # 100
+        default=300,  # 300
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -106,7 +106,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=50,  # 50
+        default=20,  # 50
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(

@@ -239,7 +239,7 @@ class OP_Controller(BasePolicy):
             "OP/actorLoss": torch.mean(actorLoss).item(),
             "OP/valueLoss": torch.mean(valueLoss).item(),
             "OP/entropyLoss": torch.mean(entropyLoss).item(),
-            "OP/intrinsicTrjReward": (torch.sum(rewards) / rewards.shape[0]).item(),
+            "OP/intrinsicTrjReward": (torch.mean(rewards) / rewards.shape[0]).item(),
         }
         loss_dict.update(grad_dict)
 
