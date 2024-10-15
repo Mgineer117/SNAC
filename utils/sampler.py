@@ -94,7 +94,7 @@ class Base:
         )
         return data
 
-    def set_any_seed(self, env_seed, seed):
+    def set_any_seed(self, seed, pid):
         """
         This saves current seed info and calls after stochastic action selection.
         -------------------------------------------------------------------------
@@ -102,7 +102,7 @@ class Base:
         Without this, the samples from each multiprocessor will be same since the seed was fixed
         """
 
-        temp_seed = env_seed + seed
+        temp_seed = seed + pid
 
         # Set the temporary seed
         torch.manual_seed(temp_seed)
@@ -295,7 +295,7 @@ class OnlineSampler(Base):
 
         if queue is not None:
             # Apply different seeds for multiprocessor's action stochacity
-            self.set_any_seed(env_seed, seed)
+            self.set_any_seed(seed, pid)
 
         while current_step < thread_batch_size:
             if ep_num >= episode_num:
@@ -399,7 +399,7 @@ class OnlineSampler(Base):
 
         if queue is not None:
             # Apply different seeds for multiprocessor's action stochacity
-            self.set_any_seed(env_seed, seed)
+            self.set_any_seed(seed, pid)
 
         while current_step < thread_batch_size:
             if ep_num >= episode_num:
@@ -551,7 +551,7 @@ class OnlineSampler(Base):
 
         if queue is not None:
             # Apply different seeds for multiprocessor's action stochacity
-            self.set_any_seed(env_seed, seed)
+            self.set_any_seed(seed, pid)
 
         while current_step < thread_batch_size:
             if ep_num >= episode_num:

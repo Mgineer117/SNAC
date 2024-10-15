@@ -106,7 +106,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=10,  # 50
+        default=20,  # 50
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -303,7 +303,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=True,
+        default=False,
         help="it imports previously trained model",
     )
     parser.add_argument(
