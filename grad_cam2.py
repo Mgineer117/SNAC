@@ -158,7 +158,7 @@ def run_loop(grid, pos, target="s"):
 
         img = grid.clone()
 
-        img[:, x.long(), y.long(), 1] = 1
+        img[:, x.long(), y.long(), 1] = 2
 
         # do grad-cam
         out = gradCam(img, target=target)

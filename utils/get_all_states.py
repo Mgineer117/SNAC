@@ -34,12 +34,12 @@ def get_grid_tensor2(env, env_seed):
 
     grid_tensor = obs
 
-    loc = np.where(grid_tensor[:, :, 1] == 1)
+    loc = np.where(grid_tensor[:, :, 1] == 2)
     grid_tensor[loc[0], loc[1], 1] = 0
     env.close()
 
     x_coords, y_coords = np.where(
-        (grid_tensor[:, :, 0] != 0) & (grid_tensor[:, :, 1] != 2)
+        (grid_tensor[:, :, 0] != 0) & (grid_tensor[:, :, 1] != 1)
     )  # find idx where not wall
 
     return grid_tensor, (x_coords, y_coords), loc
