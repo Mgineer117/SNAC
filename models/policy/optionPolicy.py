@@ -205,7 +205,7 @@ class OP_Controller(BasePolicy):
             surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * advantages
 
             actorLoss = -torch.min(surr1, surr2)
-            entropyLoss = self._entropy_scaler * entropy
+            entropyLoss = 0.1 * self._entropy_scaler * entropy
 
             loss = torch.mean(actorLoss + 0.5 * valueLoss + entropyLoss)
 
