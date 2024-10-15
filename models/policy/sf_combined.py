@@ -220,7 +220,7 @@ class SF_Combined(BasePolicy):
             if param.requires_grad:  # Only include parameters that require gradients
                 l2_norm += torch.norm(param, p=2)  # L
 
-        option_loss_scaler = 0.0
+        option_loss_scaler = 1.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
 
         phi_loss = conv_dict["loss"] + phi_s_loss + option_loss + 1e-6 * l2_norm
