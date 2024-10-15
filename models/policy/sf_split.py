@@ -240,7 +240,12 @@ class SF_Split(BasePolicy):
             if param.requires_grad:  # Only include parameters that require gradients
                 l2_norm += torch.norm(param, p=2)  # L
 
-        phi_loss = conv_dict["loss"] + phi_r_loss + phi_s_loss + 1e-5 * l2_norm
+        option_loss_scaler = 1.0
+        option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
+
+        phi_loss = (
+            conv_dict["loss"] + phi_r_loss + phi_s_loss + 1e-5 * l2_norm + option_loss
+        )
 
         phi_norm = torch.norm(phi.detach())
         return phi_loss, {
@@ -248,6 +253,7 @@ class SF_Split(BasePolicy):
             "loss": conv_dict["loss"],
             "phi_r_loss": phi_r_loss,
             "phi_s_loss": phi_s_loss,
+            "option_loss": option_loss,
             "phi_norm": phi_norm,
         }
 
@@ -358,6 +364,7 @@ class SF_Split(BasePolicy):
             "SF/kl_loss": phi_loss_dict["loss"].item(),
             "SF/phi_r_loss": phi_loss_dict["phi_r_loss"].item(),
             "SF/phi_s_loss": phi_loss_dict["phi_s_loss"].item(),
+            "SF/option_loss": phi_loss_dict["option_loss"].item(),
             "SF/phiOutNorm": phi_loss_dict["phi_norm"].item(),
         }
         loss_dict.update(norm_dict)

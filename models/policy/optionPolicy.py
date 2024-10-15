@@ -147,7 +147,6 @@ class OP_Controller(BasePolicy):
 
         # N x 1
         rew = self.multiply_options(deltaPhi, option)
-        # rew = rew * 1e3  # the scale is too small so entropy dominates reward
         return rew
 
     def learn(self, batch, z):
@@ -155,20 +154,20 @@ class OP_Controller(BasePolicy):
         t0 = time.time()
 
         # Ingredients
-        (
-            states,
-            features,
-            actions,
-            _,
-            next_states,
-            rewards,
-            terminals,
-            old_logprobs,
-        ) = self.preprocess_batch(batch, self.device)
+        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
+        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
+        next_states = (
+            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
+        )
+        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
+        old_logprobs = (
+            torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
+        )
 
-        raw_states = states.reshape(states.shape[0], -1)
+        n, w, h, c = states.shape
+        raw_states = states.reshape(n, w * h * c)
 
-        phi = features
+        phi = self.getPhi(states)
         next_phi = self.getPhi(next_states)
 
         rewards = self._intricsicReward(phi, next_phi, z)
@@ -221,6 +220,13 @@ class OP_Controller(BasePolicy):
             )
             self.optimizers["ppo"].step()
 
+        norm_dict = self.compute_weight_norm(
+            [self.optionPolicy, self.optionCritic],
+            ["policy", "critic"],
+            dir="OP",
+            device=self.device,
+        )
+
         loss_dict = {
             "OP/loss": loss.item(),
             "OP/actorLoss": torch.mean(actorLoss).item(),
@@ -229,6 +235,7 @@ class OP_Controller(BasePolicy):
             "OP/intrinsicAvgReward": (torch.mean(rewards) / rewards.shape[0]).item(),
         }
         loss_dict.update(grad_dict)
+        loss_dict.update(norm_dict)
 
         t1 = time.time()
         self.eval()

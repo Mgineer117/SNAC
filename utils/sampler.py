@@ -313,7 +313,7 @@ class OnlineSampler(Base):
 
                     # env stepping
                     ns, rew, term, trunc, infos = env.step(a)
-                    t += 1
+
                     done = term or trunc
 
                 # saving the data
@@ -329,11 +329,13 @@ class OnlineSampler(Base):
                 )
 
                 s = ns
+                t += 1
 
                 if done:
                     # clear log
                     ep_num += 1
                     current_step += t + 1
+                    t = 0
                     break
 
         memory = dict(
@@ -407,13 +409,12 @@ class OnlineSampler(Base):
                 ### Create an Option Loop
                 if metaData["is_option"]:
                     ns, rew, term, trunc, infos = env.step(a)
-                    t += 1
                     done = term or trunc
 
                     option_termination = metaData["termination"]
 
                     op_rew = rew
-                    gamma_count = 1
+                    step_count = 1
 
                     while not (done or option_termination):
                         option_s = ns
@@ -425,12 +426,11 @@ class OnlineSampler(Base):
                         option_a = option_a.cpu().numpy().squeeze()
 
                         ns, rew, term, trunc, infos = env.step(option_a)
-                        t += 1
 
-                        op_rew += 0.99**gamma_count * rew
-                        gamma_count += 1
+                        op_rew += 0.99**step_count * rew
+                        step_count += 1
                         option_termination = option_metaData["termination"]
-                        if gamma_count > 10:
+                        if step_count > 9:
                             option_termination = True
                         done = term or trunc
 
@@ -439,9 +439,9 @@ class OnlineSampler(Base):
 
                 ### Conventional Loop
                 else:
+                    step_count = 1
                     # env stepping
                     ns, rew, term, trunc, infos = env.step(a)
-                    t += 1
                     done = term or trunc
 
                 # saving the data
@@ -457,11 +457,13 @@ class OnlineSampler(Base):
                 )
 
                 s = ns
+                t += step_count
 
                 if done:
                     # clear log
                     ep_num += 1
                     current_step += t + 1
+                    t = 0
                     break
 
         memory = dict(
@@ -545,13 +547,12 @@ class OnlineSampler(Base):
                 ### Create an Option Loop
                 if is_first_iter:
                     ns, rew, term, trunc, infos = env.step(a)
-                    t += 1
                     done = term or trunc
 
                     option_termination = metaData["termination"]
 
                     op_rew = rew
-                    gamma_count = 1
+                    step_count = 1
 
                     while not (done or option_termination):
                         option_s = ns
@@ -563,13 +564,12 @@ class OnlineSampler(Base):
                         option_a = option_a.cpu().numpy().squeeze()
 
                         ns, rew, term, trunc, infos = env.step(option_a)
-                        t += 1
 
-                        op_rew += 0.99**gamma_count * rew
-                        gamma_count += 1
+                        op_rew += 0.99**step_count * rew
+                        step_count += 1
                         option_termination = option_metaData["termination"]
 
-                        if gamma_count >= 9:
+                        if step_count > 9:
                             option_termination = True
 
                         done = term or trunc
@@ -578,11 +578,11 @@ class OnlineSampler(Base):
                     is_first_iter = False
                 ### Conventional Loop
                 else:
+                    step_count = 1
                     # env stepping
                     # forcing random walk after option activation
                     a = torch.randint(0, 4, (1,))
                     ns, rew, term, trunc, infos = env.step(a)
-                    t += 1
 
                     done = term or trunc
 
@@ -599,11 +599,13 @@ class OnlineSampler(Base):
                 )
 
                 s = ns
+                t += step_count
 
                 if done:
                     # clear log
                     ep_num += 1
                     current_step += t + 1
+                    t = 0
                     break
 
         memory = dict(
