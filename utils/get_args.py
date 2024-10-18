@@ -94,7 +94,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=300,  # 300
+        default=500,  # 300
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -193,13 +193,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--conv-fc-dim",
         type=int,
-        default=512,
+        default=1024,
         help="This is a dimension of FCL that decodes the output of CNN",
     )
     parser.add_argument(
         "--sf-dim",
         type=int,
-        default=64,
+        default=128,
         help="This is an feature dimension thus option dimension. 32 / 64",
     )
     parser.add_argument(

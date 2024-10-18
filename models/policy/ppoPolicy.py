@@ -158,17 +158,7 @@ class PPO_Learner(BasePolicy):
             entropyLoss = self._entropy_scaler * entropy
 
             loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
-            # print(
-            #     old_logprobs.shape,
-            #     logprobs.shape,
-            #     ratios.shape,
-            #     surr1.shape,
-            #     surr2.shape,
-            #     actorLoss.shape,
-            #     entropyLoss.shape,
-            #     loss.shape,
-            # )
-            # step the optimizer
+
             self.optimizer.zero_grad()
             loss.backward()
             # torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=20.0)
@@ -185,6 +175,7 @@ class PPO_Learner(BasePolicy):
             "PPO/actorLoss": torch.mean(actorLoss).item(),
             "PPO/valueLoss": torch.mean(valueLoss).item(),
             "PPO/entropyLoss": torch.mean(entropyLoss).item(),
+            "PPO/trainAvgReward": (torch.sum(rewards) / rewards.shape[0]).item(),
         }
         loss_dict.update(grad_dict)
 

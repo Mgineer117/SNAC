@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 import gymnasium as gym
 
 from models.evaulators.base_evaluator import DotDict
-from gym_multigrid.envs.fourrooms import FourRooms
+
+# from gym_multigrid.envs.fourrooms import FourRooms
+from gym_multigrid.envs.lavarooms import FourRooms2 as FourRooms
 
 from utils import *
 
@@ -22,8 +24,13 @@ class GradCam(nn.Module):
 
         # get the pretrained VGG19 network
         self.feaNet = sf_network.feaNet
+        self.options = sf_network._options
         self.preGrad = sf_network.feaNet.pre_grad_cam
         self.postGrad = sf_network.feaNet.post_grad_cam
+
+        self.multiply_options = lambda x, y: torch.sum(
+            torch.mul(x, y), axis=-1, keepdim=True
+        )
 
         self.algo_name = algo_name
 
@@ -45,6 +52,8 @@ class GradCam(nn.Module):
         # apply the remaining pooling
         if self.algo_name == "SNAC":
             x_r, x_s = torch.split(x, x.size(-1) // 2, dim=-1)
+            reward = self.multiply_options(x_r, self.options)
+            reward = reward[0][0].detach().numpy()
             x = torch.sum(x_s, dim=-1)
             if target == "s":
                 x = torch.sum(x_s, dim=-1)
@@ -53,8 +62,9 @@ class GradCam(nn.Module):
             else:
                 raise ValueError(f"Unknown target: {target}")
         else:
+            reward = 0
             x = torch.sum(x)
-        return x
+        return x, reward
 
     # method for the gradient extraction
     def get_activations_gradient(self):
@@ -88,7 +98,7 @@ def get_grid(env, args):
     return grid, pos
 
 
-def plot(img, heatmap, i):
+def plot(img, heatmap, reward, i):
     img = img.numpy()
     heatmap = heatmap.numpy()
 
@@ -110,7 +120,7 @@ def plot(img, heatmap, i):
     superimposed_img = heatmap * alpha + img[0, :, :, 0] * (1 - alpha)
 
     axes[2].matshow(superimposed_img)
-    axes[2].set_title("Super-imposed")
+    axes[2].set_title(f"Super-imposed with reward: {reward:1f}")
 
     # draw the heatmap
     plt.axis("off")
@@ -129,7 +139,7 @@ def run_loop(grid, pos, target="s"):
 
         # do grad-cam
         # do grad-cam
-        out = gradCam(img, pos[i, :].unsqueeze(0), target=target)
+        out, reward = gradCam(img, pos[i, :].unsqueeze(0), target=target)
         out.backward()
 
         gradients = gradCam.get_activations_gradient()
@@ -148,7 +158,7 @@ def run_loop(grid, pos, target="s"):
 
         heatmap = (heatmap - min_val) / (max_val - min_val + 1e-8)
 
-        plot(img, heatmap, i)
+        plot(img, heatmap, reward, i)
 
 
 if __name__ == "__main__":
@@ -157,14 +167,14 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.grid_size = 13
+    args.grid_size = 9
     args.device = torch.device("cpu")
 
     # call sf
     args.import_sf_model = True
     sf_network = call_sfNetwork(args)
     gradCam = GradCam(sf_network=sf_network, algo_name=args.algo_name)
-    target = "s"
+    target = "r"
     print(f"target Algorithm: {args.algo_name} | target: {target}")
 
     # call env

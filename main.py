@@ -11,7 +11,6 @@ from algorithms.EigenOption import EigenOption
 from algorithms.CoveringOption import CoveringOption
 from algorithms.PPO import PPO
 from algorithms.FeatureTrain import FeatureTrain
-from gym_multigrid.envs.fourrooms import FourRooms
 
 from utils import *
 

@@ -270,13 +270,14 @@ def get_eigenvectors(
         option_vals, options, metaData = cluster_vecvtors(
             S_list, V_list, k=int(args.num_vector / 2)
         )  # replacing original V with cluster centroids
-        plotter.plotClusteredVectors(
-            V_list=V_list,
-            centroids=metaData["centroids_list"],
-            labels=metaData["labels_list"],
-            names=names,
-            dir=plotter.sf_path,
-        )
+        if draw_map:
+            plotter.plotClusteredVectors(
+                V_list=V_list,
+                centroids=metaData["centroids_list"],
+                labels=metaData["labels_list"],
+                names=names,
+                dir=plotter.sf_path,
+            )
     elif args.algo_name == "EigenOption":
         print(
             f"Selecting top {args.num_vector/ 2} vector!!! | Total options: {args.num_vector}"

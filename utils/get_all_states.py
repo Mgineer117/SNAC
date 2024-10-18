@@ -7,22 +7,33 @@ from utils.wrappers import NoStateDictWrapper
 from minigrid.core.grid import Grid
 
 
-def get_grid_tensor(env, env_seed):
+def get_grid_tensor(env, env_seed, target="agent"):
     """
     Can be extended to the multigrid by removing multiple agents
+    target: relocation of agent or goal
     """
     obs, _ = env.reset(seed=env_seed)
     grid_tensor = obs["observation"]
 
-    loc = np.where(grid_tensor[:, :, 0] == 10)
-    grid_tensor[loc[0], loc[1], 0] = 1
-    # s[loc[0], loc[1], 1] = 0
-    # s[loc[0], loc[1], 2] = 0
-    env.close()
+    if target == "agent":
+        loc = np.where(grid_tensor[:, :, 0] == 10)
+        grid_tensor[loc[0], loc[1], 0] = 1
+        env.close()
 
-    x_coords, y_coords = np.where(
-        (grid_tensor[:, :, 0] != 2) & (grid_tensor[:, :, 0] != 8)
-    )  # find idx where not wall
+        x_coords, y_coords = np.where(
+            (grid_tensor[:, :, 0] != 2) & (grid_tensor[:, :, 0] != 8)
+        )  # find idx where not wall
+
+    elif target == "goal":
+        loc = np.where(grid_tensor[:, :, 0] == 8)
+        grid_tensor[loc[0], loc[1], 0] = 1
+        env.close()
+
+        x_coords, y_coords = np.where(
+            (grid_tensor[:, :, 0] != 2) & (grid_tensor[:, :, 0] != 10)
+        )  # find idx where not wall
+    else:
+        raise ValueError(f"Unknown target relocation {target}")
 
     return grid_tensor, (x_coords, y_coords), loc
 

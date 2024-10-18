@@ -132,7 +132,7 @@ class ConvNetwork(nn.Module):
 
         self.en_feature = MLP(
             input_dim=flat_dim + 2,  # agent pos concat
-            hidden_dims=(fc_dim, fc_dim),
+            hidden_dims=(fc_dim, fc_dim, fc_dim),
             output_dim=sf_dim,
             activation=self.act,
         )
@@ -160,7 +160,12 @@ class ConvNetwork(nn.Module):
 
         # main decoding module
         self.de_concat = MLP(
-            input_dim=2 * fc_dim, hidden_dims=(flat_dim,), activation=self.act
+            input_dim=2 * fc_dim,
+            hidden_dims=(
+                fc_dim,
+                flat_dim,
+            ),
+            activation=self.act,
         )
 
         self.reshape = Reshape(fc_dim, reduced_feature_dim)

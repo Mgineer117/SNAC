@@ -80,13 +80,13 @@ class TrajectoryBuffer:
         temp_trajs = []
 
         if sort == "reward":
-            stack = 0
+            # stack = 0
             for trj in trajs:
                 if np.any(trj["rewards"] != 0):
                     temp_trajs.append(trj)
-                    reward_sum = np.sum(trj["rewards"])
+                    # reward_sum = np.sum(trj["rewards"])
                     # print(f"tfj reward sum: {reward_sum}")
-                    stack += 1
+                    # stack += 1
 
             # print(f"sorted {len(temp_trajs)}/{len(trajs)}")
 

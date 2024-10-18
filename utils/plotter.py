@@ -507,10 +507,11 @@ class Plotter:
             fig = plt.figure(figsize=(18, 6))  # Adjust figsize as needed
 
             # reassign the agent
-            grid_tensor[loc[0], loc[1]] = 10
+            img = grid_tensor.clone()
+            img[loc[0], loc[1]] = 10
 
             ax0 = fig.add_subplot(131)
-            ax0.imshow(grid_tensor * 20)
+            ax0.imshow(img * 20)
             ax0.axis("off")  # Turn off the axis for the image
             ax0.invert_yaxis()  # Invert the y-axis
 

@@ -132,7 +132,7 @@ class OPTrainer:
                 sample_time = 0
                 update_time = 0
                 policy_loss = []
-
+                avgRewDictList = []
                 for z in trange(
                     self.policy._num_options, desc=f"Updating Option", leave=False
                 ):
@@ -143,8 +143,9 @@ class OPTrainer:
                     sample_time += sampleT
 
                     # update params
-                    loss_dict, updateT = self.policy.learn(batch, z)
+                    loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
                     policy_loss.append(loss_dict)
+                    avgRewDictList.append(avgRewDict)
                     update_time += updateT
 
                 loss = self.average_dict_values(policy_loss)
@@ -152,6 +153,8 @@ class OPTrainer:
                 # Logging further info
                 loss["OP/sample_time"] = sample_time
                 loss["OP/update_time"] = update_time
+                for each_dict in avgRewDictList:
+                    loss.update(each_dict)
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 
