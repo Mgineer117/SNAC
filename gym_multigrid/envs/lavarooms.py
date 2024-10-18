@@ -153,7 +153,7 @@ class LavaRooms(MultiGridEnv):
             goal.init_pos, goal.cur_pos = goal_pos
 
         # lava allocation
-        random_lava_positions = random.sample(self.lava_positions, 2)
+        random_lava_positions = random.sample(self.lava_positions, 1)
         for lava_pos in random_lava_positions:
             lava = Lava(self.world)
             self.put_obj(lava, *lava_pos)
@@ -212,7 +212,7 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0  # - 0.99 * (self.step_count / self.max_steps)
+                        rewards += 1.0 - 0.5 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
@@ -225,7 +225,7 @@ class LavaRooms(MultiGridEnv):
                     self.agents[i].pos = fwd_pos
                 else:
                     # rewards -= 0.001
-                    rewards += 0.0
+                    rewards += -0.001
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             # Rotate right
@@ -236,7 +236,7 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0  #  - 0.99 * (self.step_count / self.max_steps)
+                        rewards += 1.0 - 0.5 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
@@ -248,7 +248,7 @@ class LavaRooms(MultiGridEnv):
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards += 0.0
+                    rewards += -0.001
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             # Move forward
@@ -259,7 +259,7 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0  # - 0.99 * (self.step_count / self.max_steps)
+                        rewards += 1.0 - 0.5 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
@@ -271,7 +271,7 @@ class LavaRooms(MultiGridEnv):
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards += 0.0
+                    rewards += -0.001
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             elif actions[i] == self.actions.down:
@@ -281,7 +281,7 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0  # - 0.99 * (self.step_count / self.max_steps)
+                        rewards += 1.0 - 0.5 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
@@ -293,7 +293,7 @@ class LavaRooms(MultiGridEnv):
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards += 0.0
+                    rewards += -0.001
                     # rewards -= (
                     #     np.linalg.norm(
                     #         (np.array(self.goal_positions[0]) - np.array(fwd_pos)),
