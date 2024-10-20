@@ -21,7 +21,9 @@ def get_grid_tensor(env, env_seed, target="agent"):
         env.close()
 
         x_coords, y_coords = np.where(
-            (grid_tensor[:, :, 0] != 2) & (grid_tensor[:, :, 0] != 8)
+            (grid_tensor[:, :, 0] != 2)
+            & (grid_tensor[:, :, 0] != 4)
+            & (grid_tensor[:, :, 0] != 8)
         )  # find idx where not wall
 
     elif target == "goal":
@@ -30,7 +32,9 @@ def get_grid_tensor(env, env_seed, target="agent"):
         env.close()
 
         x_coords, y_coords = np.where(
-            (grid_tensor[:, :, 0] != 2) & (grid_tensor[:, :, 0] != 10)
+            (grid_tensor[:, :, 0] != 2)
+            & (grid_tensor[:, :, 0] != 4)
+            & (grid_tensor[:, :, 0] != 8)
         )  # find idx where not wall
     else:
         raise ValueError(f"Unknown target relocation {target}")

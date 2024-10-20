@@ -219,7 +219,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--feature-lr",
         type=float,
-        default=2e-4,
+        default=1e-4,
         help="CNN lr where scheduler is used so can be high",
     )
     parser.add_argument(
@@ -231,7 +231,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--option-lr",
         type=float,
-        default=2e-4,
+        default=1e-4,
         help="Intermediate-level model learning rate",
     )
 

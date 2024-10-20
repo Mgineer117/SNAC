@@ -59,7 +59,7 @@ if __name__ == "__main__":
         config = json.load(json_file)
     args = DotDict(config)
     args.grid_size = 9
-    args.num_vector = 12
+    args.num_vector = 32
     args.device = torch.device("cpu")
 
     # call sf

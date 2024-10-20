@@ -508,7 +508,7 @@ class Plotter:
 
             # reassign the agent
             img = grid_tensor.clone()
-            img[loc[0], loc[1]] = 10
+            # img[loc[0], loc[1]] = 10
 
             ax0 = fig.add_subplot(131)
             ax0.imshow(img * 20)

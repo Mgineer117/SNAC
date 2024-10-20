@@ -9,7 +9,8 @@ import gymnasium as gym
 from models.evaulators.base_evaluator import DotDict
 
 # from gym_multigrid.envs.fourrooms import FourRooms
-from gym_multigrid.envs.lavarooms import FourRooms2 as FourRooms
+from gym_multigrid.envs.fourrooms import FourRooms
+from gym_multigrid.envs.lavarooms import LavaRooms
 
 from utils import *
 
@@ -76,7 +77,7 @@ class GradCam(nn.Module):
 
 
 def get_env(args):
-    env = FourRooms(
+    env = LavaRooms(
         grid_size=(args.grid_size, args.grid_size),
         max_steps=args.episode_len,
         tile_size=args.img_tile_size,
@@ -105,21 +106,21 @@ def plot(img, heatmap, reward, i):
     ### Figure
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    axes[0].imshow(img[0, :, :, 0])
+    axes[0].imshow(np.flipud(img[0, :, :, 0]))
     axes[0].set_title("Original")
 
     # Plot the second heatmap
-    axes[1].matshow(heatmap)
+    axes[1].matshow(np.flipud(heatmap))
     axes[1].set_title("Heatmap")
     axes[1].colorbar = plt.colorbar(plt.cm.ScalarMappable(), ax=axes[1])
 
     # Plot the second heatmap
     alpha = 0.8
-    heatmap = cv2.resize(heatmap, (img.shape[2], img.shape[1]))
+    heatmap = cv2.resize(np.flipud(heatmap), (img.shape[2], img.shape[1]))
     # heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
     superimposed_img = heatmap * alpha + img[0, :, :, 0] * (1 - alpha)
 
-    axes[2].matshow(superimposed_img)
+    axes[2].matshow(np.flipud(superimposed_img))
     axes[2].set_title(f"Super-imposed with reward: {reward:1f}")
 
     # draw the heatmap
@@ -137,7 +138,6 @@ def run_loop(grid, pos, target="s"):
 
         img[:, x.long(), y.long(), 0] = 10
 
-        # do grad-cam
         # do grad-cam
         out, reward = gradCam(img, pos[i, :].unsqueeze(0), target=target)
         out.backward()
