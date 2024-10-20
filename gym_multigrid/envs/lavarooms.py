@@ -297,7 +297,7 @@ class LavaRooms(MultiGridEnv):
                     # rewards -= (
                     #     np.linalg.norm(
                     #         (np.array(self.goal_positions[0]) - np.array(fwd_pos)),
-                    #         ord=2,
+                    #         ord=2,1.0 - 0.5 * (self.step_count / self.max_steps)
                     #     )
                     #     / 9.0
                     # )
