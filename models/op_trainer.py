@@ -343,7 +343,7 @@ class OPTrainer2:
                 sample_time += sampleT
 
                 # update params
-                loss_dict, updateT = self.policy.learn(batch, z)
+                loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
                 update_time += updateT
 
                 # Logging further info
