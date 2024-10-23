@@ -100,6 +100,10 @@ class HC_Evaluator(Evaluator):
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
+                    # Update the grid
+                    if self.gridCriteria:
+                        self.get_agent_pos(env)
+
                     next_obs, rew, term, trunc, infos = env.step(a)
 
                     done = term or trunc
@@ -115,6 +119,10 @@ class HC_Evaluator(Evaluator):
                         option_a, _ = policy(option_s, option_idx, deterministic=True)
                         option_a = option_a.cpu().numpy().squeeze()
 
+                        # Update the grid
+                        if self.gridCriteria:
+                            self.get_agent_pos(env)
+
                         next_obs, rew, term, trunc, infos = env.step(option_a)
 
                         op_rew += 0.99**step_count * rew
@@ -129,6 +137,10 @@ class HC_Evaluator(Evaluator):
 
                 ### Conventional Loop
                 else:
+                    # Update the grid
+                    if self.gridCriteria:
+                        self.get_agent_pos(env)
+
                     step_count = 1  # dummy
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
@@ -140,14 +152,6 @@ class HC_Evaluator(Evaluator):
                 ep_reward += rew
                 ep_length += step_count
 
-                if self.gridCriteria:
-                    if hasattr(env.env, "agent_pos"):
-                        self.path.append(env.get_wrapper_attr("agent_pos"))
-                    elif hasattr(env.env, "agents"):
-                        self.path.append(env.get_wrapper_attr("agents")[0].pos)
-                    else:
-                        raise ValueError("No agent position information.")
-
                 # Update the render
                 if self.renderCriteria:
                     img = env.render()
@@ -155,6 +159,9 @@ class HC_Evaluator(Evaluator):
 
                 if done:
                     if self.gridCriteria:
+                        # final agent pos
+                        self.get_agent_pos(env)
+
                         self.plotter.plotPath(
                             self.grid,
                             self.path,
@@ -204,3 +211,13 @@ class HC_Evaluator(Evaluator):
 
     def init_grid(self, env):
         self.grid = np.copy(env.render()).astype(np.float32) / 255.0
+
+    def get_agent_pos(self, env):
+        # Update the grid
+        if self.gridCriteria:
+            if hasattr(env.env, "agent_pos"):
+                self.path.append(env.get_wrapper_attr("agent_pos"))
+            elif hasattr(env.env, "agents"):
+                self.path.append(env.get_wrapper_attr("agents")[0].pos)
+            else:
+                raise ValueError("No agent position information.")

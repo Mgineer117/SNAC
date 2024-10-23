@@ -83,8 +83,6 @@ class OP_Evaluator(Evaluator):
 
             # env initialization
             obs, _ = env.reset(seed=env_seed)
-            s = obs["observation"]
-            agent_pos = obs["agent_pos"]
 
             if self.gridCriteria:
                 self.init_grid(env)
@@ -95,6 +93,9 @@ class OP_Evaluator(Evaluator):
                     a, phi_dict = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze()
 
+                if self.gridCriteria:
+                    self.get_agent_pos(env)
+
                 # env stepping
                 next_obs, rew, term, trunc, infos = env.step(a)
                 ns = next_obs["observation"]
@@ -103,19 +104,10 @@ class OP_Evaluator(Evaluator):
                 done = term or trunc
 
                 obs = next_obs
-                s = ns
-                agent_pos = next_agent_pos
 
                 ep_reward += rew
                 ep_length += 1
 
-                if self.gridCriteria:
-                    if hasattr(env.env, "agent_pos"):
-                        self.path.append(env.get_wrapper_attr("agent_pos"))
-                    elif hasattr(env.env, "agents"):
-                        self.path.append(env.get_wrapper_attr("agents")[0].pos)
-                    else:
-                        raise ValueError("No agent position information.")
                 # Update the render
                 if self.renderCriteria:
                     img = env.render()
@@ -123,6 +115,9 @@ class OP_Evaluator(Evaluator):
 
                 if done:
                     if self.gridCriteria:
+                        if self.gridCriteria:
+                            self.get_agent_pos(env)
+
                         self.plotter.plotPath(
                             self.grid,
                             self.path,
@@ -243,15 +238,18 @@ class OP_Evaluator2(Evaluator):
                     a, phi_dict = policy(s, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze()
 
+                # Update the grid
+                if self.gridCriteria:
+                    self.get_agent_pos(env)
+
                 ns, rew, term, trunc, _ = env.step(a)
                 done = term or trunc
 
                 s = ns
+
                 ep_reward += rew
                 ep_length += 1
 
-                if self.gridCriteria:
-                    self.path.append(env.get_wrapper_attr("agent_pos"))
                 # Update the render
                 if self.renderCriteria:
                     img = env.render()
@@ -259,6 +257,8 @@ class OP_Evaluator2(Evaluator):
 
                 if done:
                     if self.gridCriteria:
+                        self.get_agent_pos(env)
+
                         self.plotter.plotPath(
                             self.grid,
                             self.path,
@@ -299,3 +299,13 @@ class OP_Evaluator2(Evaluator):
 
     def init_grid(self, env):
         self.grid = np.copy(env.render()).astype(np.float32) / 255.0
+
+    def get_agent_pos(self, env):
+        # Update the grid
+        if self.gridCriteria:
+            if hasattr(env.env, "agent_pos"):
+                self.path.append(env.get_wrapper_attr("agent_pos"))
+            elif hasattr(env.env, "agents"):
+                self.path.append(env.get_wrapper_attr("agents")[0].pos)
+            else:
+                raise ValueError("No agent position information.")

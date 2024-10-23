@@ -25,8 +25,7 @@ class PPO_Evaluator(Evaluator):
         plotter: Plotter,
         testing_env=None,
         dir: str = None,
-        eigenPlot: bool = False,
-        gridPlot: bool = False,
+        gridPlot: bool = True,
         renderPlot: bool = False,
         eval_ep_num: int = 1,
         log_interval: int = 1,
@@ -42,16 +41,11 @@ class PPO_Evaluator(Evaluator):
         self.plotter = plotter
 
         if dir is not None:
-            if eigenPlot:
-                self.eigenPlot = True
-                self.eigenDir = os.path.join(dir, "eigen")
-                os.mkdir(self.eigenDir)
-            else:
-                self.eigenPlot = False
             if gridPlot:
                 self.gridPlot = True
                 self.gridDir = os.path.join(dir, "grid")
                 os.mkdir(self.gridDir)
+                self.path = []
             else:
                 self.gridPlot = False
             if renderPlot:
@@ -62,7 +56,6 @@ class PPO_Evaluator(Evaluator):
             else:
                 self.renderPlot = False
         else:
-            self.eigenPlot = False
             self.gridPlot = False
             self.renderPlot = False
 
@@ -92,7 +85,7 @@ class PPO_Evaluator(Evaluator):
             # env initialization
             s, _ = env.reset(seed=env_seed)
 
-            if self.eigenCriteria:
+            if self.gridCriteria:
                 self.init_grid(env)
 
             done = False
@@ -101,6 +94,10 @@ class PPO_Evaluator(Evaluator):
                     a, phi_dict = policy(s, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze()
 
+                # Update the grid
+                if self.gridCriteria:
+                    self.get_agent_pos(env)
+
                 ns, rew, term, trunc, _ = env.step(a)
                 done = term or trunc
 
@@ -108,47 +105,23 @@ class PPO_Evaluator(Evaluator):
                 ep_reward += rew
                 ep_length += 1
 
-                # Update the grid
-                if self.eigenCriteria:
-                    if hasattr(env.env, "agent_pos"):
-                        agent_pos = env.get_wrapper_attr("agent_pos")
-                    elif hasattr(env.env, "agents"):
-                        agent_pos = env.get_wrapper_attr("agents")[0].pos
-                    else:
-                        raise ValueError("No agent position information.")
-                    self.update_grid(
-                        agent_pos,
-                        phi_dict["phi_r"],
-                        phi_dict["phi_s"],
-                        phi_dict["q"],
-                    )
                 # Update the render
                 if self.renderCriteria:
                     img = env.render()
                     self.recorded_frames.append(img)
 
                 if done:
-                    if self.eigenCriteria:
-                        self.plotter.plotEigenFunction1(
-                            eigenvectors=policy._options[:, idx]
-                            .clone()
-                            .detach()
-                            .numpy()
-                            .T,
-                            dir=self.eigenDir,
-                            epoch=epoch,
-                        )
-
                     if self.gridCriteria:
-                        self.plotter.plotFeature(
+                        # final agent pos
+                        self.get_agent_pos(env)
+
+                        self.plotter.plotPath(
                             self.grid,
-                            self.grid_r,
-                            self.grid_s,
-                            self.grid_v,
-                            self.grid_q,
+                            self.path,
                             dir=self.gridDir,
-                            epoch=epoch,
+                            epoch=str(epoch),
                         )
+                        self.path = []
 
                     if self.renderCriteria:
                         width = self.recorded_frames[0].shape[0]
@@ -177,47 +150,18 @@ class PPO_Evaluator(Evaluator):
 
     def update_render_criteria(self, epoch, num_episodes):
         basisCriteria = epoch % self.log_interval == 0 and num_episodes == 0
-        self.eigenCriteria = basisCriteria and self.eigenPlot
         self.gridCriteria = basisCriteria and self.gridPlot
         self.renderCriteria = basisCriteria and self.renderPlot
 
     def init_grid(self, env):
         self.grid = np.copy(env.render()).astype(np.float32) / 255.0
 
-        self.grid_r = np.zeros(self.grid.shape)
-        self.grid_s = np.zeros(self.grid.shape)
-        self.grid_v = np.zeros(self.grid.shape)
-        self.grid_q = np.zeros(self.grid.shape)
-
-    def update_grid(self, coord, phi_r, phi_s, q):
-        ### create image
-        phi_r, phi_s = phi_r.cpu().numpy(), phi_s.cpu().numpy()
-
-        phi_r = np.sum(phi_r) / phi_r.shape[-1]
-        phi_s = np.sum(phi_s) / phi_s.shape[-1]
-
-        colormap = cm.get_cmap("gray")  # Choose a colormap
-        color_r = colormap(phi_r * 5)[:3]  # Get RGB values
-        color_s = colormap(phi_s * 2)[:3]  # Get RGB values
-        color_q = colormap(q)[:3]  # Get RGB values
-        # coord =
-        coordx = [
-            coord[0] * self.tile_size + 1,
-            coord[0] * self.tile_size + self.tile_size - 1,
-        ]
-        coordy = [
-            coord[1] * self.tile_size + 1,
-            coord[1] * self.tile_size + self.tile_size - 1,
-        ]
-
-        self.grid_r[coordx[0] : coordx[1], coordy[0] : coordy[1], :] = color_r
-        self.grid_s[coordx[0] : coordx[1], coordy[0] : coordy[1], :] = color_s
-        self.grid_v[coordx[0] : coordx[1], coordy[0] : coordy[1], :] += (
-            0.01,
-            0.01,
-            0.01,
-        )
-        self.grid_q[coordx[0] : coordx[1], coordy[0] : coordy[1], :] = color_q
-
-    def plot_options(self, S, V):
-        self.plotter.plotEigenFunctionAll(S.numpy(), V.numpy())
+    def get_agent_pos(self, env):
+        # Update the grid
+        if self.gridCriteria:
+            if hasattr(env.env, "agent_pos"):
+                self.path.append(env.get_wrapper_attr("agent_pos"))
+            elif hasattr(env.env, "agents"):
+                self.path.append(env.get_wrapper_attr("agents")[0].pos)
+            else:
+                raise ValueError("No agent position information.")
