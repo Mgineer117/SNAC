@@ -6,7 +6,7 @@ import random
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.lavarooms import LavaRooms
 
-from gym_multigrid.envs.ctf import Ctf1v1Env
+from gym_multigrid.envs.ctf import Ctf1v1Env, Ctf1v2Env
 from utils import NoStateDictWrapper, get_grid_tensor
 from utils.wrappers import NoStateDictCtfWrapper
 
@@ -44,6 +44,8 @@ def call_env(args):
         observation_option: str = "tensor"
         if args.env_name == "CtF1v1":
             env = Ctf1v1Env(map_path=map_path, observation_option=observation_option)
+        elif args.env_name == "CtF1v2":
+            env = Ctf1v2Env(map_path=map_path, observation_option=observation_option)
         else:
             raise NotImplementedError(f"{args.env_name} not implemented")
         return NoStateDictCtfWrapper(env, tile_size=args.tile_size)
