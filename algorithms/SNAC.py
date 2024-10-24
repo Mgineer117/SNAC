@@ -102,6 +102,7 @@ class SNAC:
             writer=writer,
             training_env=self.env,
             plotter=self.plotter,
+            renderPlot=args.rendering,
             dir=self.hc_path,
             min_option_length=args.min_option_length,
             log_interval=args.log_interval,
