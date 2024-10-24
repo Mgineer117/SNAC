@@ -309,7 +309,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=True,
+        default=False,
         help="it imports previously trained model",
     )
     parser.add_argument(
@@ -321,7 +321,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-op-model",
         type=bool,
-        default=True,
+        default=False,
         help="it imports previously trained model",
     )
     parser.add_argument(
