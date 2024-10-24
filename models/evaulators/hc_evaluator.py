@@ -76,7 +76,6 @@ class HC_Evaluator(Evaluator):
         if queue is not None:
             self.set_any_seed(env_seed, seed)
 
-        option_indices_list = []
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
@@ -182,7 +181,6 @@ class HC_Evaluator(Evaluator):
                         )
                         self.recorded_frames = []
 
-                    option_indices_list.append(option_indices)
                     ep_buffer.append({"reward": ep_reward, "ep_length": ep_length})
 
         reward_list = [ep_info["reward"] for ep_info in ep_buffer]
@@ -194,8 +192,7 @@ class HC_Evaluator(Evaluator):
         if queue is not None:
             queue.put([rew_mean, rew_std, ln_mean, ln_std])
         else:
-            for x in option_indices_list:
-                plt.scatter(np.arange(len(x)), x)
+            plt.scatter(np.arange(len(option_indices)), option_indices)
 
             option_figure_path = os.path.join(self.plotter.hc_path, "option_figure")
             if not os.path.exists(option_figure_path):
