@@ -94,18 +94,31 @@ class LavaRooms(MultiGridEnv):
             )
         ]
 
-        self.doorway_positions = [(6, 4)]
+        self.doorway_positions = [(10, 6), (2, 6)]
         self.vert_wall_positions = [(6, 0), (7, 6)]
-        self.hor_wall_positions = [(0, 4), (4, 4)]
+        self.hor_wall_positions = [(0, 6), (6, 6)]
 
-        self.goal_positions = [(7, 1), (2, 2)]  # (7, 1)
-        self.agent_positions = (1, 7)
+        self.goal_positions = [(6, 3), (1, 1)]  # (7, 1)
+        self.agent_positions = [(6, 9), (1, 11)]
         self.lava_positions = [
-            (4, 5),
-            (4, 6),
-            (4, 7),
-            (6, 6),
-            (6, 7),
+            [
+                (2, 6),
+                (2, 7),
+                (2, 8),
+                (3, 7),
+                (3, 8),
+                (4, 7),
+                (4, 8),
+            ],
+            [
+                (10, 6),
+                (10, 7),
+                (10, 8),
+                (9, 7),
+                (9, 8),
+                (8, 7),
+                (8, 8),
+            ],
         ]
 
         super().__init__(
@@ -154,13 +167,16 @@ class LavaRooms(MultiGridEnv):
         goal.init_pos, goal.cur_pos = self.goal_positions[self.env_seed]
 
         # lava allocation
-        random_lava_positions = random.sample(self.lava_positions, 1)
+        lava_spawn_location = random.sample([0, 1], 1)[0]
+        random_lava_positions = random.sample(
+            self.lava_positions[lava_spawn_location], 3
+        )
         for lava_pos in random_lava_positions:
             lava = Lava(self.world)
             self.put_obj(lava, *lava_pos)
 
         # agent allocation
-        self.place_agent(self.agents[0], pos=self.agent_positions)
+        self.place_agent(self.agents[0], pos=self.agent_positions[self.env_seed])
 
     def reset(
         self,

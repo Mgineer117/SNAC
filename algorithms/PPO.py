@@ -66,6 +66,7 @@ class PPO:
             writer=writer,
             training_env=self.env,
             plotter=self.plotter,
+            renderPlot=args.rendering,
             dir=self.ppo_path,
             log_interval=args.log_interval,
             eval_ep_num=10,

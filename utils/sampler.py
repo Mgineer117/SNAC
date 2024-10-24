@@ -624,7 +624,8 @@ class OnlineSampler(Base):
                     step_count = 1
                     # env stepping
                     # forcing random walk after option activation
-                    a = torch.randint(0, 4, (1,))
+                    a = torch.randint(0, self.action_dim, (1,)).squeeze()
+
                     next_obs, rew, term, trunc, infos = env.step(a)
                     ns = next_obs["observation"]
                     next_agent_pos = next_obs["agent_pos"]
