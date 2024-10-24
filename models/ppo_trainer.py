@@ -54,7 +54,7 @@ class PPOTrainer:
         self.lr_scheduler = lr_scheduler
 
         # initialize the essential training components
-        self.last_max_reward = 0.0
+        self.last_max_reward = -1e10
         self.std_limit = 0.5
         self.num_env_steps = 0
 

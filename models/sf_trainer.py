@@ -61,7 +61,7 @@ class SFTrainer:
         self._eval_episodes = eval_episodes
 
         # initialize the essential training components
-        self.last_max_reward = 0.0
+        self.last_max_reward = -1e10
         self.last_min_std = 0.0
         self.num_env_steps = 0
 
