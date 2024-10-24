@@ -159,6 +159,16 @@ class OP_Evaluator(Evaluator):
     def init_grid(self, env):
         self.grid = np.copy(env.render()).astype(np.float32) / 255.0
 
+    def get_agent_pos(self, env):
+        # Update the grid
+        if self.gridCriteria:
+            if hasattr(env.env, "agent_pos"):
+                self.path.append(env.get_wrapper_attr("agent_pos"))
+            elif hasattr(env.env, "agents"):
+                self.path.append(env.get_wrapper_attr("agents")[0].pos)
+            else:
+                raise ValueError("No agent position information.")
+
 
 class OP_Evaluator2(Evaluator):
     def __init__(
@@ -309,3 +319,4 @@ class OP_Evaluator2(Evaluator):
                 self.path.append(env.get_wrapper_attr("agents")[0].pos)
             else:
                 raise ValueError("No agent position information.")
+
