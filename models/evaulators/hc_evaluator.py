@@ -95,7 +95,8 @@ class HC_Evaluator(Evaluator):
                     a, metaData = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze()
                     option_idx = metaData["z"]  # start feeding option_index
-                    option_indices.append(option_idx)
+                    if self.renderCriteria:
+                        option_indices.append(option_idx)
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
@@ -192,13 +193,14 @@ class HC_Evaluator(Evaluator):
         if queue is not None:
             queue.put([rew_mean, rew_std, ln_mean, ln_std])
         else:
-            plt.scatter(np.arange(len(option_indices)), option_indices)
+            if self.renderCriteria:
+                plt.scatter(np.arange(len(option_indices)), option_indices)
 
-            option_figure_path = os.path.join(self.plotter.hc_path, "option_figure")
-            if not os.path.exists(option_figure_path):
-                os.mkdir(option_figure_path)
-            plt.savefig(f"{option_figure_path}/{epoch}_{num_episodes}.png")
-            plt.close()
+                option_figure_path = os.path.join(self.plotter.hc_path, "option_figure")
+                if not os.path.exists(option_figure_path):
+                    os.mkdir(option_figure_path)
+                plt.savefig(f"{option_figure_path}/{epoch}_{num_episodes}.png")
+                plt.close()
             return rew_mean, rew_std, ln_mean, ln_std
 
     def update_render_criteria(self, epoch, num_episodes):

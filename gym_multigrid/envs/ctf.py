@@ -1101,3 +1101,54 @@ class Ctf1v2Env(CtfMvNEnv):
         self, action: int
     ) -> tuple[Observation, float, bool, bool, dict[str, float]]:
         return super().step([action])
+
+
+class Ctf1v3Env(CtfMvNEnv):
+    """
+    Environment for capture the flag game with one ego (blue) agent and one enemy (red) agent.
+    """
+
+    def __init__(
+        self,
+        map_path: str,
+        enemy_policies: CtfPolicyT = RwPolicy(),
+        battle_range: float = 1,
+        randomness: float = 0.75,
+        flag_reward: float = 1,
+        battle_reward_ratio: float = 0.25,
+        obstacle_penalty_ratio: float = 0,
+        step_penalty_ratio: float = 0.01,
+        max_steps: int = 100,
+        observation_option: ObservationOption = "positional",
+        observation_scaling: float = 1,
+        render_mode: Literal["human", "rgb_array"] = "rgb_array",
+        uncached_object_types: list[str] = ["red_agent", "blue_agent"],
+    ) -> None:
+
+        num_blue_agents: Final[int] = 1
+        num_red_agents: Final[int] = 3
+        super().__init__(
+            map_path,
+            num_blue_agents,
+            num_red_agents,
+            enemy_policies,
+            battle_range,
+            randomness,
+            flag_reward,
+            battle_reward_ratio,
+            obstacle_penalty_ratio,
+            step_penalty_ratio,
+            max_steps,
+            observation_option,
+            observation_scaling,
+            render_mode,
+            uncached_object_types,
+        )
+
+        self.action_space = spaces.Discrete(len(self.actions_set))
+        self.ac_dim = self.action_space.n
+
+    def step(
+        self, action: int
+    ) -> tuple[Observation, float, bool, bool, dict[str, float]]:
+        return super().step([action])

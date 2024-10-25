@@ -6,7 +6,7 @@ import random
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.lavarooms import LavaRooms
 
-from gym_multigrid.envs.ctf import Ctf1v1Env, Ctf1v2Env
+from gym_multigrid.envs.ctf import Ctf1v1Env, Ctf1v2Env, Ctf1v3Env
 from utils import NoStateDictWrapper, get_grid_tensor
 from utils.wrappers import NoStateDictCtfWrapper
 
@@ -38,7 +38,7 @@ def call_env(args):
         )
         return NoStateDictWrapper(env, tile_size=args.tile_size)
 
-    elif args.env_name == "CtF1v1" or "CtF1v2":
+    elif args.env_name == "CtF1v1" or "CtF1v2" or "CtF1v3":
         args.draw_map = False
         args.a_dim = 5
         map_path: str = "assets/ctf_avoid_obj.txt"
@@ -47,6 +47,8 @@ def call_env(args):
             env = Ctf1v1Env(map_path=map_path, observation_option=observation_option)
         elif args.env_name == "CtF1v2":
             env = Ctf1v2Env(map_path=map_path, observation_option=observation_option)
+        elif args.env_name == "CtF1v3":
+            env = Ctf1v3Env(map_path=map_path, observation_option=observation_option)
         else:
             raise NotImplementedError(f"{args.env_name} not implemented")
         return NoStateDictCtfWrapper(env, tile_size=args.tile_size)
