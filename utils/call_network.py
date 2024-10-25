@@ -111,6 +111,7 @@ def get_conv_layer(args):
         args.env_name == "CtF1v1"
         or args.env_name == "CtF1v2"
         or args.env_name == "CtF1v3"
+        or args.env_name == "CtF1v4"
     ):
         encoder_conv_layers = [
             {
