@@ -107,7 +107,11 @@ def get_conv_layer(args):
                 "out_filters": 128,
             },  # Halve spatial dimensions again
         ]
-    elif args.env_name == "CtF1v1" or args.env_name == "CtF1v2":
+    elif (
+        args.env_name == "CtF1v1"
+        or args.env_name == "CtF1v2"
+        or args.env_name == "CtF1v3"
+    ):
         encoder_conv_layers = [
             {
                 "type": "conv",

@@ -52,7 +52,7 @@ class LavaRooms(MultiGridEnv):
     def __init__(
         self,
         env_seed: int = 0,
-        grid_size: tuple = (9, 9),
+        grid_size: tuple = (13, 13),
         agent_view_size: int = 7,
         max_steps: int = 100,
         tile_size: int = 20,
@@ -94,30 +94,38 @@ class LavaRooms(MultiGridEnv):
             )
         ]
 
-        self.doorway_positions = [(10, 6), (2, 6)]
+        self.doorway_positions = [(10, 6)]
         self.vert_wall_positions = [(6, 0), (7, 6)]
         self.hor_wall_positions = [(0, 6), (6, 6)]
 
         self.goal_positions = [(6, 3), (1, 1)]  # (7, 1)
-        self.agent_positions = [(6, 9), (1, 11)]
+        self.agent_positions = [(1, 9), (1, 11)]
         self.lava_positions = [
+            # [
+            #     (2, 6),
+            #     (2, 7),
+            #     (2, 8),
+            #     (3, 7),
+            #     (3, 8),
+            #     (4, 7),
+            #     (4, 8),
+            # ],
             [
-                (2, 6),
-                (2, 7),
-                (2, 8),
-                (3, 7),
-                (3, 8),
-                (4, 7),
-                (4, 8),
-            ],
-            [
-                (10, 6),
-                (10, 7),
-                (10, 8),
+                # (10, 6),
+                # (10, 7),
+                # (10, 8),
                 (9, 7),
-                (9, 8),
-                (8, 7),
-                (8, 8),
+                (9, 9),
+                (9, 10),
+                (9, 11),
+                (7, 7),
+                (7, 8),
+                (7, 10),
+                (7, 11),
+                (5, 7),
+                (5, 8),
+                (5, 9),
+                (5, 11),
             ],
         ]
 
@@ -167,10 +175,7 @@ class LavaRooms(MultiGridEnv):
         goal.init_pos, goal.cur_pos = self.goal_positions[self.env_seed]
 
         # lava allocation
-        lava_spawn_location = random.sample([0, 1], 1)[0]
-        random_lava_positions = random.sample(
-            self.lava_positions[lava_spawn_location], 3
-        )
+        random_lava_positions = random.sample(self.lava_positions[0], 6)
         for lava_pos in random_lava_positions:
             lava = Lava(self.world)
             self.put_obj(lava, *lava_pos)

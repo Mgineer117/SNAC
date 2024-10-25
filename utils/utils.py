@@ -287,6 +287,7 @@ def save_dim_to_args(env, args):
 
     ## should be manually chosen since there is dummy action dims
     args.s_dim = s_dim
+    args.grid_size = s_dim[0]
     if args.a_dim is None:
         args.a_dim = a_dim
 
