@@ -175,7 +175,7 @@ class LavaRooms(MultiGridEnv):
         goal.init_pos, goal.cur_pos = self.goal_positions[self.env_seed]
 
         # lava allocation
-        random_lava_positions = random.sample(self.lava_positions[0], 6)
+        random_lava_positions = random.sample(self.lava_positions[0], 3)
         for lava_pos in random_lava_positions:
             lava = Lava(self.world)
             self.put_obj(lava, *lava_pos)
