@@ -95,8 +95,6 @@ class HC_Evaluator(Evaluator):
                     a, metaData = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze()
                     option_idx = metaData["z"]  # start feeding option_index
-                    if self.renderCriteria:
-                        option_indices.append(option_idx)
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
@@ -156,6 +154,7 @@ class HC_Evaluator(Evaluator):
                 if self.renderCriteria:
                     img = env.render()
                     self.recorded_frames.append(img)
+                    option_indices.append(option_idx)
 
                 if done:
                     if self.gridCriteria:
@@ -171,6 +170,7 @@ class HC_Evaluator(Evaluator):
                         self.path = []
 
                     if self.renderCriteria:
+                        # save rendering
                         width = self.recorded_frames[0].shape[0]
                         height = self.recorded_frames[0].shape[1]
                         self.plotter.plotRendering(
@@ -182,6 +182,10 @@ class HC_Evaluator(Evaluator):
                         )
                         self.recorded_frames = []
 
+                        # save option indices
+                        self.plotter.plotOptionIndices(
+                            option_indices, dir=self.plotter.hc_path, epoch=epoch
+                        )
                     ep_buffer.append({"reward": ep_reward, "ep_length": ep_length})
 
         reward_list = [ep_info["reward"] for ep_info in ep_buffer]
@@ -193,14 +197,6 @@ class HC_Evaluator(Evaluator):
         if queue is not None:
             queue.put([rew_mean, rew_std, ln_mean, ln_std])
         else:
-            if self.renderCriteria:
-                plt.scatter(np.arange(len(option_indices)), option_indices)
-
-                option_figure_path = os.path.join(self.plotter.hc_path, "option_figure")
-                if not os.path.exists(option_figure_path):
-                    os.mkdir(option_figure_path)
-                plt.savefig(f"{option_figure_path}/{epoch}_{num_episodes}.png")
-                plt.close()
             return rew_mean, rew_std, ln_mean, ln_std
 
     def update_render_criteria(self, epoch, num_episodes):

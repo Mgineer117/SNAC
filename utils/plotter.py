@@ -314,6 +314,14 @@ class Plotter:
         out.release()
         cv2.destroyAllWindows()
 
+    def plotOptionIndices(self, option_indices: list, dir: str, epoch: int):
+        option_figure_path = os.path.join(dir, "option_figure")
+        if not os.path.exists(option_figure_path):
+            os.mkdir(option_figure_path)
+        plt.scatter(np.arange(len(option_indices)), option_indices)
+        plt.savefig(f"{option_figure_path}/{epoch}.png")
+        plt.close()
+
     def plotClusteredVectors(self, V_list, centroids, labels, names: List, dir: str):
         for vector, centroid, label, name in zip(V_list, centroids, labels, names):
             vector = vector.cpu().numpy()
