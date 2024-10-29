@@ -132,8 +132,21 @@ class ConvNetwork(nn.Module):
 
         self.en_feature = MLP(
             input_dim=flat_dim + 2,  # agent pos concat
-            hidden_dims=(fc_dim, fc_dim),
-            output_dim=sf_dim,
+            hidden_dims=(fc_dim,),
+            activation=self.act,
+        )
+
+        self.en_reward = MLP(
+            input_dim=fc_dim,  # agent pos concat
+            hidden_dims=(fc_dim,),
+            output_dim=int(sf_dim / 2),
+            activation=self.act,
+        )
+
+        self.en_state = MLP(
+            input_dim=fc_dim,  # agent pos concat
+            hidden_dims=(fc_dim,),
+            output_dim=int(sf_dim / 2),
             activation=self.act,
         )
 
@@ -218,6 +231,9 @@ class ConvNetwork(nn.Module):
         out = self.en_flatter(x)
         out = torch.cat((out, agent_pos), axis=-1)
         out = self.en_feature(out)
+        r_out = self.en_reward(out)
+        s_out = self.en_state(out)
+        out = torch.cat((r_out, s_out), axis=-1)
         out = self.en_last_act(out)
         return out
 
@@ -242,6 +258,9 @@ class ConvNetwork(nn.Module):
         out = self.en_flatter(out)
         out = torch.cat((out, agent_pos), axis=-1)
         out = self.en_feature(out)
+        r_out = self.en_reward(out)
+        s_out = self.en_state(out)
+        out = torch.cat((r_out, s_out), axis=-1)
         out = self.en_last_act(out)
         return out, {"indices": indices, "output_dim": sizes, "loss": torch.tensor(0.0)}
 

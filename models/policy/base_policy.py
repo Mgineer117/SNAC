@@ -30,6 +30,9 @@ class BasePolicy(nn.Module):
             ),
             axis=0,
         )
+        self.mqe_loss2 = lambda x, y: torch.mean(
+            torch.sum(torch.pow(x - y, 4), -1), axis=-1
+        )
 
         # self.multiply_options = lambda x, y: torch.einsum(
         #     "naf,nf->na", x, y
