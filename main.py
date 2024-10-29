@@ -42,7 +42,7 @@ def train(args, unique_id):
             writer=writer,
             args=args,
         )
-    elif args.algo_name == "EigenOption":
+    elif args.algo_name == "EigenOption" or args.algo_name == "EigenOption2":
         # start the sf training or import it
         ft = FeatureTrain(logger=logger, writer=writer, args=args)
         sf_network, prev_epoch = ft.train()

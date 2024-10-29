@@ -413,6 +413,8 @@ class Plotter:
                 phi, _ = feaNet(img, agent_pos)
             features[x, y, :] = phi
 
+        # print(features[:, :, 0])
+
         ### COMPUTE DELTA-PHI
         coordinates = np.stack((coords[0], coords[1]), axis=-1)
         for agent_dir in agent_dirs:
@@ -449,8 +451,9 @@ class Plotter:
                         deltaPhi[agent_dir, x, y, :] += features[x, y, :]
 
         # sum all connected next_phi - current phi
-        deltaPhi -= features
         deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
+        # print(deltaPhi[:, :, 0])
+        # deltaPhi -= features
 
         if algo_name == "SNAC":
             r_deltaPhi, s_deltaPhi = torch.split(
@@ -470,11 +473,11 @@ class Plotter:
                         torch.mul(s_deltaPhi[:, :, :], V[vec_idx, :]),
                         axis=-1,
                     )
-
-                # rewards[vec_idx, :, :] = reward
-                # center the rew min to 0
-                # rew_min = torch.min(reward.reshape(-1))
-                # reward -= rew_min
+                    # if vec_idx == 9:
+                    #     print(s_deltaPhi[3, 3, :])
+                    #     print(s_deltaPhi[5, 5, :])
+                    #     print(s_deltaPhi[7, 7, :])
+                    #     print(V[vec_idx, :])
 
                 for x, y in zip(coords[0], coords[1]):
                     rewards[vec_idx, x, y] += reward[x, y]
@@ -490,29 +493,42 @@ class Plotter:
                 for x, y in zip(coords[0], coords[1]):
                     rewards[vec_idx, x, y] += reward[x, y]
 
+        # for k in range(num_vec):
+        #     # Get max positive and min negative rewards
+        #     r_max = rewards[k, :, :].max()
+        #     r_min = rewards[k, :, :].min()
+
+        #     # Normalize negative rewards between 0 and -1
+        #     rewards[k, :, :] = (rewards[k, :, :] - r_min) / (r_max - r_min + 1e-10)
+
         for k in range(num_vec):
-            pos_rewards = rewards[k, :, :] > 0
-            neg_rewards = rewards[k, :, :] < 0
+            pos_rewards = rewards[k, :, :] >= 0
+            neg_rewards = rewards[k, :, :] <= 0
 
-            r_pos_max = torch.max(rewards[k, pos_rewards], axis=-1)[0]
-            r_neg_min = torch.min(rewards[k, neg_rewards], axis=-1)[0]
+            # Get max positive and min negative rewards
+            r_pos_max = rewards[k, pos_rewards].max()
+            r_neg_min = rewards[k, neg_rewards].min()
 
-            rewards[k, pos_rewards] = (rewards[k, pos_rewards] - 1e-10) / (
-                r_pos_max - 1e-10
-            )
-            rewards[k, neg_rewards] = (rewards[k, neg_rewards] + 1e-10) / (
-                1e-10 - r_neg_min
-            )
+            # Normalize positive rewards between 0 and 1
+            rewards[k, pos_rewards] = rewards[k, pos_rewards] / (r_pos_max + 1e-10)
+
+            # Normalize negative rewards between 0 and -1
+            rewards[k, neg_rewards] = rewards[k, neg_rewards] / (abs(r_neg_min) + 1e-10)
+
+        walls = (grid_tensor == 2.0)[:, :, 0]
+        rewards[:, walls] = 0.0
 
         # Define a custom colormap with black at the center
         colors = [
             (0.2, 0.2, 1),
-            (0.0, 0.2, 0.1),
+            (0.2667, 0.0039, 0.3294),
             (1, 0.2, 0.2),
         ]  # Blue -> Black -> Red
         cmap = mcolors.LinearSegmentedColormap.from_list(
-            "pale_blue_dark_brown_pale_red", colors
+            "pale_blue_dark_pale_red", colors
         )
+
+        # cmap = "viridis"
 
         vec_dir_path = os.path.join(dir, "rewardMap")
         os.mkdir(vec_dir_path)
@@ -544,7 +560,12 @@ class Plotter:
             ax2 = fig.add_subplot(133)
             ax2.axis("off")  # Turn off the axis for the image
             heatmap = ax2.imshow(
-                grid.numpy(), cmap=cmap, extent=[-9, 9, -9, 9], origin="lower"
+                grid.numpy(),
+                cmap=cmap,
+                extent=[-9, 9, -9, 9],
+                origin="lower",
+                vmin=-1,
+                vmax=1,
             )
             fig.colorbar(heatmap, ax=ax2)  # Add color bar for the heatmap
 

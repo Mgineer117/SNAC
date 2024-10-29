@@ -138,14 +138,14 @@ class ConvNetwork(nn.Module):
 
         self.en_reward = MLP(
             input_dim=fc_dim,  # agent pos concat
-            hidden_dims=(fc_dim,),
+            hidden_dims=(fc_dim, fc_dim),
             output_dim=int(sf_dim / 2),
             activation=self.act,
         )
 
         self.en_state = MLP(
             input_dim=fc_dim,  # agent pos concat
-            hidden_dims=(fc_dim,),
+            hidden_dims=(fc_dim, fc_dim),
             output_dim=int(sf_dim / 2),
             activation=self.act,
         )

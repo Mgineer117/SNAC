@@ -124,10 +124,8 @@ class OP_Controller(BasePolicy):
                 q = self.multiply_options(psi_r, self._options[z, :]).squeeze()
             else:
                 q = self.multiply_options(psi_s, self._options[z, :]).squeeze()
-        elif self._algo_name == "EigenOption" or self._algo_name == "CoveringOption":
-            q = self.multiply_options(psi, self._options[z, :]).squeeze()
         else:
-            raise ValueError(f"algo_name is unknown: {self._algo_name}")
+            q = self.multiply_options(psi, self._options[z, :]).squeeze()
 
         return a, {
             "q": q,
@@ -159,15 +157,14 @@ class OP_Controller(BasePolicy):
             next_phi_r, next_phi_s = self.split(next_phi)
 
             if z < int(self._num_options / 2):
-                deltaPhi = next_phi_r - phi_r  # N x F/2
-                # deltaPhi = phi_r  # N x F/2
+                # deltaPhi = next_phi_r - phi_r  # N x F/2
+                deltaPhi = phi_r  # N x F/2
             else:
-                deltaPhi = next_phi_s - phi_s  # N x F/2
-                # deltaPhi = phi_s  # N x F/2
-
-        elif self._algo_name == "EigenOption" or self._algo_name == "CoveringOption":
-            deltaPhi = next_phi - phi  # N x F
-            # deltaPhi = phi  # N x F
+                # deltaPhi = next_phi_s - phi_s  # N x F/2
+                deltaPhi = phi_s  # N x F/2
+        else:
+            # deltaPhi = next_phi - phi  # N x F
+            deltaPhi = phi  # N x F
 
         # N x 1
         rew = self.multiply_options(deltaPhi, option)
@@ -290,10 +287,13 @@ class OP_Controller(BasePolicy):
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
 
+        # avgRewDict = {
+        #     f"OP/ScldIntEpRew:{z}": (
+        #         torch.sum(self.scale_reward(rewards)) / torch.sum(terminals)
+        #     ).item(),
+        # }
         avgRewDict = {
-            f"OP/ScldIntAvgRew:{z}": (
-                torch.sum(self.scale_reward(rewards)) / rewards.shape[0]
-            ).item(),
+            f"OP/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
         t1 = time.time()
         self.eval()

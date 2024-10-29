@@ -8,26 +8,13 @@ import matplotlib.pyplot as plt
 import gymnasium as gym
 
 from models.evaulators.base_evaluator import DotDict
-from gym_multigrid.envs.lavarooms import LavaRooms
 
 from utils import *
+from utils.call_env import call_env
 
 import wandb
 
 wandb.require("core")
-
-
-def get_env(args):
-    env = LavaRooms(
-        grid_size=(args.grid_size, args.grid_size),
-        max_steps=args.episode_len,
-        tile_size=args.img_tile_size,
-        highlight_visible_cells=False,
-        partial_observability=False,
-        render_mode="rgb_array",
-    )
-    env = NoStateDictWrapper(env, tile_size=args.tile_size)
-    return env
 
 
 def run_loop(option_vals, options):
@@ -58,7 +45,7 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.grid_size = 9
+    args.grid_size = 13
     args.num_vector = 32
     args.device = torch.device("cpu")
 
@@ -72,7 +59,7 @@ if __name__ == "__main__":
     )
 
     # call env
-    env = get_env(args)
+    env = call_env(args)
     save_dim_to_args(env, args)  # given env, save its state and action dim
 
     sampler = OnlineSampler(
@@ -80,6 +67,8 @@ if __name__ == "__main__":
         state_dim=args.s_dim,
         feature_dim=args.sf_dim,
         action_dim=args.a_dim,
+        min_option_length=args.min_option_length,
+        min_cover_option_length=args.min_cover_option_length,
         episode_len=args.episode_len,
         episode_num=args.episode_num,
         num_cores=args.num_cores,

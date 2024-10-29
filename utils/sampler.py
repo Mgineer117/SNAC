@@ -260,8 +260,9 @@ class OnlineSampler(Base):
         self.num_worker_per_env = int(self.total_num_worker / len(self.training_envs))
         self.rounds = rounds
 
+        print("====================")
         print("Sampling Parameters:")
-        print("--------------------")
+        print("====================")
         print(
             f"Cores (usage)/(given)     : {self.num_workers_per_round[0]}/{self.num_cores} out of {multiprocessing.cpu_count()}"
         )

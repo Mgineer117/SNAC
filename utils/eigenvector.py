@@ -113,17 +113,75 @@ def discover_options(
                     f"Given classification is not implemented {classification}"
                 )
 
-            S_r = torch.cat((S_r, -S_r), axis=0)
-            S_s = torch.cat((S_s, -S_s), axis=0)
-            V_r = torch.cat((V_r, -V_r), axis=0)
-            V_s = torch.cat((V_s, -V_s), axis=0)
-
             S = torch.cat((S_r, S_s), axis=0)
             V = torch.cat((V_r, V_s), axis=0)
 
             return S, V, [S_r, S_s], [V_r, V_s], ["R-feature", "S-feature"], batch
         else:
             NotImplementedError(f"Not implemented arg {method}")
+
+    elif algo_name == "EigenOption2":
+        with torch.no_grad():
+            psi = estimate_psi(features, terminals, gamma)  # operate on cpu
+
+            if prev_batch is not None:
+                prev_features = (
+                    torch.from_numpy(prev_batch["features"])
+                    .to(torch.float32)
+                    .to(device)
+                )
+                prev_terminals = (
+                    torch.from_numpy(prev_batch["terminals"])
+                    .to(torch.float32)
+                    .to(device)
+                )
+                prev_psi = estimate_psi(
+                    prev_features, prev_terminals, gamma
+                )  # operate on cpu
+
+                psi = torch.cat((prev_psi, psi), axis=0)
+
+            # to save VRAM
+            del features, terminals
+            torch.cuda.empty_cache()
+
+        option_dim = psi.shape[-1]
+        if option_dim < 3 * num:
+            raise ValueError(
+                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{2*num}"
+            )
+
+        divide_num = (option_dim - 2 * num) // num
+        first_indices = list(range(0, num))
+        middle_indices = list(range(num, option_dim - num, divide_num))
+        final_indices = list(range(option_dim - num, option_dim))
+
+        indices = first_indices + middle_indices + final_indices
+
+        if method == "SVD":
+            # V_r, V_s ~ [F/2, F/2]
+            _, S, V = torch.svd(psi)  # S: max - min
+
+            if classification == "all":
+                pass
+            elif classification == "top":
+                S = S[first_indices]
+                V = V[first_indices, :]
+            elif classification == "mid":
+                S = S[middle_indices]
+                V = V[middle_indices, :]
+            elif classification == "bot":
+                S = S[final_indices]
+                V = V[final_indices, :]
+            elif classification == "mix":
+                S = S[indices]
+                V = V[indices, :]
+            else:
+                NotImplementedError(
+                    f"Given classification is not implemented {classification}"
+                )
+
+            return S, V, [S], [V], ["S-feature"], batch
 
     elif algo_name == "EigenOption" or algo_name == "CoveringOption":
         with torch.no_grad():
@@ -198,6 +256,7 @@ def discover_options(
 
 def cluster_vecvtors(S_list, V_list, k=10):
     """V must be matrix of linear functionals: V_h"""
+    k = int(k / 2)
 
     centroids_list = []
     labels_list = []
@@ -221,8 +280,11 @@ def cluster_vecvtors(S_list, V_list, k=10):
         sorted_indices = sorted(
             range(len(eigVals)), key=lambda i: eigVals[i], reverse=True
         )
-        eigVals = sorted(eigVals, reverse=True)
+        eigVals = np.array(sorted(eigVals, reverse=True))
         centroids = centroids[sorted_indices, :]
+
+        eigVals = np.concatenate((eigVals, -eigVals), axis=0)
+        centroids = np.concatenate((centroids, -centroids), axis=0)
 
         centroids_list.append(centroids)
         labels_list.append(labels)
@@ -253,9 +315,6 @@ def get_eigenvectors(
     draw_map: bool = False,
 ):
     if args.algo_name == "SNAC":
-        print(
-            f"Clustering the vector!!!: R:{int(args.num_vector / 2)}  S:{int(args.num_vector / 2)} | Total options: {args.num_vector}"
-        )
         option_vals, options, S_list, V_list, names, batch = discover_options(
             policy=network,
             sampler=sampler,
@@ -270,6 +329,9 @@ def get_eigenvectors(
         option_vals, options, metaData = cluster_vecvtors(
             S_list, V_list, k=int(args.num_vector / 2)
         )  # replacing original V with cluster centroids
+        print(
+            f"Selecting clustered R:{int(len(option_vals)/2)}  S:{int(len(option_vals)/2)} vector !!! | Given total options: {args.num_vector}"
+        )
         if draw_map:
             plotter.plotClusteredVectors(
                 V_list=V_list,
@@ -279,9 +341,6 @@ def get_eigenvectors(
                 dir=plotter.sf_path,
             )
     elif args.algo_name == "EigenOption":
-        print(
-            f"Selecting top {args.num_vector/ 2} vector!!! | Total options: {args.num_vector}"
-        )
         option_vals, options, S_list, V_list, names, batch = discover_options(
             policy=network,
             sampler=sampler,
@@ -293,23 +352,37 @@ def get_eigenvectors(
             num_trj=app_trj_num,
             device=args.device,
         )
-    elif args.algo_name == "CoveringOption":
         print(
-            f"Selecting top 1 (+/-) vector over {int(args.num_vector / 2)} iterations"
+            f"Selecting top {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
         )
+    elif args.algo_name == "EigenOption2":
         option_vals, options, S_list, V_list, names, batch = discover_options(
             policy=network,
             sampler=sampler,
             env_seed=args.env_seed,
             algo_name=args.algo_name,
             method="SVD",
-            classification="top",
-            num=1,
+            classification="all",
             num_trj=app_trj_num,
-            prev_batch=prev_batch,
-            idx=idx,
             device=args.device,
         )
+        option_vals, options, metaData = cluster_vecvtors(
+            S_list, V_list, k=args.num_vector
+        )  # replacing original V with cluster centroids
+        print(
+            f"Selecting clustered {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
+        )
+        if draw_map:
+            plotter.plotClusteredVectors(
+                V_list=V_list,
+                centroids=metaData["centroids_list"],
+                labels=metaData["labels_list"],
+                names=names,
+                dir=plotter.sf_path,
+            )
+    elif args.algo_name == "CoveringOption":
+        """It is separately implemented in CoveringOption class"""
+        pass
     else:
         raise ValueError(f"Unknown algorithm: {args.algo_name}")
 
