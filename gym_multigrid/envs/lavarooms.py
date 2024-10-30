@@ -102,12 +102,12 @@ class LavaRooms(MultiGridEnv):
         self.agent_positions = [(1, 7), (1, 9)]
         self.lava_positions = [
             [
-                (3, 4),
+                (3, 5),
                 (3, 6),
                 (4, 5),
-                (4, 6),
-                (5, 4),
-                (5, 5),
+                (4, 7),
+                (5, 6),
+                (5, 7),
             ],
         ]
 
