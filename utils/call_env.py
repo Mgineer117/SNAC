@@ -44,13 +44,29 @@ def call_env(args):
         map_path: str = "assets/ctf_avoid_obj.txt"
         observation_option: str = "tensor"
         if args.env_name == "CtF1v1":
-            env = Ctf1v1Env(map_path=map_path, observation_option=observation_option)
+            env = Ctf1v1Env(
+                map_path=map_path,
+                observation_option=observation_option,
+                step_penalty_ratio=0.0,
+            )
         elif args.env_name == "CtF1v2":
-            env = Ctf1v2Env(map_path=map_path, observation_option=observation_option)
+            env = Ctf1v2Env(
+                map_path=map_path,
+                observation_option=observation_option,
+                step_penalty_ratio=0.0,
+            )
         elif args.env_name == "CtF1v3":
-            env = Ctf1v3Env(map_path=map_path, observation_option=observation_option)
+            env = Ctf1v3Env(
+                map_path=map_path,
+                observation_option=observation_option,
+                step_penalty_ratio=0.0,
+            )
         elif args.env_name == "CtF1v4":
-            env = Ctf1v4Env(map_path=map_path, observation_option=observation_option)
+            env = Ctf1v4Env(
+                map_path=map_path,
+                observation_option=observation_option,
+                step_penalty_ratio=0.0,
+            )
         else:
             raise NotImplementedError(f"{args.env_name} not implemented")
         return NoStateDictCtfWrapper(env, tile_size=args.tile_size)
