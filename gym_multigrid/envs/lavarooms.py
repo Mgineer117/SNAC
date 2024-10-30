@@ -222,7 +222,7 @@ class LavaRooms(MultiGridEnv):
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards -= 0.001
+                    rewards += 0.0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             # Rotate right
@@ -245,7 +245,7 @@ class LavaRooms(MultiGridEnv):
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards -= 0.001
+                    rewards += 0.0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             # Move forward
@@ -268,7 +268,7 @@ class LavaRooms(MultiGridEnv):
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards -= 0.001
+                    rewards += 0.0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             elif actions[i] == self.actions.down:
@@ -290,7 +290,7 @@ class LavaRooms(MultiGridEnv):
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards -= 0.001
+                    rewards += 0.0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
             else:
                 assert False, "unknown action"
