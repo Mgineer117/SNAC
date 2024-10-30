@@ -216,6 +216,7 @@ class LavaRooms(MultiGridEnv):
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
+                        done = True
                         rewards[i] = -0.5
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
@@ -239,6 +240,7 @@ class LavaRooms(MultiGridEnv):
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
+                        done = True
                         rewards[i] = -0.5
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
@@ -262,6 +264,7 @@ class LavaRooms(MultiGridEnv):
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
+                        done = True
                         rewards[i] = -0.5
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
@@ -284,6 +287,7 @@ class LavaRooms(MultiGridEnv):
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
+                        done = True
                         rewards[i] = -0.5
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
