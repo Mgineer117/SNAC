@@ -94,11 +94,9 @@ def plot(img, heatmap, reward, i):
     ### Figure
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    normalized_img = (img[0, :, :, :] - img[0, :, :, :].min()) / (
-        img[0, :, :, :].max() - img[0, :, :, :].min()
-    )
+    img = np.sum(img[0, :, :, :], axis=-1)
+    normalized_img = (img - img.min()) / (img.max() - img.min())
 
-    print(normalized_img.shape)
     axes[0].imshow(np.flipud(normalized_img))
     axes[0].set_title("Original")
 
@@ -109,8 +107,8 @@ def plot(img, heatmap, reward, i):
 
     # Plot the second heatmap
     alpha = 0.8
-    heatmap = cv2.resize(np.flipud(heatmap), (img.shape[2], img.shape[1]))
-    # heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    heatmap = cv2.resize(heatmap, (img.shape[0], img.shape[1]))
+
     superimposed_img = heatmap * alpha + normalized_img * (1 - alpha)
 
     axes[2].matshow(np.flipud(superimposed_img))
@@ -143,7 +141,6 @@ def run_loop(grid, pos, target="s"):
             activations[:, j, :, :] *= pooled_gradients[j]
 
         # average the channels of the activations
-        print(activations.shape)
         heatmap = torch.mean(activations, dim=1).squeeze()
 
         # normalize the heatmap

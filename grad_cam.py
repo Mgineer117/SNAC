@@ -104,7 +104,7 @@ def plot(img, heatmap, reward, i):
 
     # Plot the second heatmap
     alpha = 0.8
-    heatmap = cv2.resize(np.flipud(heatmap), (img.shape[2], img.shape[1]))
+    heatmap = cv2.resize(heatmap, (img.shape[2], img.shape[1]))
     # heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
     superimposed_img = heatmap * alpha + img[0, :, :, 0] * (1 - alpha)
 
@@ -114,7 +114,6 @@ def plot(img, heatmap, reward, i):
     # draw the heatmap
     plt.axis("off")
     plt.savefig(f"heatmap/{i}.png")
-    print(f"{i} th figure saved")
     plt.close()
 
 

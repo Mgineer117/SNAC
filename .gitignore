@@ -134,7 +134,7 @@ tmp/
 
 out/
 
-*.p
+#*.p
 log/__pycache__/*
 wandb/
 
@@ -144,7 +144,7 @@ __pycache__/
 *.log
 wandb
 
-# log/eval_log/*
+#log/eval_log/*
 log/train_log/*
 
 # Old test files

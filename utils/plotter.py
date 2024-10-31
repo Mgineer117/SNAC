@@ -528,7 +528,8 @@ class Plotter:
 
             # reassign the agent
             img = grid_tensor.clone()
-            # img[loc[0], loc[1]] = 10
+            img = np.sum(img, axis=-1)
+            img = (img - img.min()) / (img.max() - img.min())
 
             ax0 = fig.add_subplot(131)
             ax0.imshow(img * 20)
@@ -723,11 +724,12 @@ class Plotter:
 
             # reassign the agent
             img = grid_tensor.clone()
-            img[loc[0], loc[1], 1] = 1
-            img[loc[0], loc[1], 2] = 2
+
+            img = torch.sum(img, axis=-1)
+            img = (img - img.min()) / (img.max() - img.min())
 
             ax0 = fig.add_subplot(131)
-            ax0.imshow(img * 20)
+            ax0.imshow(img)
             ax0.axis("off")  # Turn off the axis for the image
             ax0.invert_yaxis()  # Invert the y-axis
 

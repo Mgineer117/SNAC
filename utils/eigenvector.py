@@ -329,6 +329,7 @@ def get_eigenvectors(
         option_vals, options, metaData = cluster_vecvtors(
             S_list, V_list, k=int(args.num_vector / 2)
         )  # replacing original V with cluster centroids
+
         print(
             f"Selecting clustered R:{int(len(option_vals)/2)}  S:{int(len(option_vals)/2)} vector !!! | Given total options: {args.num_vector}"
         )

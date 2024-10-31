@@ -30,7 +30,7 @@ def remove_dir(dir_path):
     os.rmdir(dir_path)
 
 
-def run_loop(env_name, option_vals, options):
+def run_loop(env, env_name, option_vals, options):
     # for i in [0, 4, 5, 6, 9]:
     if env_name == "FourRooms" or env_name == "LavaRooms":
         for i in range(10):
@@ -123,6 +123,7 @@ if __name__ == "__main__":
         draw_map=False,
     )
 
-    print(option_vals.shape, options.shape)
+    obs, _ = env.reset(seed=args.env_seed)
+    grid_tensor = obs["observation"]
 
-    run_loop(args.env_name, option_vals, options)
+    run_loop(env, args.env_name, option_vals, options)
