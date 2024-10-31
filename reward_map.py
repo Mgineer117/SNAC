@@ -17,26 +17,66 @@ import wandb
 wandb.require("core")
 
 
-def run_loop(option_vals, options):
+def remove_dir(dir_path):
+    # Iterate over all the files and subdirectories
+    for root, dirs, files in os.walk(dir_path, topdown=False):
+        # Delete all files
+        for name in files:
+            os.remove(os.path.join(root, name))
+        # Delete all directories
+        for name in dirs:
+            os.rmdir(os.path.join(root, name))
+    # Finally, delete the main directory
+    os.rmdir(dir_path)
+
+
+def run_loop(env_name, option_vals, options):
     # for i in [0, 4, 5, 6, 9]:
-    for i in range(10):
-        grid, pos, loc = get_grid_tensor(env, env_seed=i)
-        save_path = f"RewardMap/{str(i)}"
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-        # do reward Plot
-        plotter.plotRewardMap(
-            feaNet=sf_network.feaNet,
-            S=option_vals,
-            V=options,
-            feature_dim=args.sf_dim,
-            algo_name=args.algo_name,
-            grid_tensor=grid,
-            coords=pos,
-            loc=loc,
-            dir=save_path,
-            device=args.device,
-        )
+    if env_name == "FourRooms" or env_name == "LavaRooms":
+        for i in range(10):
+            grid, pos, loc = get_grid_tensor(env, env_seed=i)
+            save_path = f"RewardMap/{str(i)}"
+            if not os.path.exists(save_path):
+                os.mkdir(save_path)
+            else:
+                remove_dir(save_path)
+                os.mkdir(save_path)
+
+            # do reward Plot
+            plotter.plotRewardMap(
+                feaNet=sf_network.feaNet,
+                S=option_vals,
+                V=options,
+                feature_dim=args.sf_dim,
+                algo_name=args.algo_name,
+                grid_tensor=grid,
+                coords=pos,
+                loc=loc,
+                dir=save_path,
+                device=args.device,
+            )
+    elif env_name == "CtF1v1" or env_name == "CtF1v2":
+        for i in range(10):
+            grid, pos, loc = get_grid_tensor2(env, env_seed=i)
+            save_path = f"RewardMap/{str(i)}"
+            if not os.path.exists(save_path):
+                os.mkdir(save_path)
+            else:
+                remove_dir(save_path)
+                os.mkdir(save_path)
+            # do reward Plot
+            plotter.plotRewardMap2(
+                feaNet=sf_network.feaNet,
+                S=option_vals,
+                V=options,
+                feature_dim=args.sf_dim,
+                algo_name=args.algo_name,
+                grid_tensor=grid,
+                coords=pos,
+                loc=loc,
+                dir=save_path,
+                device=args.device,
+            )
 
 
 if __name__ == "__main__":
@@ -45,8 +85,8 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.grid_size = 13
-    args.num_vector = 32
+    args.grid_size = 12
+    args.num_vector = 8
     args.device = torch.device("cpu")
 
     # call sf
@@ -85,4 +125,4 @@ if __name__ == "__main__":
 
     print(option_vals.shape, options.shape)
 
-    run_loop(option_vals, options)
+    run_loop(args.env_name, option_vals, options)

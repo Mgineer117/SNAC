@@ -1153,6 +1153,7 @@ class Ctf1v3Env(CtfMvNEnv):
     ) -> tuple[Observation, float, bool, bool, dict[str, float]]:
         return super().step([action])
 
+
 class Ctf1v4Env(CtfMvNEnv):
     """
     Environment for capture the flag game with one ego (blue) agent and one enemy (red) agent.

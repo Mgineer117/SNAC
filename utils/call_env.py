@@ -39,7 +39,6 @@ def call_env(args):
         return NoStateDictWrapper(env, tile_size=args.tile_size)
 
     elif args.env_name == "CtF1v1" or "CtF1v2" or "CtF1v3" or "CtF1v4":
-        args.draw_map = False
         args.a_dim = 5
         map_path: str = "assets/ctf_avoid_obj.txt"
         observation_option: str = "tensor"

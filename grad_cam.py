@@ -13,6 +13,7 @@ from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.lavarooms import LavaRooms
 
 from utils import *
+from utils.call_env import call_env
 
 import wandb
 
@@ -74,19 +75,6 @@ class GradCam(nn.Module):
     # method for the activation exctraction
     def get_activations(self, x):
         return self.preGrad(x)
-
-
-def get_env(args):
-    env = LavaRooms(
-        grid_size=(args.grid_size, args.grid_size),
-        max_steps=args.episode_len,
-        tile_size=args.img_tile_size,
-        highlight_visible_cells=False,
-        partial_observability=False,
-        render_mode="rgb_array",
-    )
-    env = NoStateDictWrapper(env, tile_size=args.tile_size)
-    return env
 
 
 def get_grid(env, args):
@@ -178,7 +166,7 @@ if __name__ == "__main__":
     print(f"target Algorithm: {args.algo_name} | target: {target}")
 
     # call env
-    env = get_env(args)
+    env = call_env(args)
     grid, pos = get_grid(env, args)
 
     run_loop(grid, pos, target=target)

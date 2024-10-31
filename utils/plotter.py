@@ -452,8 +452,6 @@ class Plotter:
 
         # sum all connected next_phi - current phi
         deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
-        # print(deltaPhi[:, :, 0])
-        # deltaPhi -= features
 
         if algo_name == "SNAC":
             r_deltaPhi, s_deltaPhi = torch.split(
@@ -473,11 +471,6 @@ class Plotter:
                         torch.mul(s_deltaPhi[:, :, :], V[vec_idx, :]),
                         axis=-1,
                     )
-                    # if vec_idx == 9:
-                    #     print(s_deltaPhi[3, 3, :])
-                    #     print(s_deltaPhi[5, 5, :])
-                    #     print(s_deltaPhi[7, 7, :])
-                    #     print(V[vec_idx, :])
 
                 for x, y in zip(coords[0], coords[1]):
                     rewards[vec_idx, x, y] += reward[x, y]
@@ -492,14 +485,6 @@ class Plotter:
 
                 for x, y in zip(coords[0], coords[1]):
                     rewards[vec_idx, x, y] += reward[x, y]
-
-        # for k in range(num_vec):
-        #     # Get max positive and min negative rewards
-        #     r_max = rewards[k, :, :].max()
-        #     r_min = rewards[k, :, :].min()
-
-        #     # Normalize negative rewards between 0 and -1
-        #     rewards[k, :, :] = (rewards[k, :, :] - r_min) / (r_max - r_min + 1e-10)
 
         for k in range(num_vec):
             pos_rewards = rewards[k, :, :] >= 0
@@ -528,8 +513,6 @@ class Plotter:
             "pale_blue_dark_pale_red", colors
         )
 
-        # cmap = "viridis"
-
         vec_dir_path = os.path.join(dir, "rewardMap")
         os.mkdir(vec_dir_path)
         for vec_idx in range(num_vec):
@@ -546,6 +529,202 @@ class Plotter:
             # reassign the agent
             img = grid_tensor.clone()
             # img[loc[0], loc[1]] = 10
+
+            ax0 = fig.add_subplot(131)
+            ax0.imshow(img * 20)
+            ax0.axis("off")  # Turn off the axis for the image
+            ax0.invert_yaxis()  # Invert the y-axis
+
+            # Second subplot: 3D surface plot in the middle
+            ax1 = fig.add_subplot(132, projection="3d")
+            ax1.plot_surface(x, y, grid.numpy(), cmap=cmap)
+
+            # Third subplot: 2D heatmap on the right
+            ax2 = fig.add_subplot(133)
+            ax2.axis("off")  # Turn off the axis for the image
+            heatmap = ax2.imshow(
+                grid.numpy(),
+                cmap=cmap,
+                extent=[-9, 9, -9, 9],
+                origin="lower",
+                vmin=-1,
+                vmax=1,
+            )
+            fig.colorbar(heatmap, ax=ax2)  # Add color bar for the heatmap
+
+            # Save the plot with both the 3D surface and the 2D heatmap
+            plt.savefig(f"{vec_dir_path}/{vec_idx}_{S[vec_idx]:3f}.png")
+            plt.close()
+
+    def plotRewardMap2(
+        self,
+        feaNet: nn.Module,
+        S: torch.Tensor,
+        V: torch.Tensor,
+        feature_dim: int,
+        algo_name: str,
+        grid_tensor: np.ndarray,
+        coords: tuple,
+        loc: np.ndarray,
+        dir: str,
+        device=torch.device("cpu"),
+    ):
+        """
+        The input V is a eigenvectors which are row-vector.
+        Given feature dim: f, V ~ [f, f/2]
+        """
+        x_grid_dim, y_grid_dim, _ = grid_tensor.shape
+
+        ### Load states
+        # the path is likely to be: args.path_allStates and direction of agent
+        # should come afterwards
+        num_vec, _ = V.shape
+
+        # DO NOT CARE AGENT DIR
+        agent_dirs = [0, 1, 2, 3]
+
+        grid_tensor = torch.from_numpy(grid_tensor)
+
+        features = torch.zeros(x_grid_dim, y_grid_dim, feature_dim)
+        deltaPhi = torch.zeros(len(agent_dirs), x_grid_dim, y_grid_dim, feature_dim)
+
+        # will avg across agent_dirs
+        rewards = torch.zeros(num_vec, x_grid_dim, y_grid_dim)
+
+        for x, y in zip(coords[0], coords[1]):
+            # # Load the image as a NumPy array
+            img = grid_tensor.clone()
+            img[x, y, 1] = 1  # 1 is an agent
+            img[x, y, 2] = 2  # 2 is an agent alive
+
+            with torch.no_grad():
+                if isinstance(img, np.ndarray):
+                    img = torch.from_numpy(img).to(self._dtype).to(self.device)
+                if len(img.shape) == 3:
+                    img = img[None, :, :, :].to(self._dtype).to(self.device)
+
+                agent_pos = torch.tensor([[x, y]]).to(self._dtype).to(self.device)
+
+                phi, _ = feaNet(img, agent_pos)
+            features[x, y, :] = phi
+
+        # print(features[:, :, 0])
+
+        ### COMPUTE DELTA-PHI
+        coordinates = np.stack((coords[0], coords[1]), axis=-1)
+        for agent_dir in agent_dirs:
+            """
+            agent_dir 0: left
+            agent_dir 1: up
+            agent_dir 2: right
+            agent_dir 3: down
+            """
+            for x, y in zip(coords[0], coords[1]):
+                if agent_dir == 0:
+                    temp_x, temp_y = x, y - 1
+                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+                    else:
+                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+                elif agent_dir == 1:
+                    temp_x, temp_y = x - 1, y
+                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+                    else:
+                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+                elif agent_dir == 2:
+                    temp_x, temp_y = x, y + 1
+                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+                    else:
+                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+                elif agent_dir == 3:
+                    temp_x, temp_y = x + 1, y
+                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+                    else:
+                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+
+        # sum all connected next_phi - current phi
+        deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
+
+        if algo_name == "SNAC":
+            r_deltaPhi, s_deltaPhi = torch.split(
+                deltaPhi, deltaPhi.size(-1) // 2, dim=-1
+            )
+
+            for vec_idx in range(num_vec):
+                # deltaPhi ~ [n_possible_states, f/2]
+                # V ~ [1, f/2]
+                if vec_idx < int(num_vec / 2):
+                    reward = torch.sum(
+                        torch.mul(r_deltaPhi[:, :, :], V[vec_idx, :]),
+                        axis=-1,
+                    )
+                else:
+                    reward = torch.sum(
+                        torch.mul(s_deltaPhi[:, :, :], V[vec_idx, :]),
+                        axis=-1,
+                    )
+
+                for x, y in zip(coords[0], coords[1]):
+                    rewards[vec_idx, x, y] += reward[x, y]
+        else:
+            for vec_idx in range(num_vec):
+                # deltaPhi ~ [n_possible_states, f]
+                # V ~ [1, f]
+                reward = torch.sum(
+                    torch.mul(deltaPhi[:, :, :], V[vec_idx, :]),
+                    axis=-1,
+                )
+
+                for x, y in zip(coords[0], coords[1]):
+                    rewards[vec_idx, x, y] += reward[x, y]
+
+        for k in range(num_vec):
+            pos_rewards = rewards[k, :, :] >= 0
+            neg_rewards = rewards[k, :, :] <= 0
+
+            # Get max positive and min negative rewards
+            r_pos_max = rewards[k, pos_rewards].max()
+            r_neg_min = rewards[k, neg_rewards].min()
+
+            # Normalize positive rewards between 0 and 1
+            rewards[k, pos_rewards] = rewards[k, pos_rewards] / (r_pos_max + 1e-10)
+
+            # Normalize negative rewards between 0 and -1
+            rewards[k, neg_rewards] = rewards[k, neg_rewards] / (abs(r_neg_min) + 1e-10)
+
+        walls = grid_tensor[:, :, 0] == 0
+        rewards[:, walls] = 0.0
+
+        # Define a custom colormap with black at the center
+        colors = [
+            (0.2, 0.2, 1),
+            (0.2667, 0.0039, 0.3294),
+            (1, 0.2, 0.2),
+        ]  # Blue -> Black -> Red
+        cmap = mcolors.LinearSegmentedColormap.from_list(
+            "pale_blue_dark_pale_red", colors
+        )
+
+        vec_dir_path = os.path.join(dir, "rewardMap")
+        os.mkdir(vec_dir_path)
+        for vec_idx in range(num_vec):
+            grid = torch.zeros(self.grid_size, self.grid_size)
+            grid += rewards[vec_idx, :, :]
+
+            x = np.linspace(0, self.grid_size - 1, self.grid_size)
+            y = np.linspace(0, self.grid_size - 1, self.grid_size)
+            x, y = np.meshgrid(x, y)
+
+            # Create the figure and two subplots: one for the 3D plot and one for the 2D heatmap
+            fig = plt.figure(figsize=(18, 6))  # Adjust figsize as needed
+
+            # reassign the agent
+            img = grid_tensor.clone()
+            img[loc[0], loc[1], 1] = 1
+            img[loc[0], loc[1], 2] = 2
 
             ax0 = fig.add_subplot(131)
             ax0.imshow(img * 20)

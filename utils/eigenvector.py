@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.cluster import KMeans
 
-from utils.get_all_states import get_grid_tensor
+from utils.get_all_states import get_grid_tensor, get_grid_tensor2
 from utils.utils import estimate_psi
 from utils.sampler import OnlineSampler
 from utils.buffer import TrajectoryBuffer
@@ -387,19 +387,48 @@ def get_eigenvectors(
         raise ValueError(f"Unknown algorithm: {args.algo_name}")
 
     if draw_map:
-        grid_tensor, coords, loc = get_grid_tensor(env, args.env_seed)
-        plotter.plotRewardMap(
-            feaNet=network.feaNet,
-            S=option_vals,
-            V=options,
-            feature_dim=args.sf_dim,  # since V = [V, -V]
-            algo_name=args.algo_name,
-            grid_tensor=grid_tensor,
-            coords=coords,
-            loc=loc,
-            dir=plotter.log_dir,
-            device=args.device,
-        )
+        if args.env_name == "FourRooms":
+            grid_tensor, coords, loc = get_grid_tensor(env, args.env_seed)
+            plotter.plotRewardMap(
+                feaNet=network.feaNet,
+                S=option_vals,
+                V=options,
+                feature_dim=args.sf_dim,  # since V = [V, -V]
+                algo_name=args.algo_name,
+                grid_tensor=grid_tensor,
+                coords=coords,
+                loc=loc,
+                dir=plotter.log_dir,
+                device=args.device,
+            )
+        elif args.env_name == "LavaRooms":
+            grid_tensor, coords, loc = get_grid_tensor(env, args.env_seed)
+            plotter.plotRewardMap(
+                feaNet=network.feaNet,
+                S=option_vals,
+                V=options,
+                feature_dim=args.sf_dim,  # since V = [V, -V]
+                algo_name=args.algo_name,
+                grid_tensor=grid_tensor,
+                coords=coords,
+                loc=loc,
+                dir=plotter.log_dir,
+                device=args.device,
+            )
+        elif args.env_name == "CtF1v1" or args.env_name == "CtF1v2":
+            grid_tensor, coords, loc = get_grid_tensor2(env, args.env_seed)
+            plotter.plotRewardMap2(
+                feaNet=network.feaNet,
+                S=option_vals,
+                V=options,
+                feature_dim=args.sf_dim,  # since V = [V, -V]
+                algo_name=args.algo_name,
+                grid_tensor=grid_tensor,
+                coords=coords,
+                loc=loc,
+                dir=plotter.log_dir,
+                device=args.device,
+            )
         ### action value map is shown via network
         ### therefore it is noisy so not being used
         # plotter.plotActionValueMap(

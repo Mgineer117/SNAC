@@ -1,21 +1,19 @@
 import torch
 import torch.nn as nn
-import random
+import cv2
 import json
 import numpy as np
 import matplotlib.pyplot as plt
 import gymnasium as gym
 
 from models.evaulators.base_evaluator import DotDict
-from algorithms.SNAC import SNAC
-from algorithms.EigenOption import EigenOption
-from algorithms.CoveringOption import CoveringOption
-from algorithms.PPO import PPO
-from algorithms.FeatureTrain import FeatureTrain
+
+# from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.fourrooms import FourRooms
-from gym_multigrid.envs.ctf import Ctf1v1Env
+from gym_multigrid.envs.lavarooms import LavaRooms
 
 from utils import *
+from utils.call_env import call_env
 
 import wandb
 
@@ -28,8 +26,13 @@ class GradCam(nn.Module):
 
         # get the pretrained VGG19 network
         self.feaNet = sf_network.feaNet
+        self.options = sf_network._options
         self.preGrad = sf_network.feaNet.pre_grad_cam
         self.postGrad = sf_network.feaNet.post_grad_cam
+
+        self.multiply_options = lambda x, y: torch.sum(
+            torch.mul(x, y), axis=-1, keepdim=True
+        )
 
         self.algo_name = algo_name
 
@@ -40,17 +43,19 @@ class GradCam(nn.Module):
     def activations_hook(self, grad):
         self.gradients = grad
 
-    def forward(self, x, target="s"):
+    def forward(self, x, pos, target="s"):
         x = self.preGrad(x)
 
         # register the hook
         h = x.register_hook(self.activations_hook)
 
-        x = self.postGrad(x)
+        x = self.postGrad(x, pos)
 
         # apply the remaining pooling
         if self.algo_name == "SNAC":
             x_r, x_s = torch.split(x, x.size(-1) // 2, dim=-1)
+            reward = self.multiply_options(x_r, self.options)
+            reward = reward[0][0].detach().numpy()
             x = torch.sum(x_s, dim=-1)
             if target == "s":
                 x = torch.sum(x_s, dim=-1)
@@ -59,8 +64,9 @@ class GradCam(nn.Module):
             else:
                 raise ValueError(f"Unknown target: {target}")
         else:
+            reward = 0
             x = torch.sum(x)
-        return x
+        return x, reward
 
     # method for the gradient extraction
     def get_activations_gradient(self):
@@ -69,20 +75,6 @@ class GradCam(nn.Module):
     # method for the activation exctraction
     def get_activations(self, x):
         return self.preGrad(x)
-
-
-def get_env(args):
-    args.grid_size = 12
-    args.a_dim = 5
-    args.draw_map = False
-    map_path: str = "assets/ctf_avoid_obj.txt"
-    observation_option: str = "tensor"
-    if args.env_name == "CtF1v1":
-        env = Ctf1v1Env(map_path=map_path, observation_option=observation_option)
-    else:
-        raise NotImplementedError(f"{args.env_name} not implemented")
-    env = NoStateDictCtfWrapper(env, tile_size=args.tile_size)
-    return env
 
 
 def get_grid(env, args):
@@ -95,6 +87,41 @@ def get_grid(env, args):
     return grid, pos
 
 
+def plot(img, heatmap, reward, i):
+    img = img.numpy()
+    heatmap = heatmap.numpy()
+
+    ### Figure
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    normalized_img = (img[0, :, :, :] - img[0, :, :, :].min()) / (
+        img[0, :, :, :].max() - img[0, :, :, :].min()
+    )
+
+    print(normalized_img.shape)
+    axes[0].imshow(np.flipud(normalized_img))
+    axes[0].set_title("Original")
+
+    # Plot the second heatmap
+    axes[1].matshow(np.flipud(heatmap))
+    axes[1].set_title("Heatmap")
+    axes[1].colorbar = plt.colorbar(plt.cm.ScalarMappable(), ax=axes[1])
+
+    # Plot the second heatmap
+    alpha = 0.8
+    heatmap = cv2.resize(np.flipud(heatmap), (img.shape[2], img.shape[1]))
+    # heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    superimposed_img = heatmap * alpha + normalized_img * (1 - alpha)
+
+    axes[2].matshow(np.flipud(superimposed_img))
+    axes[2].set_title(f"Super-imposed with reward: {reward:1f}")
+
+    # draw the heatmap
+    plt.axis("off")
+    plt.savefig(f"heatmap/{i}.png")
+    plt.close()
+
+
 def run_loop(grid, pos, target="s"):
     for i in range(pos.shape[0]):
         x, y = pos[i, 0], pos[i, 1]
@@ -102,9 +129,10 @@ def run_loop(grid, pos, target="s"):
         img = grid.clone()
 
         img[:, x.long(), y.long(), 1] = 1
+        img[:, x.long(), y.long(), 2] = 2
 
         # do grad-cam
-        out = gradCam(img, target=target)
+        out, reward = gradCam(img, pos[i, :].unsqueeze(0), target=target)
         out.backward()
 
         gradients = gradCam.get_activations_gradient()
@@ -115,6 +143,7 @@ def run_loop(grid, pos, target="s"):
             activations[:, j, :, :] *= pooled_gradients[j]
 
         # average the channels of the activations
+        print(activations.shape)
         heatmap = torch.mean(activations, dim=1).squeeze()
 
         # normalize the heatmap
@@ -122,24 +151,8 @@ def run_loop(grid, pos, target="s"):
         max_val = torch.max(heatmap)
 
         heatmap = (heatmap - min_val) / (max_val - min_val + 1e-8)
-        heatmap = heatmap.numpy()
 
-        ### Figure
-        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-
-        axes[0].imshow(img[0, :, :, 0])
-        axes[0].set_title("Original")
-
-        # Plot the second heatmap
-        axes[1].matshow(heatmap)
-        axes[1].set_title("Heatmap")
-        axes[1].colorbar = plt.colorbar(plt.cm.ScalarMappable(), ax=axes[1])
-
-        # draw the heatmap
-        plt.axis("off")
-        plt.savefig(f"heatmap/{i}.png")
-        print(f"{i} th figure saved")
-        plt.close()
+        plot(img, heatmap, reward, i)
 
 
 if __name__ == "__main__":
@@ -148,7 +161,7 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.grid_size = 13
+    args.grid_size = 9
     args.device = torch.device("cpu")
 
     # call sf
@@ -159,7 +172,7 @@ if __name__ == "__main__":
     print(f"target Algorithm: {args.algo_name} | target: {target}")
 
     # call env
-    env = get_env(args)
+    env = call_env(args)
     grid, pos = get_grid(env, args)
 
     run_loop(grid, pos, target=target)
