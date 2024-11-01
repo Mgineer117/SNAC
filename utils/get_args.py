@@ -39,7 +39,7 @@ def get_args(verbose=True):
 
     # WandB and Logging parameters
     parser.add_argument(
-        "--project", type=str, default="Garbage", help="WandB project classification"
+        "--project", type=str, default="Exp", help="WandB project classification"
     )
     parser.add_argument(
         "--logdir", type=str, default="log/train_log", help="name of the logging folder"
@@ -106,7 +106,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=100,  # 300
+        default=300,  # 300
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -137,7 +137,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-option-length",
         type=int,
-        default=3,
+        default=5,
         help="Minimum time step requirement for option",
     )
     parser.add_argument(
