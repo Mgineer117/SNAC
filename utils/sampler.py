@@ -312,12 +312,18 @@ class OnlineSampler(Base):
             agent_pos = obs["agent_pos"]
 
             t = 0
+            if queue is None:
+                print('=================')
             while t < episode_len:
                 # for t in range(episode_len):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
                     feature = metaData["phi"]
+
+                    if queue is None:
+                        print(s[:,:,1])
+                        print(a)
 
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)

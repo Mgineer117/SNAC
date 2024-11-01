@@ -6,7 +6,7 @@ import random
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.lavarooms import LavaRooms
 
-from gym_multigrid.envs.ctf import Ctf1v1Env, Ctf1v2Env, Ctf1v3Env, Ctf1v4Env
+from gym_multigrid.envs.ctf import CtF
 from utils import NoStateDictWrapper, get_grid_tensor
 from utils.wrappers import NoStateDictCtfWrapper
 
@@ -43,26 +43,34 @@ def call_env(args):
         map_path: str = "assets/ctf_avoid_obj.txt"
         observation_option: str = "tensor"
         if args.env_name == "CtF1v1":
-            env = Ctf1v1Env(
+            env = CtF(
                 map_path=map_path,
+                num_blue_agents=1,
+                num_red_agents=1,
                 observation_option=observation_option,
                 step_penalty_ratio=0.0,
             )
         elif args.env_name == "CtF1v2":
-            env = Ctf1v2Env(
+            env = CtF(
                 map_path=map_path,
+                num_blue_agents=1,
+                num_red_agents=2,
                 observation_option=observation_option,
                 step_penalty_ratio=0.0,
             )
         elif args.env_name == "CtF1v3":
-            env = Ctf1v3Env(
+            env = CtF(
                 map_path=map_path,
+                num_blue_agents=1,
+                num_red_agents=3,
                 observation_option=observation_option,
                 step_penalty_ratio=0.0,
             )
         elif args.env_name == "CtF1v4":
-            env = Ctf1v4Env(
+            env = CtF(
                 map_path=map_path,
+                num_blue_agents=1,
+                num_red_agents=4,
                 observation_option=observation_option,
                 step_penalty_ratio=0.0,
             )

@@ -34,7 +34,7 @@ class CollectGameEnv(MultiGridEnv):
             Whether or not balls respawn after being collected.
         """
         self.size = kwargs["size"]
-        self.num_balls = np.sum(np.array(kwargs["num_balls"]))
+        self.num_balls = int(np.sum(np.array(kwargs["num_balls"])))
         self.collected_balls = 0
         self.balls_index = kwargs["balls_index"]
         self.balls_reward = kwargs["balls_reward"]
@@ -91,8 +91,10 @@ class CollectGameEnv(MultiGridEnv):
         self.grid.vert_wall(width - 1, 0)
 
         if not isinstance(self.num_balls, list):
-            raise TypeError(f'Expected num balls to be of type list, \
-            however type {type(self.num_balls)} was passed')
+            raise TypeError(
+                f"Expected num balls to be of type list, \
+            however type {type(self.num_balls)} was passed"
+            )
 
         for number, index, reward in zip(
             self.num_balls, self.balls_index, self.balls_reward
@@ -119,20 +121,20 @@ class CollectGameEnv(MultiGridEnv):
         return state, self.info
 
     def _reward(
-        self, current_agent: int, rewards: NDArray[np.float_], reward: float = 1
+        self, current_agent: int, rewards: NDArray[np.float64], reward: float = 1
     ) -> None:
         """
         Compute the reward to be given upon success
         """
         rewards[current_agent] += reward
-    
+
     def _respawn(self, color):
         self.place_obj(Ball(self.world, color, self.balls_reward[color]))
 
     def _handle_pickup(
         self,
         i,
-        rewards: NDArray[np.float_],
+        rewards: NDArray[np.float64],
         fwd_pos: Position,
         fwd_cell: WorldObjT | None,
     ) -> None:
@@ -148,7 +150,7 @@ class CollectGameEnv(MultiGridEnv):
 
     def move_agent(
         self,
-        rewards: NDArray[np.float_],
+        rewards: NDArray[np.float64],
         agent_index: int,
         next_cell: WorldObjT | None,
         next_pos: Position,
@@ -158,7 +160,7 @@ class CollectGameEnv(MultiGridEnv):
 
         Parameters
         ----------
-        rewards : NDArray[np.float_]
+        rewards : NDArray[np.float64]
             array of rewards for each agent
         agent_index : int
             index of agent to move
@@ -182,9 +184,9 @@ class CollectGameEnv(MultiGridEnv):
 
     def step(
         self, actions: list[int] | NDArray[np.int_]
-    ) -> tuple[NDArray[np.int_], NDArray[np.float_], bool, bool, dict]:
+    ) -> tuple[NDArray[np.int_], NDArray[np.float64], bool, bool, dict]:
         order: list[int] = np.random.permutation(len(actions)).tolist()
-        rewards: NDArray[np.float_] = np.zeros(len(actions))
+        rewards: NDArray[np.float64] = np.zeros(len(actions))
         terminated: bool = False
         truncated: bool = False
         self.step_count += 1
@@ -224,11 +226,13 @@ class CollectGameEnv(MultiGridEnv):
         """
         return self.num_ball_types
 
+
 class CollectGameEvenDist(CollectGameEnv):
     """
-        Collect game instance that has the same amount of balls
-        for each type of ball present
+    Collect game instance that has the same amount of balls
+    for each type of ball present
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.num_balls_per_type = self.num_balls // len(self.balls_index)
@@ -243,8 +247,10 @@ class CollectGameEvenDist(CollectGameEnv):
         self.grid.vert_wall(width - 1, 0)
 
         if not isinstance(self.num_balls, int):
-            raise TypeError(f'Expected num balls to be of type int, \
-            however type {type(self.num_balls)} was passed')
+            raise TypeError(
+                f"Expected num balls to be of type int, \
+            however type {type(self.num_balls)} was passed"
+            )
         assert len(self.balls_reward) == self.num_ball_types
         for ball_type in range(self.num_ball_types):
             for _ in range(self.num_balls_per_type):
@@ -257,6 +263,7 @@ class CollectGameEvenDist(CollectGameEnv):
                 )
         for a in self.agents:
             self.place_agent(a)
+
 
 class CollectGameQuadrants(CollectGameEnv):
     def __init__(self, *args, **kwargs):
@@ -298,6 +305,7 @@ class CollectGameQuadrants(CollectGameEnv):
         for a in self.agents:
             self.place_agent(a, agent_pos)
             agent_pos = (agent_pos[0] + 1, agent_pos[1])
+
 
 class CollectGameRooms(CollectGameEnv):
     def __init__(self, size: int = 11, *args, **kwargs):
@@ -341,8 +349,10 @@ class CollectGameRooms(CollectGameEnv):
         partition_size = (width // 2 - 1, width // 2 - 1)
         index = 0
         if not isinstance(self.num_balls, int):
-            raise TypeError(f'Expected num balls to be of type int, \
-            however type {type(self.num_balls)} was passed')
+            raise TypeError(
+                f"Expected num balls to be of type int, \
+            however type {type(self.num_balls)} was passed"
+            )
         num_colors: int = len(self.balls_index)
         assert len(self.balls_reward) == num_colors
         num_ball: int = round(self.num_balls / num_colors)
@@ -361,6 +371,7 @@ class CollectGameRooms(CollectGameEnv):
                 size=partition_size,
             )
 
+
 class CollectGameRoomsFixedHorizon(CollectGameRooms):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -368,6 +379,7 @@ class CollectGameRoomsFixedHorizon(CollectGameRooms):
     def step(self, actions):
         obs, rewards, _, truncated, info = super().step(actions)
         return obs, rewards, False, truncated, info
+
 
 class CollectGameQuadrantsRespawn(CollectGameQuadrants):
     def __init__(self):
@@ -406,4 +418,8 @@ class CollectGameQuadrantsRespawn(CollectGameQuadrants):
         ]
         partition_size = (self.width // 2 + 1, self.height // 2 + 1)
         top = partitions[color]
-        self.place_obj(Ball(self.world, color, self.balls_reward[color]), top=top, size=partition_size)
+        self.place_obj(
+            Ball(self.world, color, self.balls_reward[color]),
+            top=top,
+            size=partition_size,
+        )
