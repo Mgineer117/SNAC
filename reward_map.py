@@ -34,7 +34,7 @@ def run_loop(env, env_name, option_vals, options):
     # for i in [0, 4, 5, 6, 9]:
     if env_name == "FourRooms" or env_name == "LavaRooms":
         for i in range(10):
-            grid, pos, loc = get_grid_tensor(env, env_seed=i)
+            grid, pos, loc = get_grid_tensor(env, grid_type=i)
             save_path = f"RewardMap/{str(i)}"
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
@@ -57,7 +57,7 @@ def run_loop(env, env_name, option_vals, options):
             )
     elif env_name == "CtF1v1" or env_name == "CtF1v2":
         for i in range(10):
-            grid, pos, loc = get_grid_tensor2(env, env_seed=i)
+            grid, pos, loc = get_grid_tensor2(env, grid_type=i)
             save_path = f"RewardMap/{str(i)}"
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         draw_map=False,
     )
 
-    obs, _ = env.reset(seed=args.env_seed)
+    obs, _ = env.reset(seed=args.grid_type)
     grid_tensor = obs["observation"]
 
     run_loop(env, args.env_name, option_vals, options)

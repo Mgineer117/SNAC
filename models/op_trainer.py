@@ -45,7 +45,7 @@ class OPTrainer:
         eval_episodes: int = 10,
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         log_interval: int = 2,
-        env_seed: int = 0,
+        grid_type: int = 0,
     ) -> None:
         self.policy = policy
         self.sampler = sampler
@@ -71,7 +71,7 @@ class OPTrainer:
         self.num_env_steps = 0
 
         self.log_interval = log_interval
-        self.env_seed = env_seed
+        self.grid_type = grid_type
 
     def train(self) -> Dict[str, float]:
         start_time = time.time()
@@ -100,7 +100,7 @@ class OPTrainer:
                     name1=self._val_options[z],
                     dir_name="OP",
                     write_log=False,  # since OP needs to write log of average of all options
-                    env_seed=self.env_seed,
+                    grid_type=self.grid_type,
                 )
                 rew_mean[z] = avg_rew_mean
                 rew_std[z] = avg_rew_std
@@ -138,7 +138,7 @@ class OPTrainer:
                 ):
                     # sample batch
                     batch, sampleT = self.sampler.collect_samples(
-                        self.policy, idx=z, env_seed=self.env_seed
+                        self.policy, idx=z, grid_type=self.grid_type
                     )
                     sample_time += sampleT
 
@@ -177,7 +177,7 @@ class OPTrainer:
                 ):
                     # sample batch
                     batch, sampleT = self.sampler.collect_samples(
-                        self.policy, idx=z, env_seed=self.env_seed
+                        self.policy, idx=z, grid_type=self.grid_type
                     )
                     sample_time += sampleT
 
@@ -262,7 +262,7 @@ class OPTrainer2:
         prefix: str = "OP",
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         log_interval: int = 2,
-        env_seed: int = 0,
+        grid_type: int = 0,
     ) -> None:
         self.policy = policy
         self.sampler = sampler
@@ -289,7 +289,7 @@ class OPTrainer2:
         self.num_env_steps = 0
 
         self.log_interval = log_interval
-        self.env_seed = env_seed
+        self.grid_type = grid_type
 
     def train(self, z) -> Dict[str, float]:
         start_time = time.time()
@@ -314,7 +314,7 @@ class OPTrainer2:
                 name1=self.policy._option_vals[z],
                 dir_name=self.prefix,
                 write_log=False,  # since OP needs to write log of average of all options
-                env_seed=self.env_seed,
+                grid_type=self.grid_type,
             )
 
             # manual logging
@@ -338,7 +338,7 @@ class OPTrainer2:
 
                 # sample batch
                 batch, sampleT = self.sampler.collect_samples(
-                    self.policy, idx=z, env_seed=self.env_seed
+                    self.policy, idx=z, grid_type=self.grid_type
                 )
                 sample_time += sampleT
 

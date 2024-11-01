@@ -68,13 +68,13 @@ class HC_Evaluator(Evaluator):
         name1: str = None,
         name2: str = None,
         name3: str = None,
-        env_seed: int = 0,
+        grid_type: int = 0,
         seed: int = None,
         queue=None,
     ) -> Dict[str, List[float]]:
         ep_buffer = []
         if queue is not None:
-            self.set_any_seed(env_seed, seed)
+            self.set_any_seed(grid_type, seed)
 
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
@@ -83,7 +83,7 @@ class HC_Evaluator(Evaluator):
             ep_reward, ep_length = 0, 0
 
             # env initialization
-            obs, _ = env.reset(seed=env_seed)
+            obs, _ = env.reset(seed=grid_type)
 
             if self.gridCriteria:
                 self.init_grid(env)

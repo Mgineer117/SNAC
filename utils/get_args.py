@@ -72,7 +72,7 @@ def get_args(verbose=True):
         "--log-interval", type=int, default=1, help="logging interval; epoch-based"
     )
     parser.add_argument(
-        "--env-seed",
+        "--grid-type",
         type=int,
         default=0,
         help="0 or 1. Seed to fix the grid, agent, and goal locations",

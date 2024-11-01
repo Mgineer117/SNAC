@@ -271,7 +271,7 @@ def save_dim_to_args(env, args):
         # Done completing task
         done = 6
     """
-    obs, _ = env.reset(seed=args.env_seed)
+    obs, _ = env.reset(seed=args.grid_type)
     s = obs["observation"]
     agent_pos = obs["agent_pos"]
     # for _ in range(100):

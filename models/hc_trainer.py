@@ -38,7 +38,7 @@ class HCTrainer:
         eval_episodes: int = 10,
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         log_interval: int = 2,
-        env_seed: int = 0,
+        grid_type: int = 0,
     ) -> None:
         self.policy = policy
         self.sampler = sampler
@@ -61,7 +61,7 @@ class HCTrainer:
         self.num_env_steps = 0
 
         self.log_interval = log_interval
-        self.env_seed = env_seed
+        self.grid_type = grid_type
 
     def train(self) -> Dict[str, float]:
         start_time = time.time()
@@ -78,7 +78,7 @@ class HCTrainer:
                 epoch=e,
                 iter_idx=int(e * self._step_per_epoch),
                 dir_name=self._prefix,
-                env_seed=self.env_seed,
+                grid_type=self.grid_type,
             )
 
             self.last_reward_mean.append(avg_rew_mean)
@@ -90,7 +90,7 @@ class HCTrainer:
             ### training loop
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
-                    self.policy, env_seed=self.env_seed, is_option=True
+                    self.policy, grid_type=self.grid_type, is_option=True
                 )
                 loss, update_time = self.policy.learn(batch, prefix=self._prefix)
 

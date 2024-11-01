@@ -7,12 +7,12 @@ from utils.wrappers import NoStateDictWrapper
 from minigrid.core.grid import Grid
 
 
-def get_grid_tensor(env, env_seed):
+def get_grid_tensor(env, grid_type):
     """
     Can be extended to the multigrid by removing multiple agents
     FourRoom and LavaRoom tailored
     """
-    obs, _ = env.reset(seed=env_seed)
+    obs, _ = env.reset(seed=grid_type)
     grid_tensor = obs["observation"]
 
     loc = np.where(grid_tensor[:, :, 0] == 10)
@@ -28,12 +28,12 @@ def get_grid_tensor(env, env_seed):
     return grid_tensor, (x_coords, y_coords), loc
 
 
-def get_grid_tensor2(env, env_seed):
+def get_grid_tensor2(env, grid_type):
     """
     Can be extended to the multigrid by removing multiple agents
     CTF tailored
     """
-    obs, _ = env.reset(seed=env_seed)
+    obs, _ = env.reset(seed=grid_type)
     grid_tensor = obs["observation"]
 
     loc = np.where(grid_tensor[:, :, 1] == 1)

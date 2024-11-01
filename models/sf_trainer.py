@@ -40,7 +40,7 @@ class SFTrainer:
         step_per_epoch: int = 1000,
         eval_episodes: int = 10,
         log_interval: int = 2,
-        env_seed: int = 0,
+        grid_type: int = 0,
     ) -> None:
         self.policy = policy
         self.sampler = sampler
@@ -66,7 +66,7 @@ class SFTrainer:
         self.num_env_steps = 0
 
         self.log_interval = log_interval
-        self.env_seed = env_seed
+        self.grid_type = grid_type
 
     def train(self) -> Dict[str, float]:
         start_time = time.time()
@@ -84,7 +84,7 @@ class SFTrainer:
                 epoch=e,
                 iter_idx=int(e * self._step_per_epoch),
                 dir_name="SF",
-                env_seed=self.env_seed,
+                grid_type=self.grid_type,
             )
             self.save_model(e)
 
@@ -105,7 +105,7 @@ class SFTrainer:
                 self.scheduler.step()
 
             batch, sample_time = self.sampler.collect_samples(
-                self.policy, env_seed=self.env_seed
+                self.policy, grid_type=self.grid_type
             )
             self.buffer.push(batch)
 
@@ -120,7 +120,7 @@ class SFTrainer:
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
-                    self.policy, env_seed=self.env_seed
+                    self.policy, grid_type=self.grid_type
                 )
 
                 loss, update_time = self.policy.learnPsi(batch)
@@ -161,7 +161,7 @@ class SFTrainer:
         sample_time = 0
         while self.buffer.num_trj < self.buffer.min_num_trj:
             batch, sampleT = self.sampler.collect_samples(
-                self.policy, env_seed=self.env_seed
+                self.policy, grid_type=self.grid_type
             )
             self.buffer.push(batch, sort="reward")
             sample_time += sampleT

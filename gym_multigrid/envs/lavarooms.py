@@ -51,8 +51,8 @@ class LavaRooms(MultiGridEnv):
 
     def __init__(
         self,
-        env_seed: int = 0,
-        grid_size: tuple = (9, 9),
+        grid_type: int = 0,
+        grid_size: tuple = (13, 13),
         agent_view_size: int = 7,
         max_steps: int = 100,
         tile_size: int = 20,
@@ -67,12 +67,12 @@ class LavaRooms(MultiGridEnv):
         ----------
 
         """
-        if env_seed < 0 or env_seed >= 2:
+        if grid_type < 0 or grid_type >= 2:
             raise ValueError(
-                f"The Lavaroom only accepts env_seed of 0 and 1, given {env_seed}"
+                f"The Lavaroom only accepts grid_type of 0 and 1, given {grid_type}"
             )
         else:
-            self.env_seed = env_seed
+            self.grid_type = grid_type
 
         self.width = grid_size[0]
         self.height = grid_size[1]
@@ -94,20 +94,46 @@ class LavaRooms(MultiGridEnv):
             )
         ]
 
-        self.doorway_positions = [(5, 4)]
-        self.vert_wall_positions = [(4, 0), (5, 4)]
-        self.hor_wall_positions = [(0, 4), (4, 4)]
+        # These define a fixed grid information
+        # each index corresponds to the grid type
+        self.doorway_positions = [[(2, 6), (6, 2)]]
+        self.vert_wall_positions = [[(6, 0)]]
+        self.hor_wall_positions = [[(0, 6)]]
 
-        self.goal_positions = [(3, 2), (1, 1)]  # (7, 1)
-        self.agent_positions = [(1, 7), (1, 9)]
+        self.goal_positions = [[(9, 9)]]  # (7, 1)
+        self.agent_positions = [(3, 3)]
         self.lava_positions = [
             [
-                (3, 5),
-                (3, 6),
-                (4, 5),
-                (4, 7),
-                (5, 6),
-                (5, 7),
+                [
+                    (7, 4),
+                    (8, 4),
+                    (8, 5),
+                    (8, 6),
+                    (9, 3),
+                    (9, 4),
+                    (9, 5),
+                    (9, 6),
+                    (9, 7),
+                    (10, 4),
+                    (10, 5),
+                    (10, 6),
+                    (11, 5),
+                ],
+                [
+                    (4, 7),
+                    (4, 8),
+                    (5, 8),
+                    (6, 8),
+                    (3, 9),
+                    (4, 9),
+                    (5, 9),
+                    (6, 9),
+                    (7, 9),
+                    (4, 10),
+                    (5, 10),
+                    (6, 10),
+                    (5, 11),
+                ],
             ],
         ]
 
@@ -131,39 +157,37 @@ class LavaRooms(MultiGridEnv):
         self.grid = Grid(width, height, self.world)
 
         # Generate the surrounding walls
-        self.grid.horz_wall(0, 0)
-        self.grid.horz_wall(0, height - 1)
-        self.grid.vert_wall(0, 0)
-        self.grid.vert_wall(width - 1, 0)
+        self.grid.wall_rect(0, 0, width, height)
 
         room_w = width // 2
         room_h = height // 2
 
-        # # Bottom wall and door
-        # for coord in vert_wall_positions:
-        #     self.grid.vert_wall(coord[0], coord[1], room_h)
+        # Bottom wall and door
+        for coord in self.vert_wall_positions[self.grid_type]:
+            self.grid.vert_wall(coord[0], coord[1], room_h + 1)
 
         # Bottom wall and door
-        for coord in self.hor_wall_positions:
+        for coord in self.hor_wall_positions[self.grid_type]:
             self.grid.horz_wall(coord[0], coord[1], room_w)
 
-        for pos in self.doorway_positions:
+        for pos in self.doorway_positions[self.grid_type]:
             self.grid.set(*pos, None)
 
         # goal allocation
         # place goal
-        goal = Goal(self.world, 0)
-        self.put_obj(goal, *self.goal_positions[self.env_seed])
-        goal.init_pos, goal.cur_pos = self.goal_positions[self.env_seed]
+        for i, pos in enumerate(self.goal_positions[self.grid_type]):
+            goal = Goal(self.world, i)
+            self.put_obj(goal, *pos)
 
         # lava allocation
-        random_lava_positions = random.sample(self.lava_positions[0], 2)
-        for lava_pos in random_lava_positions:
-            lava = Lava(self.world)
-            self.put_obj(lava, *lava_pos)
+        for lava_pos_samples in self.lava_positions[self.grid_type]:
+            random_lava_positions = random.sample(lava_pos_samples, 3)
+            for lava_pos in random_lava_positions:
+                lava = Lava(self.world)
+                self.put_obj(lava, *lava_pos)
 
         # agent allocation
-        self.place_agent(self.agents[0], pos=self.agent_positions[self.env_seed])
+        self.place_agent(self.agents[0], pos=self.agent_positions[self.grid_type])
 
     def reset(
         self,
@@ -171,8 +195,7 @@ class LavaRooms(MultiGridEnv):
         seed: int | None = None,
         options: dict | None = None,
     ):
-        ### intentional to not feed seed since the grid and agent are fixed
-        obs, info = super().reset(options=options)
+        obs, info = super().reset(seed=seed, options=options)
 
         ### NOTE: not multiagent setting
         self.agent_pos = self.agents[0].pos
@@ -211,20 +234,19 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0 - 0.5 * (self.step_count / self.max_steps)
+                        rewards += 1.0  # - 0.5 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
-                        done = True
-                        rewards[i] = -0.5
+                        rewards[i] = -0.25
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards += 0.0
+                    rewards = 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             # Rotate right
@@ -235,20 +257,19 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0 - 0.5 * (self.step_count / self.max_steps)
+                        rewards += 1.0
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
-                        done = True
-                        rewards[i] = -0.5
+                        rewards[i] = -0.25
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards += 0.0
+                    rewards = 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             # Move forward
@@ -259,20 +280,19 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0 - 0.5 * (self.step_count / self.max_steps)
+                        rewards += 1.0
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
-                        done = True
-                        rewards[i] = -0.5
+                        rewards[i] = -0.25
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards += 0.0
+                    rewards = 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             elif actions[i] == self.actions.down:
@@ -282,20 +302,19 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0 - 0.5 * (self.step_count / self.max_steps)
+                        rewards += 1.0
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
-                        done = True
-                        rewards[i] = -0.5
+                        rewards[i] = -0.25
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards += 0.0
+                    rewards = 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
             else:
                 assert False, "unknown action"

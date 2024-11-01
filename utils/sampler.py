@@ -113,7 +113,7 @@ class Base:
         self,
         policy,
         idx: int = None,
-        env_seed: int = 0,
+        grid_type: int = 0,
         deterministic: bool = False,
         is_option: bool = False,
         is_covering_option: bool = False,
@@ -164,7 +164,7 @@ class Base:
                             self.episode_len,
                             self.episodes_per_worker,
                             idx,
-                            env_seed,
+                            grid_type,
                             i,
                             deterministic,
                         )
@@ -179,7 +179,7 @@ class Base:
                             self.episode_len,
                             self.episodes_per_worker,
                             idx,
-                            env_seed,
+                            grid_type,
                             i,
                             deterministic,
                         )
@@ -283,7 +283,7 @@ class OnlineSampler(Base):
         episode_len: int,
         episode_num: int,
         idx: int | None = None,
-        env_seed: int = 0,
+        grid_type: int = 0,
         seed: int | None = None,
         deterministic: bool = False,
     ):
@@ -307,23 +307,17 @@ class OnlineSampler(Base):
                 break
 
             # env initialization
-            obs, _ = env.reset(seed=env_seed)
+            obs, _ = env.reset(seed=grid_type)
             s = obs["observation"]
             agent_pos = obs["agent_pos"]
 
             t = 0
-            if queue is None:
-                print('=================')
             while t < episode_len:
                 # for t in range(episode_len):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
                     feature = metaData["phi"]
-
-                    if queue is None:
-                        print(s[:,:,1])
-                        print(a)
 
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
@@ -393,7 +387,7 @@ class OnlineSampler(Base):
         episode_len: int,
         episode_num: int,
         idx: int = None,
-        env_seed: int = 0,
+        grid_type: int = 0,
         seed: int | None = None,
         deterministic: bool = False,
     ):
@@ -417,7 +411,7 @@ class OnlineSampler(Base):
                 break
 
             # env initialization
-            obs, _ = env.reset(seed=env_seed)
+            obs, _ = env.reset(seed=grid_type)
             s = obs["observation"]
             agent_pos = obs["agent_pos"]
 
@@ -539,7 +533,7 @@ class OnlineSampler(Base):
         episode_len: int,
         episode_num: int,
         idx: int = None,
-        env_seed: int = 0,
+        grid_type: int = 0,
         seed: int | None = None,
         deterministic: bool = False,
     ):
@@ -571,7 +565,7 @@ class OnlineSampler(Base):
                 break
 
             # env initialization
-            obs, _ = env.reset(seed=env_seed)
+            obs, _ = env.reset(seed=grid_type)
             s = obs["observation"]
             agent_pos = obs["agent_pos"]
 

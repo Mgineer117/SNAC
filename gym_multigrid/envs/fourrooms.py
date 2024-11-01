@@ -50,7 +50,7 @@ class FourRooms(MultiGridEnv):
 
     def __init__(
         self,
-        env_seed: int = 0,
+        grid_type: int = 0,
         grid_size: tuple = (13, 13),
         agent_view_size: int = 7,
         max_steps: int = 100,
@@ -66,12 +66,12 @@ class FourRooms(MultiGridEnv):
         ----------
 
         """
-        if env_seed < 0 or env_seed >= 2:
+        if grid_type < 0 or grid_type >= 2:
             raise ValueError(
-                f"The Fourroom only accepts env_seed of 0 and 1, given {env_seed}"
+                f"The Fourroom only accepts grid_type of 0 and 1, given {grid_type}"
             )
         else:
-            self.env_seed = env_seed
+            self.grid_type = grid_type
 
         self.width = grid_size[0]
         self.height = grid_size[1]
@@ -150,12 +150,12 @@ class FourRooms(MultiGridEnv):
 
         # place goal
         goal = Goal(self.world, 0)
-        self.put_obj(goal, *self.goal_positions[self.env_seed])
-        goal.init_pos, goal.cur_pos = self.goal_positions[self.env_seed]
+        self.put_obj(goal, *self.goal_positions[self.grid_type])
+        goal.init_pos, goal.cur_pos = self.goal_positions[self.grid_type]
 
         # place agent
         for agent in self.agents:
-            self.place_agent(agent, pos=self.agent_positions[self.env_seed])
+            self.place_agent(agent, pos=self.agent_positions[self.grid_type])
 
     def reset(
         self,
@@ -163,7 +163,6 @@ class FourRooms(MultiGridEnv):
         seed: int | None = None,
         options: dict | None = None,
     ):
-        ### intentional to not feed seed since the grid and agent are fixed
         obs, info = super().reset(seed=seed, options=options)
 
         ### NOTE: not multiagent setting

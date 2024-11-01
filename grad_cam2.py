@@ -78,7 +78,7 @@ class GradCam(nn.Module):
 
 
 def get_grid(env, args):
-    grid, (x_coords, y_coords), loc = get_grid_tensor2(env, args.env_seed)
+    grid, (x_coords, y_coords), loc = get_grid_tensor2(env, args.grid_type)
     grid = grid[None, :, :, :]
     pos = np.hstack((x_coords[:, None], y_coords[:, None]))
 

@@ -694,14 +694,36 @@ class CtfMvNEnv(MultiGridEnv):
                 for i, j in self.obstacle:
                     static_object_layer[i, j] = 0
 
-                for agent in self.agents:
+                blue_agent_count: int = 0
+                red_agent_count: int = 0
+                for agent in self.agents[0 : self.num_blue_agents]:
                     assert agent.pos is not None
-                    agent_flag_layer[agent.pos[0], agent.pos[1]] = (
-                        1 if agent.color == "blue" else 2
-                    )
+                    agent_flag_layer[agent.pos[0], agent.pos[1]] = 1
                     agent_status_layer[agent.pos[0], agent.pos[1]] = (
                         1 if agent.terminated else 2
                     )
+
+                    blue_agent_count += 1
+
+                for agent in self.agents[self.num_blue_agents :]:
+                    assert agent.pos is not None
+                    agent_flag_layer[agent.pos[0], agent.pos[1]] = 2
+                    agent_status_layer[agent.pos[0], agent.pos[1]] = (
+                        1 if agent.terminated else 2
+                    )
+
+                    red_agent_count += 1
+
+                if blue_agent_count != self.num_blue_agents:
+                    raise ValueError(
+                        f"Number of blue agents in the grid ({blue_agent_count}) is not equal to the number of blue agents ({self.num_blue_agents}) at step {self.step_count}."
+                    )
+                elif red_agent_count != self.num_red_agents:
+                    raise ValueError(
+                        f"Number of red agents in the grid ({red_agent_count}) is not equal to the number of red agents ({self.num_red_agents}) at step {self.step_count}."
+                    )
+                else:
+                    pass
 
                 # Flags
                 agent_flag_layer[self.blue_flag[0], self.blue_flag[1]] = 3
@@ -1068,8 +1090,8 @@ class CtF(CtfMvNEnv):
     def __init__(
         self,
         map_path: str,
-        num_blue_agents:int,
-        num_red_agents:int,
+        num_blue_agents: int,
+        num_red_agents: str,
         enemy_policy: Type[CtfPolicyT] | str = RwPolicy,
         enemy_policy_kwarg: dict[str, Any] = {},
         battle_range: float = 1,

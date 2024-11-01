@@ -75,7 +75,7 @@ class Evaluator:
         name2: str = None,
         name3: str = None,
         write_log: bool = True,
-        env_seed: int = 0,
+        grid_type: int = 0,
     ) -> Dict[str, List[float]]:
         """
         policy: decision-maker
@@ -112,7 +112,7 @@ class Evaluator:
                     name2=name2,
                     name3=name3,
                     queue=None,
-                    env_seed=env_seed,
+                    grid_type=grid_type,
                     seed=i,
                 )
                 rew_mean_sum += rew_mean
@@ -135,7 +135,7 @@ class Evaluator:
                         name2=name2,
                         name3=name3,
                         queue=None,
-                        env_seed=env_seed,
+                        grid_type=grid_type,
                         seed=i,
                     )
                     rew_mean_sum += rew_mean
@@ -154,7 +154,7 @@ class Evaluator:
                             name1,
                             name2,
                             name3,
-                            env_seed,
+                            grid_type,
                             i,
                             queue,
                         ),
@@ -202,7 +202,7 @@ class Evaluator:
         for key, value in logging_dict.items():
             self.writer.add_scalar(key, value, int(iter_idx))
 
-    def set_any_seed(self, env_seed, seed):
+    def set_any_seed(self, grid_type, seed):
         """
         This saves current seed info and calls after stochastic action selection.
         -------------------------------------------------------------------------
@@ -211,7 +211,7 @@ class Evaluator:
         """
 
         # Set the temporary seed
-        temp_seed = env_seed + seed
+        temp_seed = grid_type + seed
         torch.manual_seed(temp_seed)
         np.random.seed(temp_seed)
         random.seed(temp_seed)
