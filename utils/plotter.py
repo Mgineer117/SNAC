@@ -528,7 +528,8 @@ class Plotter:
 
             # reassign the agent
             img = grid_tensor.clone()
-            img = np.sum(img, axis=-1)
+
+            img = torch.sum(img, axis=-1)
             img = (img - img.min()) / (img.max() - img.min())
 
             ax0 = fig.add_subplot(131)
