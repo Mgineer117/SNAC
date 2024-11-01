@@ -125,7 +125,7 @@ class FeatureTrain:
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
                 log_interval=self.args.log_interval,
-                env_seed=self.args.env_seed,
+                grid_type=self.args.grid_type,
             )
             final_epoch = sf_trainer.train()
         else:

@@ -313,7 +313,6 @@ class OnlineSampler(Base):
 
             t = 0
             while t < episode_len:
-                # for t in range(episode_len):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()

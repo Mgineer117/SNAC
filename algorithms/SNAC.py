@@ -145,7 +145,7 @@ class SNAC:
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
                 log_interval=self.args.log_interval,
-                env_seed=self.args.env_seed,
+                grid_type=self.args.grid_type,
             )
             final_epoch = op_trainer.train()
         else:
@@ -175,7 +175,7 @@ class SNAC:
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
                 log_interval=self.args.log_interval,
-                env_seed=self.args.env_seed,
+                grid_type=self.args.grid_type,
             )
             hc_trainer.train()
         self.curr_epoch += self.args.HC_epoch

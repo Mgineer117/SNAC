@@ -17,7 +17,7 @@ from log.wandb_logger import WandbLogger
 def discover_options(
     policy: BasePolicy,
     sampler: OnlineSampler,
-    env_seed: int = 0,
+    grid_type: int = 0,
     algo_name: str = "SNAC-combined",
     method: str = "SVD",
     classification: str = "top",
@@ -45,7 +45,7 @@ def discover_options(
     )
     while option_buffer.num_trj < option_buffer.min_num_trj:
         batch, sample_time = sampler.collect_samples(
-            policy, env_seed=env_seed, idx=idx, is_covering_option=is_covering_option
+            policy, grid_type=grid_type, idx=idx, is_covering_option=is_covering_option
         )
         option_buffer.push(batch)
     batch = option_buffer.sample_all()
@@ -318,7 +318,7 @@ def get_eigenvectors(
         option_vals, options, S_list, V_list, names, batch = discover_options(
             policy=network,
             sampler=sampler,
-            env_seed=args.env_seed,
+            grid_type=args.grid_type,
             algo_name=args.algo_name,
             method="SVD",
             classification="all",
@@ -345,7 +345,7 @@ def get_eigenvectors(
         option_vals, options, S_list, V_list, names, batch = discover_options(
             policy=network,
             sampler=sampler,
-            env_seed=args.env_seed,
+            grid_type=args.grid_type,
             algo_name=args.algo_name,
             method="SVD",
             classification="top",
@@ -360,7 +360,7 @@ def get_eigenvectors(
         option_vals, options, S_list, V_list, names, batch = discover_options(
             policy=network,
             sampler=sampler,
-            env_seed=args.env_seed,
+            grid_type=args.grid_type,
             algo_name=args.algo_name,
             method="SVD",
             classification="all",
@@ -389,7 +389,7 @@ def get_eigenvectors(
 
     if draw_map:
         if args.env_name == "FourRooms":
-            grid_tensor, coords, loc = get_grid_tensor(env, args.env_seed)
+            grid_tensor, coords, loc = get_grid_tensor(env, args.grid_type)
             plotter.plotRewardMap(
                 feaNet=network.feaNet,
                 S=option_vals,
@@ -403,7 +403,7 @@ def get_eigenvectors(
                 device=args.device,
             )
         elif args.env_name == "LavaRooms":
-            grid_tensor, coords, loc = get_grid_tensor(env, args.env_seed)
+            grid_tensor, coords, loc = get_grid_tensor(env, args.grid_type)
             plotter.plotRewardMap(
                 feaNet=network.feaNet,
                 S=option_vals,
@@ -417,7 +417,7 @@ def get_eigenvectors(
                 device=args.device,
             )
         elif args.env_name == "CtF1v1" or args.env_name == "CtF1v2":
-            grid_tensor, coords, loc = get_grid_tensor2(env, args.env_seed)
+            grid_tensor, coords, loc = get_grid_tensor2(env, args.grid_type)
             plotter.plotRewardMap2(
                 feaNet=network.feaNet,
                 S=option_vals,

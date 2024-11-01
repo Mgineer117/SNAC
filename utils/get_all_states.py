@@ -104,13 +104,13 @@ def generate_possible_states(env, path, args):
     return grid_tensor, (x_coords, y_coords)
 
 
-def generate_possible_tensors(env, path, args, tile_size, env_seed):
+def generate_possible_tensors(env, path, args, tile_size, grid_type):
     # Check if the given render mode is not human
     if env.render_mode != "rgb_array":
         raise ValueError(f"render mode should be rgb_array. Current: {env.render_mode}")
 
     # get the raw grid tensor without agent in the image
-    grid_tensor, original_tensor = get_grid_tensor(env, env_seed)
+    grid_tensor, original_tensor = get_grid_tensor(env, grid_type)
     # get coordinates where the agent can visit
     x_coords, y_coords = np.where(
         grid_tensor[:, :, 0] != 2 and grid_tensor[:, :, 0] != 8

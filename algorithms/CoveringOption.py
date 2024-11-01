@@ -169,7 +169,7 @@ class CoveringOption:
                 )
                 self.train_op_network(vec_idx=vec_idx)
 
-            grid_tensor, coords, loc = get_grid_tensor(self.env, self.args.env_seed)
+            grid_tensor, coords, loc = get_grid_tensor(self.env, self.args.grid_type)
             if self.args.draw_map:
                 self.plotter.plotRewardMap(
                     feaNet=self.sf_network.feaNet,
@@ -208,7 +208,7 @@ class CoveringOption:
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
                 log_interval=self.args.log_interval,
-                env_seed=self.args.env_seed,
+                grid_type=self.args.grid_type,
             )
             hc_trainer.train()
         self.curr_epoch += self.args.HC_epoch
@@ -233,7 +233,7 @@ class CoveringOption:
         while option_buffer.num_trj < option_buffer.min_num_trj:
             batch, sample_time = self.sampler.collect_samples(
                 policy,
-                env_seed=self.args.env_seed,
+                grid_type=self.args.grid_type,
                 idx=idx,
                 is_covering_option=True,
             )
@@ -317,7 +317,7 @@ class CoveringOption:
                 eval_episodes=self.args.eval_episodes,
                 prefix="OP/" + str(z),
                 log_interval=self.args.log_interval,
-                env_seed=self.args.env_seed,
+                grid_type=self.args.grid_type,
             )
 
             op_trainer.train(z)
