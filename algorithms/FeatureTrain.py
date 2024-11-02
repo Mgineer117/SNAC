@@ -124,7 +124,7 @@ class FeatureTrain:
                 psi_epoch=self.args.Psi_epoch,
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
-                log_interval=self.args.log_interval,
+                log_interval=self.args.sf_log_interval,
                 grid_type=self.args.grid_type,
             )
             final_epoch = sf_trainer.train()

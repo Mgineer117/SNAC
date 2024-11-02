@@ -76,16 +76,8 @@ class CoveringOption:
             training_env=self.env,
             plotter=self.plotter,
             dir=self.op_path,
-            log_interval=args.log_interval,
+            log_interval=args.op_log_interval,
             eval_ep_num=5,
-        )
-        self.ug_evaluator = UG_Evaluator(
-            logger=logger,
-            writer=writer,
-            training_env=self.env,
-            plotter=self.plotter,
-            dir=self.ug_path,
-            log_interval=args.log_interval,
         )
         self.hc_evaluator = HC_Evaluator(
             logger=logger,
@@ -95,7 +87,7 @@ class CoveringOption:
             renderPlot=args.rendering,
             dir=self.hc_path,
             min_option_length=args.min_option_length,
-            log_interval=args.log_interval,
+            log_interval=args.hc_log_interval,
             eval_ep_num=10,
         )
 
@@ -207,7 +199,7 @@ class CoveringOption:
                 init_epoch=self.curr_epoch,
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
-                log_interval=self.args.log_interval,
+                log_interval=self.args.hc_log_interval,
                 grid_type=self.args.grid_type,
             )
             hc_trainer.train()
@@ -316,7 +308,7 @@ class CoveringOption:
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
                 prefix="OP/" + str(z),
-                log_interval=self.args.log_interval,
+                log_interval=self.args.op_log_interval,
                 grid_type=self.args.grid_type,
             )
 

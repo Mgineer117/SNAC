@@ -69,8 +69,18 @@ def get_args(verbose=True):
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
-        "--log-interval", type=int, default=1, help="logging interval; epoch-based"
+        "--sf-log-interval", type=int, default=20, help="logging interval; epoch-based"
     )
+    parser.add_argument(
+        "--op-log-interval", type=int, default=2, help="logging interval; epoch-based"
+    )
+    parser.add_argument(
+        "--hc-log-interval", type=int, default=20, help="logging interval; epoch-based"
+    )
+    parser.add_argument(
+        "--ppo-log-interval", type=int, default=20, help="logging interval; epoch-based"
+    )
+    
     parser.add_argument(
         "--grid-type",
         type=int,

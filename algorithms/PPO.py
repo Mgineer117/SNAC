@@ -68,7 +68,7 @@ class PPO:
             plotter=self.plotter,
             renderPlot=args.rendering,
             dir=self.ppo_path,
-            log_interval=args.log_interval,
+            log_interval=args.ppo_log_interval,
             eval_ep_num=10,
         )
 
@@ -90,7 +90,7 @@ class PPO:
                 init_epoch=self.curr_epoch,
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
-                log_interval=self.args.log_interval,
+                log_interval=self.args.ppo_log_interval,
                 grid_type=self.args.grid_type,
             )
             final_epoch = ppo_trainer.train()
