@@ -91,7 +91,7 @@ class FeatureTrain:
             training_env=self.env,
             plotter=self.plotter,
             dir=self.sf_path,
-            log_interval=args.log_interval,
+            log_interval=args.sf_log_interval,
         )
 
     def train(self):
