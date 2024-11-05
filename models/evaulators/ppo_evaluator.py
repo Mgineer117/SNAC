@@ -76,6 +76,7 @@ class PPO_Evaluator(Evaluator):
         if queue is not None:
             self.set_any_seed(grid_type, seed)
 
+        red_flag_captured = np.zeros((self.eval_ep_num, ))
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
@@ -98,10 +99,12 @@ class PPO_Evaluator(Evaluator):
                 if self.gridCriteria:
                     self.get_agent_pos(env)
 
-                ns, rew, term, trunc, _ = env.step(a)
+                ns, rew, term, trunc, infos = env.step(a)
                 done = term or trunc
 
                 s = ns
+                if "red_flag_captured" in infos:
+                    red_flag_captured[num_episodes] = np.maximum(red_flag_captured[num_episodes], infos["red_flag_captured"])
                 ep_reward += rew
                 ep_length += 1
 
@@ -142,11 +145,12 @@ class PPO_Evaluator(Evaluator):
 
         rew_mean, rew_std = np.mean(reward_list), np.std(reward_list)
         ln_mean, ln_std = np.mean(length_list), np.std(length_list)
+        winRate_mean, winRate_std = np.mean(red_flag_captured), np.std(red_flag_captured)
 
         if queue is not None:
-            queue.put([rew_mean, rew_std, ln_mean, ln_std])
+            queue.put([rew_mean, rew_std, ln_mean, ln_std, winRate_mean, winRate_std])
         else:
-            return rew_mean, rew_std, ln_mean, ln_std
+            return rew_mean, rew_std, ln_mean, ln_std, winRate_mean, winRate_std
 
     def update_render_criteria(self, epoch, num_episodes):
         basisCriteria = epoch % self.log_interval == 0 and num_episodes == 0
