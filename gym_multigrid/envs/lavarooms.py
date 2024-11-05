@@ -181,7 +181,7 @@ class LavaRooms(MultiGridEnv):
 
         # lava allocation
         for lava_pos_samples in self.lava_positions[self.grid_type]:
-            random_lava_positions = random.sample(lava_pos_samples, 3)
+            random_lava_positions = random.sample(lava_pos_samples, 2)
             for lava_pos in random_lava_positions:
                 lava = Lava(self.world)
                 self.put_obj(lava, *lava_pos)
@@ -234,20 +234,19 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0  # - 0.5 * (self.step_count / self.max_steps)
+                        rewards += 1.0  - 0.9 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
-                        done = True
                         rewards[i] = -0.25
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards = 0
+                    rewards[i] += 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             # Rotate right
@@ -258,20 +257,19 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0
+                        rewards += 1.0- 0.9 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
-                        done = True
                         rewards[i] = -0.25
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards = 0
+                    rewards[i] += 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             # Move forward
@@ -282,20 +280,19 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0
+                        rewards += 1.0- 0.9 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
-                        done = True
                         rewards[i] = -0.25
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards = 0
+                    rewards[i] += 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             elif actions[i] == self.actions.down:
@@ -305,20 +302,19 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0
+                        rewards += 1.0- 0.9 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
                         rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "lava":
-                        done = True
                         rewards[i] = -0.25
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.agents[i].pos = fwd_pos
                 else:
-                    rewards = 0
+                    rewards[i] += 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
             else:
                 assert False, "unknown action"
