@@ -69,16 +69,16 @@ def get_args(verbose=True):
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
-        "--sf-log-interval", type=int, default=25, help="logging interval; epoch-based"
+        "--sf-log-interval", type=int, default=100, help="logging interval; epoch-based"
     )
     parser.add_argument(
-        "--op-log-interval", type=int, default=2, help="logging interval; epoch-based"
+        "--op-log-interval", type=int, default=5, help="logging interval; epoch-based"
     )
     parser.add_argument(
-        "--hc-log-interval", type=int, default=25, help="logging interval; epoch-based"
+        "--hc-log-interval", type=int, default=100, help="logging interval; epoch-based"
     )
     parser.add_argument(
-        "--ppo-log-interval", type=int, default=25, help="logging interval; epoch-based"
+        "--ppo-log-interval", type=int, default=100, help="logging interval; epoch-based"
     )
 
     parser.add_argument(
@@ -98,25 +98,25 @@ def get_args(verbose=True):
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=250,  # 500
+        default=1000,  # 500
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=300,  # 300
+        default=1000,  # 300
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=10,  # 10
+        default=30,  # 10
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=300,  # 300
+        default=1000,  # 300
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -128,7 +128,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--step-per-epoch",
         type=int,
-        default=200,  # 200
+        default=50,  # 200
         help="number of iterations within one epoch",
     )
     parser.add_argument(
