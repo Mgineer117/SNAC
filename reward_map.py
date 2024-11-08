@@ -32,10 +32,33 @@ def remove_dir(dir_path):
 
 def run_loop(env, env_name, option_vals, options):
     # for i in [0, 4, 5, 6, 9]:
-    if env_name == "FourRooms" or env_name == "LavaRooms":
+    if env_name == "FourRooms":
+        grid, pos, loc = get_grid_tensor(env, grid_type=i)
+        
+        save_path = f"RewardMap/FourRooms"
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)
+        else:
+            remove_dir(save_path)
+            os.mkdir(save_path)
+
+        # do reward Plot
+        plotter.plotRewardMap(
+            feaNet=sf_network.feaNet,
+            S=option_vals,
+            V=options,
+            feature_dim=args.sf_dim,
+            algo_name=args.algo_name,
+            grid_tensor=grid,
+            coords=pos,
+            loc=loc,
+            dir=save_path,
+            device=args.device,
+        )
+    elif env_name == "LavaRooms":
+        grid, pos, loc = get_grid_tensor(env, grid_type=i)
         for i in range(10):
-            grid, pos, loc = get_grid_tensor(env, grid_type=i)
-            save_path = f"RewardMap/{str(i)}"
+            save_path = f"RewardMap/LavaRooms/{str(i)}"
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
             else:
@@ -53,12 +76,45 @@ def run_loop(env, env_name, option_vals, options):
                 coords=pos,
                 loc=loc,
                 dir=save_path,
-                device=args.device,
-            )
+                device=args.device,)
+
     elif env_name == "CtF1v1" or env_name == "CtF1v2":
-        for i in range(10):
-            grid, pos, loc = get_grid_tensor2(env, grid_type=i)
-            save_path = f"RewardMap/{str(i)}"
+        # prepare the grid
+        obs, _ = env.reset(seed=args.grid_type)
+        grid_tensor = obs["observation"]
+        env.close()
+
+        agent_pos = np.where(grid_tensor[:, :, 1] == 1)
+        enemy_pos = np.where(grid_tensor[:, :, 1] == 2)
+
+        grid_tensor[agent_pos[0], agent_pos[1], 1] = 0
+        grid_tensor[agent_pos[0], agent_pos[1], 2] = 0
+        
+        grid_tensor[enemy_pos[0], enemy_pos[1], 1] = 0
+        grid_tensor[enemy_pos[0], enemy_pos[1], 2] = 0
+
+        x_coords, y_coords = np.where(
+            (grid_tensor[:, :, 0] != 0)
+            & (grid_tensor[:, :, 1] != 3)
+            & (grid_tensor[:, :, 1] != 4)
+        )  # find idx where not wall
+
+        for x, y in zip(x_coords, y_coords):
+            grid = grid_tensor.copy() 
+            # enemy assignment
+            grid[x, y, 1] = 2 
+            grid[x, y, 2] = 2 
+
+            # find idx where not wall and red agent 
+            pos = np.where(
+                (grid_tensor[:, :, 0] != 0)
+                & (grid_tensor[:, :, 1] != 2)
+                & (grid_tensor[:, :, 1] != 3)
+                & (grid_tensor[:, :, 1] != 4)
+            )  
+            
+            # prepare the path
+            save_path = f"RewardMap/CtF/{str(x)}_{str(y)}"
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
             else:
@@ -73,7 +129,6 @@ def run_loop(env, env_name, option_vals, options):
                 algo_name=args.algo_name,
                 grid_tensor=grid,
                 coords=pos,
-                loc=loc,
                 dir=save_path,
                 device=args.device,
             )
@@ -86,7 +141,7 @@ if __name__ == "__main__":
         config = json.load(json_file)
     args = DotDict(config)
     args.grid_size = 12
-    args.num_vector = 8
+    args.num_vector = 16
     args.device = torch.device("cpu")
 
     # call sf

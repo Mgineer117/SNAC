@@ -567,7 +567,6 @@ class Plotter:
         algo_name: str,
         grid_tensor: np.ndarray,
         coords: tuple,
-        loc: np.ndarray,
         dir: str,
         device=torch.device("cpu"),
     ):
