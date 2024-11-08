@@ -69,7 +69,12 @@ class WorldObj:
 
     def encode(self, current_agent: bool = False) -> tuple[int, ...]:
         """Encode the a description of this object as a 3-tuple of integers"""
-        if self.world.encode_dim == 3:
+        if self.world.encode_dim == 1:
+            return (
+                self.world.OBJECT_TO_IDX[self.type],
+            )
+
+        elif self.world.encode_dim == 3:
             return (
                 self.world.OBJECT_TO_IDX[self.type],
                 self.world.COLOR_TO_IDX[self.color],

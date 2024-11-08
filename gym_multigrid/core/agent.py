@@ -49,21 +49,6 @@ class MineActions(enum.IntEnum):
     build = 4
 
 
-class CtfActions(enum.IntEnum):
-    stay = 0
-    left = 1
-    down = 2
-    right = 3
-    up = 4
-
-
-class FRActions(enum.IntEnum):
-    left = 0
-    up = 1
-    right = 2
-    down = 3
-
-
 class MazeActions(enum.IntEnum):
     stay = 0
     left = 1
@@ -145,7 +130,11 @@ class Agent(WorldObj):
 
     def encode(self, current_agent=False):
         """Encode the a description of this object as a 3-tuple of integers"""
-        if self.world.encode_dim == 3:
+        if self.world.encode_dim == 1:
+            return (
+                self.world.OBJECT_TO_IDX[self.type],
+            )
+        elif self.world.encode_dim == 3:
             return (
                 self.world.OBJECT_TO_IDX[self.type],
                 self.world.COLOR_TO_IDX[self.color],

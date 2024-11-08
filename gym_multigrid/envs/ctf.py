@@ -4,7 +4,7 @@ from gymnasium import spaces
 import numpy as np
 from numpy.typing import NDArray
 
-from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, CtfActions
+from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, MazeActions
 from gym_multigrid.core.grid import Grid
 from gym_multigrid.core.object import Floor, Flag, Obstacle, WorldObjT
 from gym_multigrid.core.world import CtfWorld
@@ -134,7 +134,7 @@ class CtfMvNEnv(MultiGridEnv):
         agent_view_size: int = 10
 
         self.world = CtfWorld
-        self.actions_set = CtfActions
+        self.actions_set = MazeActions
         see_through_walls: bool = False
 
         self._map_path: Final[str] = map_path

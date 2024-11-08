@@ -161,8 +161,8 @@ class CoveringOption:
                 )
                 self.train_op_network(vec_idx=vec_idx)
 
-            grid_tensor, coords, loc = get_grid_tensor(self.env, self.args.grid_type)
             if self.args.draw_map:
+                grid_tensor, coords, loc = get_grid_tensor(self.env, self.args.grid_type)
                 self.plotter.plotRewardMap(
                     feaNet=self.sf_network.feaNet,
                     S=self.option_vals,

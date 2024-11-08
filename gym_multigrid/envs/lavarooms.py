@@ -10,11 +10,11 @@ from numpy.typing import NDArray
 
 from gym_multigrid.core.constants import *
 from gym_multigrid.utils.window import Window
-from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, FRActions
+from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, MazeActions
 from gym_multigrid.core.grid import Grid
 from gym_multigrid.core.object import Goal
 from gym_multigrid.core.object import Lava
-from gym_multigrid.core.world import FRWorld
+from gym_multigrid.core.world import RoomWorld
 from gym_multigrid.multigrid import MultiGridEnv
 from gym_multigrid.typing import Position
 
@@ -78,8 +78,8 @@ class LavaRooms(MultiGridEnv):
         self.height = grid_size[1]
         self.grid_size = grid_size
         self.max_steps = max_steps
-        self.world = FRWorld
-        self.actions_set = FRActions
+        self.world = RoomWorld
+        self.actions_set = MazeActions
 
         see_through_walls: bool = False
 
@@ -202,7 +202,7 @@ class LavaRooms(MultiGridEnv):
         self.agent_pos = self.agents[0].pos
 
         ### NOTE: NOT MULTIAGENT SETTING
-        observations = {"image": obs[0]}
+        observations = {"image": obs[0][:, :, 0:1]}
         return observations, info
 
     def step(self, actions):
@@ -321,6 +321,11 @@ class LavaRooms(MultiGridEnv):
                 else:
                     rewards[i] += 0
                 self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
+            elif actions[i] == self.actions.stay:
+                # Get the contents of the cell in front of the agent
+                fwd_pos = curr_pos
+                fwd_cell = self.grid.get(*fwd_pos)
+                self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
             else:
                 assert False, "unknown action"
 
@@ -341,6 +346,6 @@ class LavaRooms(MultiGridEnv):
         obs = [self.world.normalize_obs * ob for ob in obs]
 
         ### NOTE: not multiagent
-        observations = {"image": obs[0]}
+        observations = {"image": obs[0][:, :, 0:1]}
 
         return observations, rewards, terminated, truncated, {}

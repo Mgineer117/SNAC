@@ -17,7 +17,6 @@ from utils.eigenvector import cluster_vecvtors, discover_options, get_eigenvecto
 
 from utils.get_args import get_args
 from utils.get_all_states import (
-    generate_possible_states,
     generate_possible_tensors,
     get_grid_tensor,
     get_grid_tensor2,
@@ -27,7 +26,6 @@ from utils.sampler import OnlineSampler
 from utils.plotter import Plotter
 from utils.wrappers import (
     StateImageWrapper,
-    StateTensorWrapper,
     NoStateDictWrapper,
     NoStateDictCtfWrapper,
 )
@@ -43,7 +41,6 @@ __all__ = [
     "setup_logger",
     "cluster_vecvtors",
     "discover_options",
-    "generate_possible_states",
     "generate_possible_tensors",
     "get_grid_tensor",
     "TrajectoryBuffer",
@@ -52,7 +49,6 @@ __all__ = [
     "get_eigenvectors",
     "Plotter",
     "StateImageWrapper",
-    "StateTensorWrapper",
     "NoStateDictWrapper",
     "print_model_summary",
     "get_args",

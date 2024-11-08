@@ -39,7 +39,7 @@ def get_args(verbose=True):
 
     # WandB and Logging parameters
     parser.add_argument(
-        "--project", type=str, default="Exp", help="WandB project classification"
+        "--project", type=str, default="Test", help="WandB project classification"
     )
     parser.add_argument(
         "--logdir", type=str, default="log/train_log", help="name of the logging folder"
@@ -98,25 +98,25 @@ def get_args(verbose=True):
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=1000,  # 500
+        default=2000,  # 500
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=1000,  # 300
+        default=2000,  # 300
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=30,  # 10
+        default=50,  # 10
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=1000,  # 300
+        default=2000,  # 300
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -128,7 +128,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--step-per-epoch",
         type=int,
-        default=50,  # 200
+        default=25,  # 200
         help="number of iterations within one epoch",
     )
     parser.add_argument(
@@ -195,7 +195,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--a-dim",
         type=int,
-        default=4,
+        default=None,
         help="One can arbitrarily set the max dimension of action when one wants to disregard other useless action components of Minigrid",
     )
 
