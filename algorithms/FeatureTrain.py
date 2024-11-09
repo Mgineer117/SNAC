@@ -19,7 +19,7 @@ from utils.call_env import call_env
 
 
 class FeatureTrain:
-    def __init__(self, logger, writer, args):
+    def __init__(self, env, logger, writer, args):
         """
         SNAC Specialized Neurons and Clustering Architecture
         ---------------------------------------------------------------------------
@@ -34,11 +34,7 @@ class FeatureTrain:
                 - PPO is used to train OP network
             - Train HC network (Hierarchical Controller that alternates between option and random walk)
         """
-        ### define essential componenets for project
-        ### env here must be grid & agent fixed while others stochastic
-        # get the possible coordinates for agent allocation
-        self.env = call_env(args)
-        save_dim_to_args(self.env, args)  # given env, save its state and action dim
+        self.env = env
 
         # define buffers and sampler for Monte-Carlo sampling
         self.buffer = TrajectoryBuffer(

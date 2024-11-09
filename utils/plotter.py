@@ -500,9 +500,33 @@ class Plotter:
             # Normalize negative rewards between 0 and -1
             rewards[k, neg_rewards] = rewards[k, neg_rewards] / (abs(r_neg_min) + 1e-10)
 
-        walls = (grid_tensor == 2.0)[:, :, 0]
-        rewards[:, walls] = 0.0
+        obstacles = ((grid_tensor == 2.0) | (grid_tensor == 8.0) | (grid_tensor == 9.0))[:, :, 0]
+        rewards[:, obstacles] = -10.0
+        rewards_clone = rewards.clone()
+        rewards[:, obstacles] = 0.0
 
+        # get the maximum indices
+        indices = []
+        for k in range(num_vec):
+            # Find the index of the maximum element
+            indices.append(np.unravel_index(np.argmax(rewards_clone[k, :, :]), rewards_clone[k, :, :].shape))
+        labels = np.arange(len(indices))
+        
+        ### This is to create labels so that 
+        # labels do not overlap on the image
+        max_coords = []
+        max_labels = []
+        for k in range(len(indices)):
+            y, x = indices[k]
+            if (y, x) == (None, None):
+                pass
+            else:
+                max_coords.append((y,x))
+                positions = [i for i, value in enumerate(indices) if value == (y, x)]
+                for idx in positions:
+                    indices[idx] = (None, None)
+            
+                max_labels.append(positions)
         # Define a custom colormap with black at the center
         colors = [
             (0.2, 0.2, 1),
@@ -555,8 +579,26 @@ class Plotter:
             fig.colorbar(heatmap, ax=ax2)  # Add color bar for the heatmap
 
             # Save the plot with both the 3D surface and the 2D heatmap
+            plt.tight_layout()
             plt.savefig(f"{vec_dir_path}/{vec_idx}_{S[vec_idx]:3f}.png")
             plt.close()
+
+        # Create the plot
+        plt.figure(figsize=(6, 6))
+        plt.axis('off')
+        img = grid_tensor.clone()
+        img[loc[0], loc[1], :] = 10.0
+        img = torch.sum(img, axis=-1)
+        img = (img - img.min()) / (img.max() - img.min())
+        
+        plt.imshow(img * 20, cmap='viridis', interpolation='none')
+        plt.gca().invert_yaxis()  # Make (0,0) the top-left corner
+        plt.tight_layout()
+        
+        for (y, x), labels in zip(max_coords, max_labels):
+            plt.text(x, y, str(labels), color="white", ha='center', va='center', fontweight='bold')
+        plt.savefig(f"{vec_dir_path}/summary.png")
+        plt.close()
 
     def plotRewardMap2(
         self,

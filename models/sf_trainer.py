@@ -86,7 +86,7 @@ class SFTrainer:
                 dir_name="SF",
                 grid_type=self.grid_type,
             )
-            self.save_model(e)
+            self.save_model(e + 1)
 
             ### training loop
             self.policy.train()
@@ -116,7 +116,7 @@ class SFTrainer:
             second_final_epoch,
             desc=f"SF Psi Epoch",
         ):
-            self.save_model(e)
+            self.save_model(e + 1)
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(

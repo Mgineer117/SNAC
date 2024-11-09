@@ -33,7 +33,7 @@ def remove_dir(dir_path):
 def run_loop(env, env_name, option_vals, options):
     # for i in [0, 4, 5, 6, 9]:
     if env_name == "FourRooms":
-        grid, pos, loc = get_grid_tensor(env, grid_type=i)
+        grid, pos, loc = get_grid_tensor(env, grid_type=args.grid_type)
         
         save_path = f"RewardMap/FourRooms"
         if not os.path.exists(save_path):
@@ -56,7 +56,7 @@ def run_loop(env, env_name, option_vals, options):
             device=args.device,
         )
     elif env_name == "LavaRooms":
-        grid, pos, loc = get_grid_tensor(env, grid_type=i)
+        grid, pos, loc = get_grid_tensor(env, grid_type=args.grid_type)
         for i in range(10):
             save_path = f"RewardMap/LavaRooms/{str(i)}"
             if not os.path.exists(save_path):
@@ -140,8 +140,8 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.grid_size = 12
-    args.num_vector = 16
+    args.grid_size = 13
+    args.num_vector = 8
     args.device = torch.device("cpu")
 
     # call sf

@@ -82,7 +82,7 @@ class PPOTrainer:
             self.last_reward_mean.append(rew_mean)
             self.last_reward_std.append(rew_std)
 
-            self.save_model(e)
+            self.save_model(e+1)
 
             ### training loop
             self.policy.train()

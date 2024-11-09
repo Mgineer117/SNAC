@@ -17,7 +17,6 @@ def call_env(args):
         # first call dummy env to find possible location for agent
         env = FourRooms(
             grid_type=args.grid_type,
-            grid_size=(13, 13),  # fixed
             max_steps=args.episode_len,
             tile_size=args.img_tile_size,
             highlight_visible_cells=False,
@@ -29,7 +28,6 @@ def call_env(args):
         # first call dummy env to find possible location for agent
         env = LavaRooms(
             grid_type=args.grid_type,
-            grid_size=(13, 13),  # fixed
             max_steps=args.episode_len,
             tile_size=args.img_tile_size,
             highlight_visible_cells=False,

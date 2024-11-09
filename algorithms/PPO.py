@@ -14,13 +14,12 @@ from utils.call_env import call_env
 
 
 class PPO:
-    def __init__(self, logger, writer, args):
+    def __init__(self, env:gym.env, logger, writer, args):
         """
         This is a naive PPO wrapper that includes all necessary training pipelines for HRL.
         This trains SF network and train PPO according to the extracted features by SF network
         """
-        self.env = call_env(args)
-        save_dim_to_args(self.env, args)  # given env, save its state and action dim
+        self.env = env
 
         # define buffers and sampler for Monte-Carlo sampling
         self.sampler = OnlineSampler(

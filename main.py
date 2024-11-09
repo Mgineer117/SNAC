@@ -13,6 +13,7 @@ from algorithms.PPO import PPO
 from algorithms.FeatureTrain import FeatureTrain
 
 from utils import *
+from utils.call_env import call_env
 
 import wandb
 
@@ -29,13 +30,16 @@ def check_all_devices(module):
 #########################################################
 def train(args, unique_id):
     # call logger
+    env = call_env(args)
+    save_dim_to_args(env, args)  # given env, save its state and action dim
     logger, writer = setup_logger(args, unique_id, seed)
 
     if args.algo_name == "SNAC":
         # start the sf training or import it
-        ft = FeatureTrain(logger=logger, writer=writer, args=args)
+        ft = FeatureTrain(env=env,logger=logger, writer=writer, args=args)
         sf_network, prev_epoch = ft.train()
         alg = SNAC(
+            env=env,
             sf_network=sf_network,
             prev_epoch=prev_epoch,
             logger=logger,
@@ -44,9 +48,10 @@ def train(args, unique_id):
         )
     elif args.algo_name == "EigenOption" or args.algo_name == "EigenOption2":
         # start the sf training or import it
-        ft = FeatureTrain(logger=logger, writer=writer, args=args)
+        ft = FeatureTrain(env=env,logger=logger, writer=writer, args=args)
         sf_network, prev_epoch = ft.train()
         alg = EigenOption(
+            env=env,
             sf_network=sf_network,
             prev_epoch=prev_epoch,
             logger=logger,
@@ -55,9 +60,10 @@ def train(args, unique_id):
         )
     elif args.algo_name == "CoveringOption":
         # start the sf training or import it
-        ft = FeatureTrain(logger=logger, writer=writer, args=args)
+        ft = FeatureTrain(env=env,logger=logger, writer=writer, args=args)
         sf_network, prev_epoch = ft.train()
         alg = CoveringOption(
+            env=env,
             sf_network=sf_network,
             prev_epoch=prev_epoch,
             logger=logger,
@@ -66,6 +72,7 @@ def train(args, unique_id):
         )
     elif args.algo_name == "PPO":
         alg = PPO(
+            env=env,
             logger=logger,
             writer=writer,
             args=args,

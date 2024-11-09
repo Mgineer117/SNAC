@@ -26,9 +26,8 @@ class EigenOption:
             - this heuristics ignores other info of eigs
     """
 
-    def __init__(self, sf_network: nn.Module, prev_epoch: int, logger, writer, args):
-        self.env = call_env(args)
-        save_dim_to_args(self.env, args)  # given env, save its state and action dim
+    def __init__(self, env:gym.Env, sf_network: nn.Module, prev_epoch: int, logger, writer, args):
+        self.env = env
 
         # define buffers and sampler for Monte-Carlo sampling
         self.sampler = OnlineSampler(
