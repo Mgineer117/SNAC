@@ -19,7 +19,7 @@ from utils.call_env import call_env
 
 
 class FeatureTrain:
-    def __init__(self, env, logger, writer, args):
+    def __init__(self, env:gym.Env, logger, writer, args):
         """
         SNAC Specialized Neurons and Clustering Architecture
         ---------------------------------------------------------------------------
