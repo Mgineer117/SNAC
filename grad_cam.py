@@ -55,13 +55,14 @@ class GradCam(nn.Module):
         # apply the remaining pooling
         if self.algo_name == "SNAC":
             x_r, x_s = torch.split(x, x.size(-1) // 2, dim=-1)
-            reward = self.multiply_options(x_r, self.options)
-            reward = reward[0][0].detach().numpy()
             x = torch.sum(x_s, dim=-1)
             if target == "s":
                 x = torch.sum(x_s, dim=-1)
+                reward = 0
             elif target == "r":
                 x = torch.sum(x_r, dim=-1)
+                reward = self.multiply_options(x_r, self.options)
+                reward = reward[0][0].detach().numpy()
             else:
                 raise ValueError(f"Unknown target: {target}")
         else:
@@ -119,14 +120,16 @@ def plot(img, heatmap, reward, i):
     axes[1].axis("off")
     fig.colorbar(im, ax=axes[1], orientation='vertical')
 
-    # Resize heatmap to match img size and overlay
-    alpha = 0.9
+    # Resize heatmap to match img size
     resized_heatmap = cv2.resize(heatmap, (img.shape[0], img.shape[1]))
-    superimposed_img = resized_heatmap * alpha + img * (1 - alpha)
 
-    # Plot the superimposed image
-    axes[2].imshow(np.flipud(superimposed_img), cmap=cmap)
-    axes[2].set_title(f"Super-imposed with reward: {reward:.1f}")
+    # Superimpose image and heatmap in third plot
+    # Plot `img` as the base with `viridis` colormap
+    axes[2].imshow(np.flipud(img), cmap='viridis')
+    
+    # Overlay resized `heatmap` using the custom colormap and alpha for blending
+    axes[2].imshow(np.flipud(resized_heatmap), cmap=cmap, alpha=0.5)
+    axes[2].set_title(f"Super-imposed with reward: {reward:.3f}")
     axes[2].axis("off")
 
     # Save and close
@@ -184,7 +187,7 @@ if __name__ == "__main__":
     args.import_sf_model = True
     sf_network = call_sfNetwork(args)
     gradCam = GradCam(sf_network=sf_network, algo_name=args.algo_name)
-    target = "r"
+    target = "s"
     print(f"target Algorithm: {args.algo_name} | target: {target}")
 
     # call env

@@ -487,18 +487,21 @@ class Plotter:
                     rewards[vec_idx, x, y] += reward[x, y]
 
         for k in range(num_vec):
-            pos_rewards = rewards[k, :, :] >= 0
-            neg_rewards = rewards[k, :, :] <= 0
+            # Identify positive and negative rewards
+            pos_rewards = rewards[k, :, :] > 0
+            neg_rewards = rewards[k, :, :] < 0
 
-            # Get max positive and min negative rewards
-            r_pos_max = rewards[k, pos_rewards].max()
-            r_neg_min = rewards[k, neg_rewards].min()
+            # Normalize positive rewards to the range [0, 1]
+            if pos_rewards.any():  # Check if there are any positive rewards
+                r_pos_max = rewards[k, pos_rewards].max()
+                r_pos_min = rewards[k, pos_rewards].min()
+                rewards[k, pos_rewards] = (rewards[k, pos_rewards] - r_pos_min) / (r_pos_max - r_pos_min + 1e-10)
+            # Normalize negative rewards to the range [-1, 0]
+            if neg_rewards.any():  # Check if there are any negative rewards
+                r_neg_max = rewards[k, neg_rewards].max()  # Closest to 0 (least negative)
+                r_neg_min = rewards[k, neg_rewards].min()  # Most negative
+                rewards[k, neg_rewards] = (rewards[k, neg_rewards] - r_neg_max) / (r_neg_max - r_neg_min + 1e-10)
 
-            # Normalize positive rewards between 0 and 1
-            rewards[k, pos_rewards] = rewards[k, pos_rewards] / (r_pos_max + 1e-10)
-
-            # Normalize negative rewards between 0 and -1
-            rewards[k, neg_rewards] = rewards[k, neg_rewards] / (abs(r_neg_min) + 1e-10)
 
         obstacles = ((grid_tensor == 2.0) | (grid_tensor == 8.0) | (grid_tensor == 9.0))[:, :, 0]
         rewards[:, obstacles] = -10.0
@@ -725,18 +728,20 @@ class Plotter:
                     rewards[vec_idx, x, y] += reward[x, y]
 
         for k in range(num_vec):
-            pos_rewards = rewards[k, :, :] >= 0
-            neg_rewards = rewards[k, :, :] <= 0
+            # Identify positive and negative rewards
+            pos_rewards = rewards[k, :, :] > 0
+            neg_rewards = rewards[k, :, :] < 0
 
-            # Get max positive and min negative rewards
-            r_pos_max = rewards[k, pos_rewards].max()
-            r_neg_min = rewards[k, neg_rewards].min()
-
-            # Normalize positive rewards between 0 and 1
-            rewards[k, pos_rewards] = rewards[k, pos_rewards] / (r_pos_max + 1e-10)
-
-            # Normalize negative rewards between 0 and -1
-            rewards[k, neg_rewards] = rewards[k, neg_rewards] / (abs(r_neg_min) + 1e-10)
+            # Normalize positive rewards to the range [0, 1]
+            if pos_rewards.any():  # Check if there are any positive rewards
+                r_pos_max = rewards[k, pos_rewards].max()
+                r_pos_min = rewards[k, pos_rewards].min()
+                rewards[k, pos_rewards] = (rewards[k, pos_rewards] - r_pos_min) / (r_pos_max - r_pos_min + 1e-10)
+            # Normalize negative rewards to the range [-1, 0]
+            if neg_rewards.any():  # Check if there are any negative rewards
+                r_neg_max = rewards[k, neg_rewards].max()  # Closest to 0 (least negative)
+                r_neg_min = rewards[k, neg_rewards].min()  # Most negative
+                rewards[k, neg_rewards] = (rewards[k, neg_rewards] - r_neg_max) / (r_neg_max - r_neg_min + 1e-10)
 
         walls = grid_tensor[:, :, 0] == 0
         rewards[:, walls] = 0.0
