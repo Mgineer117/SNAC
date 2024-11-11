@@ -80,7 +80,7 @@ class GradCam(nn.Module):
 
 
 def get_grid(env, env_name, args):
-    if env_name == 'FourRooms' or env_name == 'LavaRooms':
+    if env_name == "FourRooms" or env_name == "LavaRooms":
         grid, (x_coords, y_coords), loc = get_grid_tensor(env, args.grid_type)
     else:
         grid, (x_coords, y_coords), loc = get_grid_tensor2(env, args.grid_type)
@@ -98,19 +98,17 @@ def plot(img, heatmap, reward, i):
     heatmap = heatmap.numpy()
 
     colors = [
-            (0.2, 0.2, 1),
-            (0.2667, 0.0039, 0.3294),
-            (1, 0.2, 0.2),
-        ]  # Blue -> Black -> Red
-    cmap = mcolors.LinearSegmentedColormap.from_list(
-        "pale_blue_dark_pale_red", colors
-    )
+        (0.2, 0.2, 1),
+        (0.2667, 0.0039, 0.3294),
+        (1, 0.2, 0.2),
+    ]  # Blue -> Black -> Red
+    cmap = mcolors.LinearSegmentedColormap.from_list("pale_blue_dark_pale_red", colors)
 
     # Figure setup
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
     # Plot the original image
-    axes[0].imshow(np.flipud(img), cmap='viridis')
+    axes[0].imshow(np.flipud(img), cmap="viridis")
     axes[0].set_title("Original")
     axes[0].axis("off")
 
@@ -118,22 +116,22 @@ def plot(img, heatmap, reward, i):
     im = axes[1].imshow(np.flipud(heatmap), cmap=cmap)
     axes[1].set_title("Heatmap")
     axes[1].axis("off")
-    fig.colorbar(im, ax=axes[1], orientation='vertical')
+    fig.colorbar(im, ax=axes[1], orientation="vertical")
 
     # Resize heatmap to match img size
     resized_heatmap = cv2.resize(heatmap, (img.shape[0], img.shape[1]))
 
     # Superimpose image and heatmap in third plot
     # Plot `img` as the base with `viridis` colormap
-    axes[2].imshow(np.flipud(img), cmap='viridis')
-    
+    axes[2].imshow(np.flipud(img), cmap="viridis")
+
     # Overlay resized `heatmap` using the custom colormap and alpha for blending
     axes[2].imshow(np.flipud(resized_heatmap), cmap=cmap, alpha=0.5)
     axes[2].set_title(f"Super-imposed with reward: {reward:.3f}")
     axes[2].axis("off")
 
     # Save and close
-    plt.savefig(f"heatmap/{i}.png", bbox_inches='tight')
+    plt.savefig(f"heatmap/{i}.png", bbox_inches="tight")
     plt.close()
 
 
@@ -142,8 +140,8 @@ def run_loop(env_name, grid, pos, target="s"):
         x, y = pos[i, 0], pos[i, 1]
 
         img = grid.clone()
-        
-        if env_name == 'FourRooms' or env_name == 'LavaRooms':
+
+        if env_name == "FourRooms" or env_name == "LavaRooms":
             img[:, x.long(), y.long(), 0] = 10
         else:
             img[:, x.long(), y.long(), 1] = 1
@@ -165,12 +163,19 @@ def run_loop(env_name, grid, pos, target="s"):
         # normalize the heatmap
         min_val = torch.min(heatmap)
         max_val = torch.max(heatmap)
-        heatmap = 2*(heatmap - min_val) / (max_val - min_val + 1e-8) - 1
+        heatmap = 2 * (heatmap - min_val) / (max_val - min_val + 1e-8) - 1
 
-        img = torch.sum(img[0, :, :, :], axis=-1)
+        if env_name == "CtF1v1" or env_name == "CtF1v2":
+            # reassign the agent
+            obj_indices = img[0, :, :, 1] != 0
+            obj = (img[0, :, :, 1] + 1) * 2
+            img = torch.sum(img[0, :, :, :], axis=-1)
+            img[obj_indices] = obj[obj_indices]
+        else:
+            img = torch.sum(img[0, :, :, :], axis=-1)
         min_val = torch.min(img)
         max_val = torch.max(img)
-        img = 2*(img - min_val) / (max_val - min_val + 1e-8) - 1
+        img = 2 * (img - min_val) / (max_val - min_val + 1e-8) - 1
         plot(img, heatmap, reward, i)
 
 
@@ -182,6 +187,9 @@ if __name__ == "__main__":
     args = DotDict(config)
     args.grid_size = 13
     args.device = torch.device("cpu")
+
+    print(f"Algo name: {args.algo_name}")
+    print(f"Env name: {args.env_name}")
 
     # call sf
     args.import_sf_model = True

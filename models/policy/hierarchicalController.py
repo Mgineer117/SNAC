@@ -223,7 +223,7 @@ class HC_Controller(BasePolicy):
             actorLoss = -torch.min(surr1, surr2)
             entropyLoss = self._entropy_scaler * entropy
 
-            loss = torch.mean(actorLoss + 0.5 * valueLoss + entropyLoss)
+            loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
 
             self.optimizer.zero_grad()
             loss.backward()

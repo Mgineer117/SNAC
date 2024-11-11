@@ -495,15 +495,22 @@ class Plotter:
             if pos_rewards.any():  # Check if there are any positive rewards
                 r_pos_max = rewards[k, pos_rewards].max()
                 r_pos_min = rewards[k, pos_rewards].min()
-                rewards[k, pos_rewards] = (rewards[k, pos_rewards] - r_pos_min) / (r_pos_max - r_pos_min + 1e-10)
+                rewards[k, pos_rewards] = (rewards[k, pos_rewards] - r_pos_min) / (
+                    r_pos_max - r_pos_min + 1e-10
+                )
             # Normalize negative rewards to the range [-1, 0]
             if neg_rewards.any():  # Check if there are any negative rewards
-                r_neg_max = rewards[k, neg_rewards].max()  # Closest to 0 (least negative)
+                r_neg_max = rewards[
+                    k, neg_rewards
+                ].max()  # Closest to 0 (least negative)
                 r_neg_min = rewards[k, neg_rewards].min()  # Most negative
-                rewards[k, neg_rewards] = (rewards[k, neg_rewards] - r_neg_max) / (r_neg_max - r_neg_min + 1e-10)
+                rewards[k, neg_rewards] = (rewards[k, neg_rewards] - r_neg_max) / (
+                    r_neg_max - r_neg_min + 1e-10
+                )
 
-
-        obstacles = ((grid_tensor == 2.0) | (grid_tensor == 8.0) | (grid_tensor == 9.0))[:, :, 0]
+        obstacles = (
+            (grid_tensor == 2.0) | (grid_tensor == 8.0) | (grid_tensor == 9.0)
+        )[:, :, 0]
         rewards[:, obstacles] = -10.0
         rewards_clone = rewards.clone()
         rewards[:, obstacles] = 0.0
@@ -512,10 +519,14 @@ class Plotter:
         indices = []
         for k in range(num_vec):
             # Find the index of the maximum element
-            indices.append(np.unravel_index(np.argmax(rewards_clone[k, :, :]), rewards_clone[k, :, :].shape))
+            indices.append(
+                np.unravel_index(
+                    np.argmax(rewards_clone[k, :, :]), rewards_clone[k, :, :].shape
+                )
+            )
         labels = np.arange(len(indices))
-        
-        ### This is to create labels so that 
+
+        ### This is to create labels so that
         # labels do not overlap on the image
         max_coords = []
         max_labels = []
@@ -524,11 +535,11 @@ class Plotter:
             if (y, x) == (None, None):
                 pass
             else:
-                max_coords.append((y,x))
+                max_coords.append((y, x))
                 positions = [i for i, value in enumerate(indices) if value == (y, x)]
                 for idx in positions:
                     indices[idx] = (None, None)
-            
+
                 max_labels.append(positions)
         # Define a custom colormap with black at the center
         colors = [
@@ -588,18 +599,26 @@ class Plotter:
 
         # Create the plot
         plt.figure(figsize=(6, 6))
-        plt.axis('off')
+        plt.axis("off")
         img = grid_tensor.clone()
         img[loc[0], loc[1], :] = 10.0
         img = torch.sum(img, axis=-1)
         img = (img - img.min()) / (img.max() - img.min())
-        
-        plt.imshow(img * 20, cmap='viridis', interpolation='none')
+
+        plt.imshow(img * 20, cmap="viridis", interpolation="none")
         plt.gca().invert_yaxis()  # Make (0,0) the top-left corner
         plt.tight_layout()
-        
+
         for (y, x), labels in zip(max_coords, max_labels):
-            plt.text(x, y, str(labels), color="white", ha='center', va='center', fontweight='bold')
+            plt.text(
+                x,
+                y,
+                str(labels),
+                color="white",
+                ha="center",
+                va="center",
+                fontweight="bold",
+            )
         plt.savefig(f"{vec_dir_path}/summary.png")
         plt.close()
 
@@ -613,6 +632,7 @@ class Plotter:
         grid_tensor: np.ndarray,
         coords: tuple,
         dir: str,
+        loc: np.ndarray | None = None,
         device=torch.device("cpu"),
     ):
         """
@@ -736,12 +756,18 @@ class Plotter:
             if pos_rewards.any():  # Check if there are any positive rewards
                 r_pos_max = rewards[k, pos_rewards].max()
                 r_pos_min = rewards[k, pos_rewards].min()
-                rewards[k, pos_rewards] = (rewards[k, pos_rewards] - r_pos_min) / (r_pos_max - r_pos_min + 1e-10)
+                rewards[k, pos_rewards] = (rewards[k, pos_rewards] - r_pos_min) / (
+                    r_pos_max - r_pos_min + 1e-10
+                )
             # Normalize negative rewards to the range [-1, 0]
             if neg_rewards.any():  # Check if there are any negative rewards
-                r_neg_max = rewards[k, neg_rewards].max()  # Closest to 0 (least negative)
+                r_neg_max = rewards[
+                    k, neg_rewards
+                ].max()  # Closest to 0 (least negative)
                 r_neg_min = rewards[k, neg_rewards].min()  # Most negative
-                rewards[k, neg_rewards] = (rewards[k, neg_rewards] - r_neg_max) / (r_neg_max - r_neg_min + 1e-10)
+                rewards[k, neg_rewards] = (rewards[k, neg_rewards] - r_neg_max) / (
+                    r_neg_max - r_neg_min + 1e-10
+                )
 
         walls = grid_tensor[:, :, 0] == 0
         rewards[:, walls] = 0.0
@@ -771,8 +797,11 @@ class Plotter:
 
             # reassign the agent
             img = grid_tensor.clone()
-
+            obj_indices = img[:, :, 1] != 0
+            obj = (img[:, :, 1] + 1) * 2
             img = torch.sum(img, axis=-1)
+            img[obj_indices] = obj[obj_indices]
+
             img = (img - img.min()) / (img.max() - img.min())
 
             ax0 = fig.add_subplot(131)
@@ -798,6 +827,7 @@ class Plotter:
             fig.colorbar(heatmap, ax=ax2)  # Add color bar for the heatmap
 
             # Save the plot with both the 3D surface and the 2D heatmap
+            plt.tight_layout()
             plt.savefig(f"{vec_dir_path}/{vec_idx}_{S[vec_idx]:3f}.png")
             plt.close()
 

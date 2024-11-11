@@ -272,9 +272,9 @@ def save_dim_to_args(env, args):
         done = 6
     """
     args.s_dim = env.observation_space.shape  # (width, height, colors)
-    args.s_flat_dim = np.prod(args.s_dim)
-    args.a_dim = env.action_space.n
-    args.grid_size = args.s_dim[0]
+    args.s_flat_dim = int(np.prod(args.s_dim))
+    args.a_dim = int(env.action_space.n)
+    args.grid_size = int(args.s_dim[0])
 
     print(f"Problem dimension (|S|/|A|): {args.s_dim}/{args.a_dim}")
     env.close()

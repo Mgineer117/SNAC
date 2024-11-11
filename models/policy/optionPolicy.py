@@ -258,7 +258,7 @@ class OP_Controller(BasePolicy):
             # additional 0.1 multiplied since intrinsic reward is too small
             entropyLoss = self._entropy_scaler * entropy
 
-            loss = torch.mean(actorLoss + 0.5 * valueLoss + entropyLoss)
+            loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
 
             self.optimizers["ppo"].zero_grad()
             loss.backward()
