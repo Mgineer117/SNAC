@@ -69,13 +69,13 @@ def get_args(verbose=True):
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
-        "--sf-log-interval", type=int, default=200, help="logging interval; epoch-based"
+        "--sf-log-interval", type=int, default=250, help="logging interval; epoch-based"
     )
     parser.add_argument(
         "--op-log-interval", type=int, default=10, help="logging interval; epoch-based"
     )
     parser.add_argument(
-        "--hc-log-interval", type=int, default=100, help="logging interval; epoch-based"
+        "--hc-log-interval", type=int, default=50, help="logging interval; epoch-based"
     )
     parser.add_argument(
         "--ppo-log-interval",
@@ -107,7 +107,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=2000,  # 2000
+        default=100,  # 1000
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -119,7 +119,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=2000,  # 2000
+        default=1000,  # 1000
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -131,7 +131,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--step-per-epoch",
         type=int,
-        default=25,  # 25
+        default=10,  # 25
         help="number of iterations within one epoch",
     )
     parser.add_argument(
@@ -168,7 +168,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--eval-episodes",
         type=int,
-        default=3,
+        default=5,
         help="number of episodes for evaluation; mean of those is returned as eval performance",
     )
 
@@ -230,16 +230,16 @@ def get_args(verbose=True):
 
     # learning rates
     parser.add_argument(
-        "--policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
-    )
-    parser.add_argument(
-        "--critic-lr", type=float, default=1e-4, help="PPO-critic learning rate"
-    )
-    parser.add_argument(
         "--feature-lr",
         type=float,
         default=5e-5,
         help="CNN lr where scheduler is used so can be high",
+    )
+    parser.add_argument(
+        "--option-lr",
+        type=float,
+        default=5e-5,
+        help="Intermediate-level model learning rate",
     )
     parser.add_argument(
         "--psi-lr",
@@ -248,10 +248,22 @@ def get_args(verbose=True):
         help="Intermediate-level model learning rate",
     )
     parser.add_argument(
-        "--option-lr",
-        type=float,
-        default=5e-5,
-        help="Intermediate-level model learning rate",
+        "--op-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--op-critic-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--hc-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--hc-critic-lr", type=float, default=3e-4, help="PPO-critic learning rate"
+    )
+    parser.add_argument(
+        "--ppo-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--ppo-critic-lr", type=float, default=3e-4, help="PPO-critic learning rate"
     )
 
     # PPO parameters
@@ -264,7 +276,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-3,
+        default=1e-4,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(

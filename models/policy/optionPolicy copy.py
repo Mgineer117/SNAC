@@ -6,10 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from scipy.optimize import fmin_l_bfgs_b as bfgs
 
 from copy import deepcopy
-from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils.utils import estimate_advantages, estimate_psi
 from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
@@ -189,10 +187,11 @@ class OP_Controller(BasePolicy):
 
         rewards = self._intricsicReward(phi, next_phi, z)
 
-        # Compute Advantage and returns of the current batch
+        ### LEARN PPO ###
         with torch.no_grad():
-            # values = self.critic(features)
-            values = self.optionCritic(raw_states)
+            # values, _ = self.optionCritic(phi, z)
+            values, _ = self.optionCritic(raw_states, z)
+
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
@@ -201,35 +200,14 @@ class OP_Controller(BasePolicy):
                 tau=self._tau,
                 device=self.device,
             )
-            valueLoss = self.mse_loss(returns, values)
-
-        # L-BFGS-F value network update
-        def closure(flat_params):
-            set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
-            for param in self.optionCritic.parameters():
-                if param.grad is not None:
-                    param.grad.data.fill_(0)
-            values = self.optionCritic(raw_states)
-            valueLoss = self.mse_loss(values, returns)
-            for param in self.optionCritic.parameters():
-                valueLoss += param.pow(2).sum() * self._l2_reg
-            valueLoss.backward()
-            torch.nn.utils.clip_grad_norm_(self.optionCritic.parameters(), max_norm=1.0)
-
-            return (
-                valueLoss.item(),
-                get_flat_grad_from(self.optionCritic.parameters()).cpu().numpy(),
-            )
-
-        flat_params, _, opt_info = bfgs(
-            closure,
-            get_flat_params_from(self.optionCritic).detach().cpu().numpy(),
-            maxiter=self._bfgs_iter,
-        )
-        set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
 
         # K - Loop
         for _ in range(self._K):
+            # values, _ = self.optionCritic(phi, z)
+            values, _ = self.optionCritic(raw_states, z)
+            valueLoss = self.mse_loss(returns, values)
+
+            # _, metaData = self.optionPolicy(phi, z)
             _, metaData = self.optionPolicy(raw_states, z)
             dist = metaData["dist"]
 

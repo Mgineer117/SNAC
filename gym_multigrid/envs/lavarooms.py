@@ -181,7 +181,7 @@ class LavaRooms(MultiGridEnv):
 
         # lava allocation
         for lava_pos_samples in self.lava_positions[self.grid_type]:
-            num_lava = random.randint(1, 4)
+            num_lava = random.randint(1, 5)
             random_lava_positions = random.sample(lava_pos_samples, num_lava)
             for lava_pos in random_lava_positions:
                 lava = Lava(self.world)
@@ -235,7 +235,7 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0  - 0.9 * (self.step_count / self.max_steps)
+                        rewards += 1.0 - 0.9 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
@@ -259,7 +259,7 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0- 0.9 * (self.step_count / self.max_steps)
+                        rewards += 1.0 - 0.9 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
@@ -283,7 +283,7 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0- 0.9 * (self.step_count / self.max_steps)
+                        rewards += 1.0 - 0.9 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":
@@ -306,7 +306,7 @@ class LavaRooms(MultiGridEnv):
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True
-                        rewards += 1.0- 0.9 * (self.step_count / self.max_steps)
+                        rewards += 1.0 - 0.9 * (self.step_count / self.max_steps)
                     elif fwd_cell.type == "switch":
                         self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                     elif fwd_cell.type == "ball":

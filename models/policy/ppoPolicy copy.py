@@ -6,10 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from scipy.optimize import fmin_l_bfgs_b as bfgs
 
 from copy import deepcopy
-from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils.utils import estimate_advantages
 from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
@@ -42,8 +40,6 @@ class PPO_Learner(BasePolicy):
         self._gamma = gamma
         self._tau = tau
         self._K = K
-        self._l2_reg = 1e-4
-        self._bfgs_iter = 10
         self._forward_steps = 0
 
         # trainable networks
@@ -113,17 +109,21 @@ class PPO_Learner(BasePolicy):
         t0 = time.time()
 
         # Ingredients
-        # Ingredients
-        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        raw_states = states.reshape(states.shape[0], -1)
-        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
-        rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
-        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
-        old_logprobs = (
-            torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
-        )
+        (
+            states,
+            _,
+            actions,
+            _,
+            _,
+            _,
+            _,
+            rewards,
+            terminals,
+            old_logprobs,
+        ) = self.preprocess_batch(batch, self.device)
 
-        # Compute Advantage and returns of the current batch
+        raw_states = states.reshape(states.shape[0], -1)
+
         with torch.no_grad():
             # values = self.critic(features)
             values = self.critic(raw_states)
@@ -135,35 +135,14 @@ class PPO_Learner(BasePolicy):
                 tau=self._tau,
                 device=self.device,
             )
-            valueLoss = self.mse_loss(returns, values)
-
-        # L-BFGS-F value network update
-        def closure(flat_params):
-            set_flat_params_to(self.critic, torch.tensor(flat_params))
-            for param in self.critic.parameters():
-                if param.grad is not None:
-                    param.grad.data.fill_(0)
-            values = self.critic(raw_states)
-            valueLoss = self.mse_loss(values, returns)
-            for param in self.critic.parameters():
-                valueLoss += param.pow(2).sum() * self._l2_reg
-            valueLoss.backward()
-            torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
-
-            return (
-                valueLoss.item(),
-                get_flat_grad_from(self.critic.parameters()).cpu().numpy(),
-            )
-
-        flat_params, _, opt_info = bfgs(
-            closure,
-            get_flat_params_from(self.critic).detach().cpu().numpy(),
-            maxiter=self._bfgs_iter,
-        )
-        set_flat_params_to(self.critic, torch.tensor(flat_params))
 
         # K - Loop
         for _ in range(self._K):
+            # critic ingredients
+            # values = self.critic(features)
+            values = self.critic(raw_states)
+            valueLoss = F.mse_loss(returns, values)
+
             # policy ingredients
             # dist = self.policy(features)
             dist = self.policy(raw_states)
@@ -172,17 +151,17 @@ class PPO_Learner(BasePolicy):
             entropy = dist.entropy().unsqueeze(-1)
 
             ratios = torch.exp(logprobs - old_logprobs)
-
             # policy loss
             surr1 = ratios * advantages
             surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * advantages
             actorLoss = -torch.min(surr1, surr2)
             entropyLoss = self._entropy_scaler * entropy
 
-            loss = torch.mean(actorLoss - entropyLoss)
+            loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
 
             self.optimizer.zero_grad()
             loss.backward()
+            # torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=20.0)
             grad_dict = self.compute_gradient_norm(
                 [self.policy, self.critic],
                 ["policy", "critic"],

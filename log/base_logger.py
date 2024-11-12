@@ -176,9 +176,7 @@ class BaseLogger(ABC):
         """
         if self.name is not None:
             config["name"] = self.name
-        print(config)
         config_json = convert_json(config)
-        print(config_json)
         if verbose:
             print(colorize("Saving config:\n", color="cyan", bold=True))
             output = json.dumps(

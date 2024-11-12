@@ -14,7 +14,7 @@ from utils.call_env import call_env
 
 
 class PPO:
-    def __init__(self, env:gym.Env, logger, writer, args):
+    def __init__(self, env: gym.Env, logger, writer, args):
         """
         This is a naive PPO wrapper that includes all necessary training pipelines for HRL.
         This trains SF network and train PPO according to the extracted features by SF network
