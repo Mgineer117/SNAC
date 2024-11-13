@@ -415,7 +415,7 @@ class Plotter:
 
         # print(features[:, :, 0])
 
-        # ### COMPUTE DELTA-PHI
+        # ## COMPUTE DELTA-PHI
         # coordinates = np.stack((coords[0], coords[1]), axis=-1)
         # for agent_dir in agent_dirs:
         #     """
@@ -452,6 +452,7 @@ class Plotter:
 
         # # sum all connected next_phi - current phi
         # deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
+        # deltaPhi -= features
         deltaPhi = features
 
         if algo_name == "SNAC":

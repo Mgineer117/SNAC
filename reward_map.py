@@ -141,7 +141,7 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.num_vector = 16
+    args.num_vector = 8
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")

@@ -218,6 +218,7 @@ class OnlineSampler(Base):
         episode_len: int,
         episode_num: int,
         num_cores: int = None,
+        verbose: bool = True,
     ) -> None:
         super(Base, self).__init__()
         """
@@ -260,15 +261,16 @@ class OnlineSampler(Base):
         self.num_worker_per_env = int(self.total_num_worker / len(self.training_envs))
         self.rounds = rounds
 
-        print("====================")
-        print("Sampling Parameters:")
-        print("====================")
-        print(
-            f"Cores (usage)/(given)     : {self.num_workers_per_round[0]}/{self.num_cores} out of {multiprocessing.cpu_count()}"
-        )
-        print(f"# Environments each Round : {self.num_env_per_round}")
-        print(f"Total number of Worker    : {self.total_num_worker}")
-        print(f"Episodes per Worker       : {self.episodes_per_worker}")
+        if verbose:
+            print("====================")
+            print("Sampling Parameters:")
+            print("====================")
+            print(
+                f"Cores (usage)/(given)     : {self.num_workers_per_round[0]}/{self.num_cores} out of {multiprocessing.cpu_count()}"
+            )
+            print(f"# Environments each Round : {self.num_env_per_round}")
+            print(f"Total number of Worker    : {self.total_num_worker}")
+            print(f"Episodes per Worker       : {self.episodes_per_worker}")
 
         # enforce one thread for each worker to avoid CPU overscription.
         torch.set_num_threads(1)
