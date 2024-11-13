@@ -36,16 +36,18 @@ def get_grid_tensor2(env, grid_type):
     grid_tensor = obs["observation"]
     env.close()
 
+    # detech the location of blue agent
+    # and mark them empty
     loc = np.where(grid_tensor[:, :, 1] == 1)
     grid_tensor[loc[0], loc[1], 1] = 0
     grid_tensor[loc[0], loc[1], 2] = 0
 
-    enemy_loc = np.where(grid_tensor[:, :, 1] == 2)
-    grid_tensor[enemy_loc[0], enemy_loc[1], 1] = 0
-    grid_tensor[enemy_loc[0], enemy_loc[1], 2] = 0
+    # enemy_loc = np.where(grid_tensor[:, :, 1] == 2)
+    # grid_tensor[enemy_loc[0], enemy_loc[1], 1] = 0
+    # grid_tensor[enemy_loc[0], enemy_loc[1], 2] = 0
 
-    grid_tensor[2, 3, 1] = 2
-    grid_tensor[2, 3, 2] = 1
+    # grid_tensor[2, 3, 1] = 2
+    # grid_tensor[2, 3, 2] = 2
 
     x_coords, y_coords = np.where(
         (grid_tensor[:, :, 0] != 0)

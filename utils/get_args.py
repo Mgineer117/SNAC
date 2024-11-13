@@ -113,7 +113,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=25,  # 30
+        default=50,  # 30
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -232,7 +232,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--feature-lr",
         type=float,
-        default=1e-5,
+        default=1e-4,
         help="CNN lr where scheduler is used so can be high",
     )
     parser.add_argument(
