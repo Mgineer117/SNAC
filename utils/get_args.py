@@ -101,25 +101,25 @@ def get_args(verbose=True):
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=2000,  # 2000
+        default=1000,  # 1000
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=100,  # 1000
+        default=100,  # 100
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=50,  # 50
+        default=25,  # 30
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=1000,  # 1000
+        default=200,  # 200
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -131,7 +131,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--step-per-epoch",
         type=int,
-        default=10,  # 25
+        default=10,  # 10
         help="number of iterations within one epoch",
     )
     parser.add_argument(
@@ -156,7 +156,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-cover-option-length",
         type=int,
-        default=25,
+        default=20,
         help="Minimum time step requirement for covering option",
     )
     parser.add_argument(
@@ -225,20 +225,20 @@ def get_args(verbose=True):
         "--num-vector",
         type=int,
         default=8,
-        help="Must be divided by 2. ex) 10, 20, 30",
+        help="Must be divided by 2. ex) 10, 20, 30. Minimum = 4 for SNAC.",
     )
 
     # learning rates
     parser.add_argument(
         "--feature-lr",
         type=float,
-        default=5e-5,
+        default=1e-5,
         help="CNN lr where scheduler is used so can be high",
     )
     parser.add_argument(
         "--option-lr",
         type=float,
-        default=5e-5,
+        default=1e-4,
         help="Intermediate-level model learning rate",
     )
     parser.add_argument(
@@ -251,19 +251,28 @@ def get_args(verbose=True):
         "--op-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
     )
     parser.add_argument(
-        "--op-critic-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--op-critic-lr",
+        type=float,
+        default=None,
+        help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
         "--hc-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
-        "--hc-critic-lr", type=float, default=3e-4, help="PPO-critic learning rate"
+        "--hc-critic-lr",
+        type=float,
+        default=None,
+        help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
         "--ppo-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
-        "--ppo-critic-lr", type=float, default=3e-4, help="PPO-critic learning rate"
+        "--ppo-critic-lr",
+        type=float,
+        default=None,
+        help="PPO-critic learning rate. If none, BFGS is used.",
     )
 
     # PPO parameters
@@ -276,7 +285,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-4,
+        default=1e-3,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
@@ -300,14 +309,14 @@ def get_args(verbose=True):
     parser.add_argument(
         "--max-num-traj",
         type=int,
-        default=200,
+        default=100,
         help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
 
     parser.add_argument(
         "--min-num-traj",
         type=int,
-        default=100,
+        default=50,
         help="For buffer learing, this sets the sub-iterations",
     )
 

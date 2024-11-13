@@ -19,7 +19,7 @@ from utils.call_env import call_env
 
 
 class FeatureTrain:
-    def __init__(self, env:gym.Env, logger, writer, args):
+    def __init__(self, env: gym.Env, logger, writer, args):
         """
         SNAC Specialized Neurons and Clustering Architecture
         ---------------------------------------------------------------------------
@@ -103,7 +103,7 @@ class FeatureTrain:
         ### Call network param and run
         sf_network = call_sfNetwork(self.args)
         scheduler = torch.optim.lr_scheduler.StepLR(
-            sf_network.feature_optims, step_size=20, gamma=0.95
+            sf_network.feature_optims, step_size=25, gamma=0.99
         )
         print_model_summary(sf_network, model_name="SF model")
         if not self.args.import_sf_model:

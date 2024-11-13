@@ -6,8 +6,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from scipy.optimize import fmin_l_bfgs_b as bfgs
 
 from copy import deepcopy
+from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils.utils import estimate_advantages
 from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
@@ -84,6 +86,8 @@ class HC_Controller(BasePolicy):
         self._gamma = gamma
         self._tau = tau
         self._K = K
+        self._l2_reg = 1e-5
+        self._bfgs_iter = 10
         self._forward_steps = 0
 
         # trainable networks
@@ -93,12 +97,17 @@ class HC_Controller(BasePolicy):
         self.optionPolicy = optionPolicy
         self.convNet = convNet
 
-        self.optimizer = torch.optim.AdamW(
-            [
-                {"params": self.policy.parameters(), "lr": policy_lr},
-                {"params": self.critic.parameters(), "lr": critic_lr},
-            ]
-        )
+        if critic_lr is None:
+            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
+            self.is_bfgs = True
+        else:
+            self.optimizer = torch.optim.Adam(
+                [
+                    {"params": self.policy.parameters(), "lr": policy_lr},
+                    {"params": self.critic.parameters(), "lr": critic_lr},
+                ]
+            )
+            self.is_bfgs = False
 
         #
         self.to(self.device)
@@ -192,7 +201,6 @@ class HC_Controller(BasePolicy):
         with torch.no_grad():
             # values, _ = self.critic(features)
             values, _ = self.critic(raw_states)
-
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
@@ -201,12 +209,39 @@ class HC_Controller(BasePolicy):
                 tau=self._tau,
                 device=self.device,
             )
+            valueLoss = self.mse_loss(returns, values)
+
+        if self.is_bfgs:
+            # L-BFGS-F value network update
+            def closure(flat_params):
+                set_flat_params_to(self.critic, torch.tensor(flat_params))
+                for param in self.critic.parameters():
+                    if param.grad is not None:
+                        param.grad.data.fill_(0)
+                values, _ = self.critic(raw_states)
+                valueLoss = self.mse_loss(values, returns)
+                for param in self.critic.parameters():
+                    valueLoss += param.pow(2).sum() * self._l2_reg
+                valueLoss.backward()
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
+
+                return (
+                    valueLoss.item(),
+                    get_flat_grad_from(self.critic.parameters()).cpu().numpy(),
+                )
+
+            flat_params, _, opt_info = bfgs(
+                closure,
+                get_flat_params_from(self.critic).detach().cpu().numpy(),
+                maxiter=self._bfgs_iter,
+            )
+            set_flat_params_to(self.critic, torch.tensor(flat_params))
 
         # K - Loop
         for _ in range(self._K):
-            # values, _ = self.critic(features)
-            values, _ = self.critic(raw_states)
-            valueLoss = F.mse_loss(returns, values)
+            if not self.is_bfgs:
+                values, _ = self.critic(raw_states)
+                valueLoss = self.mse_loss(returns, values)
 
             # _, metaData = self.policy(features)
             _, metaData = self.policy(raw_states)

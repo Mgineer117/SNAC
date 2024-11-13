@@ -42,7 +42,7 @@ class PPO_Learner(BasePolicy):
         self._gamma = gamma
         self._tau = tau
         self._K = K
-        self._l2_reg = 1e-4
+        self._l2_reg = 1e-5
         self._bfgs_iter = 10
         self._forward_steps = 0
 
@@ -50,12 +50,17 @@ class PPO_Learner(BasePolicy):
         self.policy = policy
         self.critic = critic
 
-        self.optimizer = torch.optim.AdamW(
-            [
-                {"params": self.policy.parameters(), "lr": policy_lr},
-                {"params": self.critic.parameters(), "lr": critic_lr},
-            ]
-        )
+        if critic_lr is None:
+            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
+            self.is_bfgs = True
+        else:
+            self.optimizer = torch.optim.Adam(
+                [
+                    {"params": self.policy.parameters(), "lr": policy_lr},
+                    {"params": self.critic.parameters(), "lr": critic_lr},
+                ]
+            )
+            self.is_bfgs = False
 
         #
         self.dummy = torch.tensor(0.0)
@@ -64,11 +69,6 @@ class PPO_Learner(BasePolicy):
     def to_device(self, device):
         self.device = device
         self.to(device)
-
-    # def getPhi(self, x):
-    #     with torch.no_grad():
-    #         phi, _ = self.convNet(x)
-    #     return phi
 
     def forward(self, obs, z=None, deterministic=False):
         self._forward_steps += 1
@@ -137,33 +137,37 @@ class PPO_Learner(BasePolicy):
             )
             valueLoss = self.mse_loss(returns, values)
 
-        # L-BFGS-F value network update
-        def closure(flat_params):
-            set_flat_params_to(self.critic, torch.tensor(flat_params))
-            for param in self.critic.parameters():
-                if param.grad is not None:
-                    param.grad.data.fill_(0)
-            values = self.critic(raw_states)
-            valueLoss = self.mse_loss(values, returns)
-            for param in self.critic.parameters():
-                valueLoss += param.pow(2).sum() * self._l2_reg
-            valueLoss.backward()
-            torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
+        if self.is_bfgs:
+            # L-BFGS-F value network update
+            def closure(flat_params):
+                set_flat_params_to(self.critic, torch.tensor(flat_params))
+                for param in self.critic.parameters():
+                    if param.grad is not None:
+                        param.grad.data.fill_(0)
+                values = self.critic(raw_states)
+                valueLoss = self.mse_loss(values, returns)
+                for param in self.critic.parameters():
+                    valueLoss += param.pow(2).sum() * self._l2_reg
+                valueLoss.backward()
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
 
-            return (
-                valueLoss.item(),
-                get_flat_grad_from(self.critic.parameters()).cpu().numpy(),
+                return (
+                    valueLoss.item(),
+                    get_flat_grad_from(self.critic.parameters()).cpu().numpy(),
+                )
+
+            flat_params, _, opt_info = bfgs(
+                closure,
+                get_flat_params_from(self.critic).detach().cpu().numpy(),
+                maxiter=self._bfgs_iter,
             )
-
-        flat_params, _, opt_info = bfgs(
-            closure,
-            get_flat_params_from(self.critic).detach().cpu().numpy(),
-            maxiter=self._bfgs_iter,
-        )
-        set_flat_params_to(self.critic, torch.tensor(flat_params))
+            set_flat_params_to(self.critic, torch.tensor(flat_params))
 
         # K - Loop
         for _ in range(self._K):
+            if not self.is_bfgs:
+                values = self.critic(raw_states)
+                valueLoss = self.mse_loss(returns, values)
             # policy ingredients
             # dist = self.policy(features)
             dist = self.policy(raw_states)
