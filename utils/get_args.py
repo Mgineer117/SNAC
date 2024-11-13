@@ -80,7 +80,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--ppo-log-interval",
         type=int,
-        default=25,
+        default=10,
         help="logging interval; epoch-based",
     )
 
