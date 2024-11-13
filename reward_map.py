@@ -141,7 +141,6 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.grid_size = 12
     args.num_vector = 16
     args.device = torch.device("cpu")
 
@@ -150,7 +149,6 @@ if __name__ == "__main__":
 
     # call sf
     args.import_sf_model = True
-    args.a_dim = 5
     sf_network = call_sfNetwork(args)
     plotter = Plotter(
         grid_size=args.grid_size,

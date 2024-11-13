@@ -415,43 +415,44 @@ class Plotter:
 
         # print(features[:, :, 0])
 
-        ### COMPUTE DELTA-PHI
-        coordinates = np.stack((coords[0], coords[1]), axis=-1)
-        for agent_dir in agent_dirs:
-            """
-            agent_dir 0: left
-            agent_dir 1: up
-            agent_dir 2: right
-            agent_dir 3: down
-            """
-            for x, y in zip(coords[0], coords[1]):
-                if agent_dir == 0:
-                    temp_x, temp_y = x, y - 1
-                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
-                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
-                    else:
-                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
-                elif agent_dir == 1:
-                    temp_x, temp_y = x - 1, y
-                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
-                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
-                    else:
-                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
-                elif agent_dir == 2:
-                    temp_x, temp_y = x, y + 1
-                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
-                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
-                    else:
-                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
-                elif agent_dir == 3:
-                    temp_x, temp_y = x + 1, y
-                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
-                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
-                    else:
-                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+        # ### COMPUTE DELTA-PHI
+        # coordinates = np.stack((coords[0], coords[1]), axis=-1)
+        # for agent_dir in agent_dirs:
+        #     """
+        #     agent_dir 0: left
+        #     agent_dir 1: up
+        #     agent_dir 2: right
+        #     agent_dir 3: down
+        #     """
+        #     for x, y in zip(coords[0], coords[1]):
+        #         if agent_dir == 0:
+        #             temp_x, temp_y = x, y - 1
+        #             if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+        #                 deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+        #             else:
+        #                 deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+        #         elif agent_dir == 1:
+        #             temp_x, temp_y = x - 1, y
+        #             if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+        #                 deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+        #             else:
+        #                 deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+        #         elif agent_dir == 2:
+        #             temp_x, temp_y = x, y + 1
+        #             if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+        #                 deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+        #             else:
+        #                 deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+        #         elif agent_dir == 3:
+        #             temp_x, temp_y = x + 1, y
+        #             if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+        #                 deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+        #             else:
+        #                 deltaPhi[agent_dir, x, y, :] += features[x, y, :]
 
-        # sum all connected next_phi - current phi
-        deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
+        # # sum all connected next_phi - current phi
+        # deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
+        deltaPhi = features
 
         if algo_name == "SNAC":
             r_deltaPhi, s_deltaPhi = torch.split(
@@ -676,43 +677,44 @@ class Plotter:
 
         # print(features[:, :, 0])
 
-        ### COMPUTE DELTA-PHI
-        coordinates = np.stack((coords[0], coords[1]), axis=-1)
-        for agent_dir in agent_dirs:
-            """
-            agent_dir 0: left
-            agent_dir 1: up
-            agent_dir 2: right
-            agent_dir 3: down
-            """
-            for x, y in zip(coords[0], coords[1]):
-                if agent_dir == 0:
-                    temp_x, temp_y = x, y - 1
-                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
-                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
-                    else:
-                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
-                elif agent_dir == 1:
-                    temp_x, temp_y = x - 1, y
-                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
-                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
-                    else:
-                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
-                elif agent_dir == 2:
-                    temp_x, temp_y = x, y + 1
-                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
-                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
-                    else:
-                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
-                elif agent_dir == 3:
-                    temp_x, temp_y = x + 1, y
-                    if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
-                        deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
-                    else:
-                        deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+        # ### COMPUTE DELTA-PHI
+        # coordinates = np.stack((coords[0], coords[1]), axis=-1)
+        # for agent_dir in agent_dirs:
+        #     """
+        #     agent_dir 0: left
+        #     agent_dir 1: up
+        #     agent_dir 2: right
+        #     agent_dir 3: down
+        #     """
+        #     for x, y in zip(coords[0], coords[1]):
+        #         if agent_dir == 0:
+        #             temp_x, temp_y = x, y - 1
+        #             if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+        #                 deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+        #             else:
+        #                 deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+        #         elif agent_dir == 1:
+        #             temp_x, temp_y = x - 1, y
+        #             if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+        #                 deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+        #             else:
+        #                 deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+        #         elif agent_dir == 2:
+        #             temp_x, temp_y = x, y + 1
+        #             if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+        #                 deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+        #             else:
+        #                 deltaPhi[agent_dir, x, y, :] += features[x, y, :]
+        #         elif agent_dir == 3:
+        #             temp_x, temp_y = x + 1, y
+        #             if any((coordinates == (temp_x, temp_y)).all(axis=-1)):
+        #                 deltaPhi[agent_dir, x, y, :] += features[temp_x, temp_y, :]
+        #             else:
+        #                 deltaPhi[agent_dir, x, y, :] += features[x, y, :]
 
-        # sum all connected next_phi - current phi
-        deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
+        # # sum all connected next_phi - current phi
+        # deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
+        deltaPhi = features
 
         if algo_name == "SNAC":
             r_deltaPhi, s_deltaPhi = torch.split(

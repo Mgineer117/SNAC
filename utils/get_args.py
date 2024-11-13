@@ -72,15 +72,15 @@ def get_args(verbose=True):
         "--sf-log-interval", type=int, default=250, help="logging interval; epoch-based"
     )
     parser.add_argument(
-        "--op-log-interval", type=int, default=10, help="logging interval; epoch-based"
+        "--op-log-interval", type=int, default=5, help="logging interval; epoch-based"
     )
     parser.add_argument(
-        "--hc-log-interval", type=int, default=50, help="logging interval; epoch-based"
+        "--hc-log-interval", type=int, default=10, help="logging interval; epoch-based"
     )
     parser.add_argument(
         "--ppo-log-interval",
         type=int,
-        default=100,
+        default=25,
         help="logging interval; epoch-based",
     )
 
@@ -107,19 +107,19 @@ def get_args(verbose=True):
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=500,  # 500
+        default=300,  # 300
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=100,  # 100
+        default=50,  # 100
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=500,  # 500
+        default=300,  # 500
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -232,7 +232,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--feature-lr",
         type=float,
-        default=5e-5,
+        default=1e-4,
         help="CNN lr where scheduler is used so can be high",
     )
     parser.add_argument(
@@ -285,7 +285,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-4,
+        default=1e-3,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
