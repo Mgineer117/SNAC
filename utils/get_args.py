@@ -107,19 +107,19 @@ def get_args(verbose=True):
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=300,  # 300
+        default=200,  # 200
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=50,  # 100
+        default=100,  # 100
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=300,  # 500
+        default=200,  # 200
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -285,7 +285,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-3,
+        default=1e-2,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
@@ -294,7 +294,9 @@ def get_args(verbose=True):
         default=0.95,
         help="Used in advantage estimation for numerical stability",
     )
-    parser.add_argument("--gamma", type=float, default=0.99, help="discount parameters")
+    parser.add_argument(
+        "--gamma", type=float, default=0.999, help="discount parameters"
+    )
     parser.add_argument(
         "--sigma-min",
         type=float,
@@ -309,14 +311,14 @@ def get_args(verbose=True):
     parser.add_argument(
         "--max-num-traj",
         type=int,
-        default=150,
+        default=100,
         help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
 
     parser.add_argument(
         "--min-num-traj",
         type=int,
-        default=100,
+        default=50,
         help="For buffer learing, this sets the sub-iterations",
     )
 
