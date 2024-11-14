@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 
 from utils.get_all_states import get_grid_tensor, get_grid_tensor2
 from utils.utils import estimate_psi
+from utils.plotter import Plotter
 from utils.sampler import OnlineSampler
 from utils.buffer import TrajectoryBuffer
 from models.policy.base_policy import BasePolicy
@@ -17,8 +18,9 @@ from log.wandb_logger import WandbLogger
 def discover_options(
     policy: BasePolicy,
     sampler: OnlineSampler,
+    plotter: Plotter,
     grid_type: int = 0,
-    algo_name: str = "SNAC-combined",
+    algo_name: str = "SNAC",
     method: str = "SVD",
     classification: str = "top",
     num: int = 10,
@@ -26,6 +28,7 @@ def discover_options(
     num_trj: int = 100,
     prev_batch: dict | None = None,
     idx: int | None = None,
+    draw_map: bool = False,
     device=torch.device("cpu"),
 ):
     """
@@ -38,7 +41,7 @@ def discover_options(
         bot: bot 10 eigenvectors,
         mix: all of the above
     """
-    # Collect batch
+    ### Collect batch to compute phi for psi
     is_covering_option = True if idx is not None else False
     option_buffer = TrajectoryBuffer(
         min_num_trj=num_trj, max_num_trj=200, device=device
@@ -51,34 +54,46 @@ def discover_options(
     batch = option_buffer.sample_all()
     option_buffer.wipe()
 
+    ### Convert to the tensor
     features = torch.from_numpy(batch["features"]).to(torch.float32).to(device)
     terminals = torch.from_numpy(batch["terminals"]).to(torch.float32).to(device)
 
-    if algo_name == "SNAC":
-        # Compute Psi
-        with torch.no_grad():
-            psi = estimate_psi(features, terminals, gamma)  # operate on cpu
-            psi_r, psi_s = policy.split(psi)
-
-            # to save VRAM
-            del features, terminals, psi
-            torch.cuda.empty_cache()
-
-        option_dim = psi_r.shape[-1]
-        if option_dim < num:
-            raise ValueError(
-                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{num}"
+    #### Compute Psi from Phi
+    with torch.no_grad():
+        psi = estimate_psi(features, terminals, gamma)  # operate on cpu
+        if prev_batch is not None:
+            prev_features = (
+                torch.from_numpy(prev_batch["features"]).to(torch.float32).to(device)
             )
+            prev_terminals = (
+                torch.from_numpy(prev_batch["terminals"]).to(torch.float32).to(device)
+            )
+            prev_psi = estimate_psi(
+                prev_features, prev_terminals, gamma
+            )  # operate on cpu
 
-        divide_num = (option_dim - 2 * num) // num
-        first_indices = list(range(0, num))
-        middle_indices = list(range(num, option_dim - num, divide_num))
-        final_indices = list(range(option_dim - num, option_dim))
+            psi = torch.cat((prev_psi, psi), axis=0)
+        psi_r, psi_s = policy.split(psi)
+        # to save VRAM
+        del features, terminals
+        torch.cuda.empty_cache()
 
-        indices = first_indices + middle_indices + final_indices
+    ### Compute the vectors via SVD
+    def vectors():
+        if algo_name == "SNAC":
+            option_dim = psi_r.shape[-1]
+            if option_dim < num:
+                raise ValueError(
+                    f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{num}"
+                )
 
-        if method == "SVD":
-            # V_r, V_s ~ [F/2, F/2]
+            divide_num = (option_dim - 2 * num) // num
+
+            first_indices = list(range(0, num))
+            middle_indices = list(range(num, option_dim - num, divide_num))
+            final_indices = list(range(option_dim - num, option_dim))
+            indices = first_indices + middle_indices + final_indices
+
             _, S_r, V_r = torch.svd(psi_r)  # S: max - min
             _, S_s, V_s = torch.svd(psi_s)  # S: max - min
 
@@ -100,10 +115,6 @@ def discover_options(
                 V_r = V_r[final_indices, :]
                 V_s = V_s[final_indices, :]
             elif classification == "mix":
-                if option_dim < 3 * num:
-                    raise ValueError(
-                        f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{2*num}"
-                    )
                 S_r = S_r[indices]
                 S_s = S_s[indices]
                 V_r = V_r[indices, :]
@@ -113,116 +124,29 @@ def discover_options(
                     f"Given classification is not implemented {classification}"
                 )
 
+            S_r = torch.cat((S_r, -S_r), axis=0)
+            S_s = torch.cat((S_s, -S_s), axis=0)
+            V_r = torch.cat((V_r, -V_r), axis=0)
+            V_s = torch.cat((V_s, -V_s), axis=0)
+
             S = torch.cat((S_r, S_s), axis=0)
             V = torch.cat((V_r, V_s), axis=0)
 
-            return S, V, [S_r, S_s], [V_r, V_s], ["R-feature", "S-feature"], batch
+            S_list, V_list = [S_r, S_s], [V_r, V_s]
+            return S, V, S_list, V_list
         else:
-            NotImplementedError(f"Not implemented arg {method}")
-
-    elif algo_name == "EigenOption2" or algo_name == "EigenOption3":
-        with torch.no_grad():
-            psi = estimate_psi(features, terminals, gamma)  # operate on cpu
-
-            if prev_batch is not None:
-                prev_features = (
-                    torch.from_numpy(prev_batch["features"])
-                    .to(torch.float32)
-                    .to(device)
+            option_dim = psi.shape[-1]
+            if option_dim < 3 * num:
+                raise ValueError(
+                    f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
                 )
-                prev_terminals = (
-                    torch.from_numpy(prev_batch["terminals"])
-                    .to(torch.float32)
-                    .to(device)
-                )
-                prev_psi = estimate_psi(
-                    prev_features, prev_terminals, gamma
-                )  # operate on cpu
+            divide_num = (option_dim - 2 * num) // num
 
-                psi = torch.cat((prev_psi, psi), axis=0)
+            first_indices = list(range(0, num))
+            middle_indices = list(range(num, option_dim - num, divide_num))
+            final_indices = list(range(option_dim - num, option_dim))
+            indices = first_indices + middle_indices + final_indices
 
-            # to save VRAM
-            del features, terminals
-            torch.cuda.empty_cache()
-
-        option_dim = psi.shape[-1]
-        if option_dim < 3 * num:
-            raise ValueError(
-                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{2*num}"
-            )
-
-        divide_num = (option_dim - 2 * num) // num
-        first_indices = list(range(0, num))
-        middle_indices = list(range(num, option_dim - num, divide_num))
-        final_indices = list(range(option_dim - num, option_dim))
-
-        indices = first_indices + middle_indices + final_indices
-
-        if method == "SVD":
-            # V_r, V_s ~ [F/2, F/2]
-            _, S, V = torch.svd(psi)  # S: max - min
-
-            if classification == "all":
-                pass
-            elif classification == "top":
-                S = S[first_indices]
-                V = V[first_indices, :]
-            elif classification == "mid":
-                S = S[middle_indices]
-                V = V[middle_indices, :]
-            elif classification == "bot":
-                S = S[final_indices]
-                V = V[final_indices, :]
-            elif classification == "mix":
-                S = S[indices]
-                V = V[indices, :]
-            else:
-                NotImplementedError(
-                    f"Given classification is not implemented {classification}"
-                )
-
-            return S, V, [S], [V], ["S-feature"], batch
-
-    elif algo_name == "EigenOption" or algo_name == "CoveringOption":
-        with torch.no_grad():
-            psi = estimate_psi(features, terminals, gamma)  # operate on cpu
-
-            if prev_batch is not None:
-                prev_features = (
-                    torch.from_numpy(prev_batch["features"])
-                    .to(torch.float32)
-                    .to(device)
-                )
-                prev_terminals = (
-                    torch.from_numpy(prev_batch["terminals"])
-                    .to(torch.float32)
-                    .to(device)
-                )
-                prev_psi = estimate_psi(
-                    prev_features, prev_terminals, gamma
-                )  # operate on cpu
-
-                psi = torch.cat((prev_psi, psi), axis=0)
-
-            # to save VRAM
-            del features, terminals
-            torch.cuda.empty_cache()
-
-        option_dim = psi.shape[-1]
-        if option_dim < 3 * num:
-            raise ValueError(
-                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{2*num}"
-            )
-
-        divide_num = (option_dim - 2 * num) // num
-        first_indices = list(range(0, num))
-        middle_indices = list(range(num, option_dim - num, divide_num))
-        final_indices = list(range(option_dim - num, option_dim))
-
-        indices = first_indices + middle_indices + final_indices
-
-        if method == "SVD":
-            # V_r, V_s ~ [F/2, F/2]
             _, S, V = torch.svd(psi)  # S: max - min
 
             if classification == "all":
@@ -247,17 +171,52 @@ def discover_options(
             S = torch.cat((S, -S), axis=0)
             V = torch.cat((V, -V), axis=0)
 
-            return S, V, [S], [V], ["S-feature"], batch
-        else:
-            NotImplementedError(f"Not implemented arg {method}")
+            return S, V, [S], [V]
+
+    if algo_name == "SNAC":
+        S, V, S_list, V_list = vectors()
+
+        option_vals, options, metaData = cluster_vecvtors(
+            S_list, V_list, k=int(num / 2)
+        )  # replacing original V with cluster centroids
+
+        if draw_map:
+            plotter.plotClusteredVectors(
+                V_list=V_list,
+                centroids=metaData["centroids_list"],
+                labels=metaData["labels_list"],
+                names=["R-feature", "S-feature"],
+                dir=plotter.sf_path,
+            )
+
+        return option_vals, options, batch
+
+    elif algo_name == "EigenOption" or algo_name == "CoveringOption":
+        S, V, S_list, V_list = vectors()
+        return S, V, batch
+
+    elif algo_name == "EigenOption2" or algo_name == "EigenOption3":
+        S, V, S_list, V_list = vectors()
+
+        option_vals, options, metaData = cluster_vecvtors(S_list, V_list, k=num)
+
+        if draw_map:
+            plotter.plotClusteredVectors(
+                V_list=V_list,
+                centroids=metaData["centroids_list"],
+                labels=metaData["labels_list"],
+                names=["S-feature"],
+                dir=plotter.sf_path,
+            )
+
+        return S, V, batch
+
     else:
         raise ValueError(f"Unknown algo-name: {algo_name}")
 
 
 def cluster_vecvtors(S_list, V_list, k=10):
     """V must be matrix of linear functionals: V_h"""
-    k = int(k / 2)
-
     centroids_list = []
     labels_list = []
     eigVals_list = []
@@ -283,9 +242,6 @@ def cluster_vecvtors(S_list, V_list, k=10):
         eigVals = np.array(sorted(eigVals, reverse=True))
         centroids = centroids[sorted_indices, :]
 
-        eigVals = np.concatenate((eigVals, -eigVals), axis=0)
-        centroids = np.concatenate((centroids, -centroids), axis=0)
-
         centroids_list.append(centroids)
         labels_list.append(labels)
         eigVals_list.append(eigVals)
@@ -309,48 +265,40 @@ def get_eigenvectors(
     sampler,
     plotter,
     args,
-    idx: int | None = None,
+    # idx: int | None = None,
     app_trj_num: int = 100,
-    prev_batch: dict | None = None,
+    # prev_batch: dict | None = None,
     draw_map: bool = False,
 ):
     if args.algo_name == "SNAC":
-        option_vals, options, S_list, V_list, names, batch = discover_options(
+        option_vals, options, batch = discover_options(
             policy=network,
             sampler=sampler,
+            plotter=plotter,
             grid_type=args.grid_type,
             algo_name=args.algo_name,
             method="SVD",
             classification="all",
             num_trj=app_trj_num,
+            draw_map=draw_map,
             device=args.device,
         )
-
-        option_vals, options, metaData = cluster_vecvtors(
-            S_list, V_list, k=int(args.num_vector / 2)
-        )  # replacing original V with cluster centroids
 
         print(
             f"Selecting clustered R:{int(len(option_vals)/2)}  S:{int(len(option_vals)/2)} vector !!! | Given total options: {args.num_vector}"
         )
-        if draw_map:
-            plotter.plotClusteredVectors(
-                V_list=V_list,
-                centroids=metaData["centroids_list"],
-                labels=metaData["labels_list"],
-                names=names,
-                dir=plotter.sf_path,
-            )
     elif args.algo_name == "EigenOption":
-        option_vals, options, S_list, V_list, names, batch = discover_options(
+        option_vals, options, batch = discover_options(
             policy=network,
             sampler=sampler,
+            plotter=plotter,
             grid_type=args.grid_type,
             algo_name=args.algo_name,
             method="SVD",
             classification="top",
             num=int(args.num_vector / 2),
             num_trj=app_trj_num,
+            draw_map=draw_map,
             device=args.device,
         )
         print(
@@ -360,27 +308,19 @@ def get_eigenvectors(
         option_vals, options, S_list, V_list, names, batch = discover_options(
             policy=network,
             sampler=sampler,
+            plotter=plotter,
             grid_type=args.grid_type,
             algo_name=args.algo_name,
             method="SVD",
             classification="all",
             num_trj=app_trj_num,
+            draw_map=draw_map,
             device=args.device,
         )
-        option_vals, options, metaData = cluster_vecvtors(
-            S_list, V_list, k=args.num_vector
-        )  # replacing original V with cluster centroids
         print(
             f"Selecting clustered {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
         )
-        if draw_map:
-            plotter.plotClusteredVectors(
-                V_list=V_list,
-                centroids=metaData["centroids_list"],
-                labels=metaData["labels_list"],
-                names=names,
-                dir=plotter.sf_path,
-            )
+
     elif args.algo_name == "EigenOption3":
         if args.num_vector < 8:
             raise ValueError(
@@ -389,11 +329,13 @@ def get_eigenvectors(
         option_vals, options, S_list, V_list, names, batch = discover_options(
             policy=network,
             sampler=sampler,
+            plotter=plotter,
             grid_type=args.grid_type,
             algo_name=args.algo_name,
             method="SVD",
             classification="all",
             num_trj=app_trj_num,
+            draw_map=draw_map,
             device=args.device,
         )
 
