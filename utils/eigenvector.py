@@ -149,7 +149,6 @@ def discover_options(
             option_vals[k] = torch.mean(S[idx])
             options[k, :] = torch.mean(V[idx, :], axis=0)
 
-        print(V.shape, options.shape)
         if draw_map:
             plotter.plotClusteredVectors(
                 V_list=[V],

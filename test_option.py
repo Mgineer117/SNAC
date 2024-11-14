@@ -16,7 +16,7 @@ def init_args(num_vector):
     args = DotDict(config)
     args.import_sf_model = True
     args.s_dim = tuple(args.s_dim)
-    args.algo_name = "EigenOption"
+    args.algo_name = "EigenOption3"
     args.device = torch.device("cpu")
 
     args.num_vector = num_vector
