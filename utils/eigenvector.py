@@ -120,7 +120,7 @@ def discover_options(
         else:
             NotImplementedError(f"Not implemented arg {method}")
 
-    elif algo_name == "EigenOption2":
+    elif algo_name == "EigenOption2" or algo_name == "EigenOption3":
         with torch.no_grad():
             psi = estimate_psi(features, terminals, gamma)  # operate on cpu
 
@@ -376,6 +376,47 @@ def get_eigenvectors(
         if draw_map:
             plotter.plotClusteredVectors(
                 V_list=V_list,
+                centroids=metaData["centroids_list"],
+                labels=metaData["labels_list"],
+                names=names,
+                dir=plotter.sf_path,
+            )
+    elif args.algo_name == "EigenOption3":
+        if args.num_vector < 8:
+            raise ValueError(
+                f"Warning: Minimum num vectors for {args.algo_name} is > {8}"
+            )
+        option_vals, options, S_list, V_list, names, batch = discover_options(
+            policy=network,
+            sampler=sampler,
+            grid_type=args.grid_type,
+            algo_name=args.algo_name,
+            method="SVD",
+            classification="all",
+            num_trj=app_trj_num,
+            device=args.device,
+        )
+
+        half_dividend = int(args.num_vector / 2)
+
+        new_option_vals = option_vals[:half_dividend]
+        new_options = options[:half_dividend, :]
+
+        S_list = [S_list[0][half_dividend:]]
+        V_list = [V_list[0][half_dividend:, :]]
+
+        option_vals, options, metaData = cluster_vecvtors(
+            S_list, V_list, k=half_dividend
+        )  # replacing original V with cluster centroids
+
+        option_vals = torch.cat((new_option_vals, option_vals), axis=0)
+        options = torch.cat((new_options, options), axis=0)
+        print(
+            f"Selecting clustered {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
+        )
+        if draw_map:
+            plotter.plotClusteredVectors(
+                V_list=[options],
                 centroids=metaData["centroids_list"],
                 labels=metaData["labels_list"],
                 names=names,

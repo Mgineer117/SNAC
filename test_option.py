@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import json
 import itertools
+import matplotlib.pyplot as plt
 
 from utils import *
 from utils.call_env import call_env
@@ -15,6 +16,7 @@ def init_args(num_vector):
     args = DotDict(config)
     args.import_sf_model = True
     args.s_dim = tuple(args.s_dim)
+    args.algo_name = "EigenOption"
     args.device = torch.device("cpu")
 
     args.num_vector = num_vector
@@ -89,7 +91,7 @@ def get_feature_matrix(feaNet, grid, pos, args):
     return features.numpy()
 
 
-def get_similarity_metric(features, options, pos, args):
+def get_similarity_metric(features, option_vals, options, pos, args):
     """This sweeps possible blue agent states to
     compute all options for each feature then average"""
     # print(f"option dims: {options.shape}")
@@ -97,6 +99,7 @@ def get_similarity_metric(features, options, pos, args):
     # print(f"vector dim: {(options[0,:] - options[1, :]).shape}")
 
     total_dissimilarity = 0
+    total_diss_dict = {}
     feature_num = len(pos[0])
 
     if args.algo_name == "SNAC":
@@ -106,6 +109,9 @@ def get_similarity_metric(features, options, pos, args):
 
         reward_options = options[:vector_dividend, :]
         state_options = options[vector_dividend:, :]
+
+        values = [option_vals[i] for i in range(args.num_vector)]
+        val_pairs = list(itertools.combinations(values, 2))
 
         reward_vectors = [reward_options[i, :] for i in range(vector_dividend)]
         state_vectors = [state_options[i, :] for i in range(vector_dividend)]
@@ -119,31 +125,55 @@ def get_similarity_metric(features, options, pos, args):
         for x, y in zip(pos[0], pos[1]):
             current_dissimilarity = 0
             current_features = reward_features[x, y, :]  # F dim feature is ready
-            for v1, v2 in reward_pairs:
+            for i, (v1, v2) in enumerate(reward_pairs):
+                dissimilarity = np.abs(np.dot(current_features, (v1 - v2)))
+                for key in val_pairs[i]:
+                    try:
+                        total_diss_dict[str(round(key.item(), 3))] += dissimilarity
+                    except:
+                        total_diss_dict[str(round(key.item(), 3))] = dissimilarity
                 # sweep through every options for each feature
-                current_dissimilarity += np.abs(np.dot(current_features, (v1 - v2)))
+                current_dissimilarity += dissimilarity
             total_dissimilarity += current_dissimilarity / len(reward_pairs)
 
         for x, y in zip(pos[0], pos[1]):
             current_dissimilarity = 0
             current_features = state_features[x, y, :]  # F dim feature is ready
-            for v1, v2 in state_pairs:
+            for j, (v1, v2) in enumerate(state_pairs):
+                dissimilarity = np.abs(np.dot(current_features, (v1 - v2)))
+                for key in val_pairs[i + j + 1]:
+                    try:
+                        total_diss_dict[str(round(key.item(), 3))] += dissimilarity
+                    except:
+                        total_diss_dict[str(round(key.item(), 3))] = dissimilarity
                 # sweep through every options for each feature
-                current_dissimilarity += np.abs(np.dot(current_features, (v1 - v2)))
+                current_dissimilarity += dissimilarity
             total_dissimilarity += current_dissimilarity / len(state_pairs)
     else:
+        values = [option_vals[i] for i in range(args.num_vector)]
         vectors = [options[i, :] for i in range(args.num_vector)]
+        val_pairs = list(itertools.combinations(values, 2))
         pairs = list(itertools.combinations(vectors, 2))
         # parameters
         for x, y in zip(pos[0], pos[1]):
             current_dissimilarity = 0
             current_features = features[x, y, :]  # F dim feature is ready
-            for v1, v2 in pairs:
+            for i, (v1, v2) in enumerate(pairs):
+                dissimilarity = np.abs(np.dot(current_features, (v1 - v2)))
+                for key in val_pairs[i]:
+                    try:
+                        total_diss_dict[str(round(key.item(), 3))] += dissimilarity
+                    except:
+                        total_diss_dict[str(round(key.item(), 3))] = dissimilarity
                 # sweep through every options for each feature
-                current_dissimilarity += np.abs(np.dot(current_features, (v1 - v2)))
+                current_dissimilarity += dissimilarity
             total_dissimilarity += current_dissimilarity / len(pairs)
 
-    return total_dissimilarity / feature_num
+    total_dissimilarity /= feature_num
+    for k, v in total_diss_dict.items():
+        total_diss_dict[k] /= feature_num * (args.num_vector - 1)
+
+    return total_dissimilarity, total_diss_dict
 
 
 if __name__ == "__main__":
@@ -156,9 +186,22 @@ if __name__ == "__main__":
     feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
 
     n = 10
-    diss_list = []
+    data = 0
     for i in range(n):
         option_vals, options = get_vectors(args)
-        diss = get_similarity_metric(feature_matrix, options, pos, args)
-        diss_list.append(diss)
-    print(f"Dissimilarity: {np.mean(diss_list)}")
+        diss, diss_dict = get_similarity_metric(
+            feature_matrix, option_vals, options, pos, args
+        )
+        data += diss / n
+        try:
+            for k, v in diss_dict.items():
+                data_dict[k] += diss_dict[k] / n
+        except:
+            data_dict = diss_dict
+
+    data_list = []
+    for k, v in diss_dict.items():
+        data_list.append(v)
+    plt.plot(data_list)
+    plt.title(f"Mean dissimilarity: {data} for {args.algo_name}")
+    plt.savefig(f"data_{args.algo_name}.png")

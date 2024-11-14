@@ -791,6 +791,10 @@ class Plotter:
             grid = torch.zeros(self.grid_size, self.grid_size)
             grid += rewards[vec_idx, :, :]
 
+            if torch.sum((grid > 0).int()) == 0:
+                for x, y in zip(coords[0], coords[1]):
+                    grid[x, y] += 1.0
+
             x = np.linspace(0, self.grid_size - 1, self.grid_size)
             y = np.linspace(0, self.grid_size - 1, self.grid_size)
             x, y = np.meshgrid(x, y)
