@@ -137,22 +137,25 @@ def discover_options(
 
         ##### cluster in feature space #####
         rewards = V @ psi.T  # (num options) x T
+
         option_vals, options, metaData = cluster_vecvtors([S], [rewards], k=num)
 
         option_vals = torch.empty(num)
         options = torch.empty(num, option_dim)
 
         for k in range(num):
-            idx = metaData["labels_list"] == k
+            idx = metaData["labels_list"][0] == k
+
             option_vals[k] = torch.mean(S[idx])
             options[k, :] = torch.mean(V[idx, :], axis=0)
 
+        print(V.shape, options.shape)
         if draw_map:
             plotter.plotClusteredVectors(
                 V_list=[V],
-                centroids=options,
+                centroids=[options],
                 labels=metaData["labels_list"],
-                names=["R-feature", "S-feature"],
+                names=["S-feature"],
                 dir=plotter.sf_path,
             )
     else:
@@ -211,6 +214,7 @@ def cluster_vecvtors(S_list, V_list, k=10):
 
         centroids = kmeans.cluster_centers_
         labels = kmeans.labels_
+
         eigVals = []
         for i in range(k):
             eigVal = S[labels == i]
@@ -285,7 +289,7 @@ def get_eigenvectors(
         print(
             f"Selecting top {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
         )
-    elif args.algo_name == "EigenOption2":
+    elif args.algo_name == "EigenOption2" or args.algo_name == "EigenOption3":
         option_vals, options, batch = discover_options(
             policy=network,
             sampler=sampler,
@@ -305,8 +309,6 @@ def get_eigenvectors(
     elif args.algo_name == "CoveringOption":
         """It is separately implemented in CoveringOption class"""
         pass
-    else:
-        raise ValueError(f"Unknown algorithm: {args.algo_name}")
 
     if draw_map:
         if args.env_name == "FourRooms":
