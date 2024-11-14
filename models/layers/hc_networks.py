@@ -26,6 +26,13 @@ class HC_Policy(nn.Module):
         num_options += 1  # for primitive actions
         # |A| duplicate networks
         self.act = activation
+
+        self._dtype = torch.float32
+        self._num_options = num_options
+
+        self._max_val = 0.6
+        self._min_val = 0.1
+
         self.model = MLP(input_dim, (fc_dim, fc_dim), num_options, activation=self.act)
 
         # parameters
@@ -33,8 +40,15 @@ class HC_Policy(nn.Module):
 
     def forward(self, x: torch.Tensor, deterministic=False):
         logits = self.model(x)
-        probs = F.softmax(logits, dim=-1) + 1e-7
-        logprobs = F.log_softmax(logits, dim=-1) + 1e-7
+
+        probs = F.softmax(logits, dim=-1)
+        p_probs = torch.clamp(probs, min=self._min_val, max=self._max_val)
+        probs = (p_probs - self._min_val) / (self._max_val - self._min_val)
+
+        logprobs = torch.log(probs)
+
+        # probs = F.softmax(logits, dim=-1) + 1e-7
+        # logprobs = F.log_softmax(logits, dim=-1) + 1e-7
 
         dist = torch.distributions.categorical.Categorical(probs)
 

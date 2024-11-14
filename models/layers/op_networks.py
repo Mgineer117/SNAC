@@ -18,7 +18,7 @@ class OptionPolicy(nn.Module):
         fc_dim: int,
         a_dim: int,
         num_options: int,
-        activation: nn.Module = nn.ReLU(),
+        activation: nn.Module = nn.Tanh(),
     ):
         super(OptionPolicy, self).__init__()
 
@@ -29,6 +29,9 @@ class OptionPolicy(nn.Module):
         self._dtype = torch.float32
         self._num_options = num_options
 
+        self._max_val = 0.6
+        self._min_val = 0.1
+
         self.models = nn.ModuleList()
         for _ in range(num_options):
             self.models.append(self.create_sequential_model(input_dim, fc_dim, a_dim))
@@ -38,9 +41,14 @@ class OptionPolicy(nn.Module):
 
     def forward(self, x: torch.Tensor, z: int, deterministic=False):
         logits = self.models[z](x)
+        # implement std for cat distribution
 
         probs = F.softmax(logits, dim=-1)
-        logprobs = F.log_softmax(logits, dim=-1)
+        p_probs = torch.clamp(probs, min=self._min_val, max=self._max_val)
+        probs = (p_probs - self._min_val) / (self._max_val - self._min_val)
+
+        logprobs = torch.log(probs)
+
         dist = torch.distributions.categorical.Categorical(probs)
         if deterministic:
             # [N, |O|]

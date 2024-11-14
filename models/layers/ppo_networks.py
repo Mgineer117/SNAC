@@ -23,12 +23,19 @@ class PPO_Policy(nn.Module):
         self._a_dim = a_dim
         self._dtype = torch.float32
 
+        self._max_val = 0.6
+        self._min_val = 0.1
+
         self.model = MLP(input_dim, (fc_dim, fc_dim), a_dim, activation=self.act)
 
     def forward(self, x: torch.Tensor):
         logits = self.model(x)
 
         probs = F.softmax(logits, dim=-1)
+        p_probs = torch.clamp(probs, min=self._min_val, max=self._max_val)
+        probs = (p_probs - self._min_val) / (self._max_val - self._min_val)
+
+        # probs = F.softmax(logits, dim=-1)
         dist = torch.distributions.categorical.Categorical(probs)
         return dist
 
