@@ -107,19 +107,19 @@ def get_args(verbose=True):
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=200,  # 200
+        default=250,  # 200
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=100,  # 100
+        default=125,  # 100
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=200,  # 200
+        default=250,  # 200
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
@@ -277,7 +277,7 @@ def get_args(verbose=True):
 
     # PPO parameters
     parser.add_argument(
-        "--K-epochs", type=int, default=5, help="PPO update per one iter"
+        "--K-epochs", type=int, default=3, help="PPO update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"
@@ -296,15 +296,6 @@ def get_args(verbose=True):
     )
     parser.add_argument(
         "--gamma", type=float, default=0.999, help="discount parameters"
-    )
-    parser.add_argument(
-        "--sigma-min",
-        type=float,
-        default=-0.5,
-        help="min deviation as e^sig_min ~= 0.6",
-    )
-    parser.add_argument(
-        "--sigma-max", type=float, default=0.5, help="max deviation as e^sig_max ~= 1.6"
     )
 
     # Training parameters
