@@ -248,7 +248,7 @@ def get_args(verbose=True):
         help="Intermediate-level model learning rate",
     )
     parser.add_argument(
-        "--op-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--op-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--op-critic-lr",
@@ -257,7 +257,7 @@ def get_args(verbose=True):
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--hc-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--hc-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--hc-critic-lr",
@@ -266,7 +266,7 @@ def get_args(verbose=True):
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--ppo-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--ppo-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--ppo-critic-lr",

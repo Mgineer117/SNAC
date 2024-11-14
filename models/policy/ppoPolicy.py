@@ -43,7 +43,7 @@ class PPO_Learner(BasePolicy):
         self._tau = tau
         self._K = K
         self._l2_reg = 1e-5
-        self._bfgs_iter = 10
+        self._bfgs_iter = 5
         self._forward_steps = 0
 
         # trainable networks
