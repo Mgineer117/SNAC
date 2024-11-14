@@ -195,7 +195,7 @@ def discover_options(
         S, V, S_list, V_list = vectors()
         return S, V, batch
 
-    elif algo_name == "EigenOption2" or algo_name == "EigenOption3":
+    elif algo_name == "EigenOption2":
         S, V, S_list, V_list = vectors()
 
         option_vals, options, metaData = cluster_vecvtors(S_list, V_list, k=num)
@@ -279,6 +279,7 @@ def get_eigenvectors(
             algo_name=args.algo_name,
             method="SVD",
             classification="all",
+            num=args.num_vector,
             num_trj=app_trj_num,
             draw_map=draw_map,
             device=args.device,
@@ -305,7 +306,7 @@ def get_eigenvectors(
             f"Selecting top {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
         )
     elif args.algo_name == "EigenOption2":
-        option_vals, options, S_list, V_list, names, batch = discover_options(
+        option_vals, options, batch = discover_options(
             policy=network,
             sampler=sampler,
             plotter=plotter,
@@ -313,6 +314,7 @@ def get_eigenvectors(
             algo_name=args.algo_name,
             method="SVD",
             classification="all",
+            num=args.num_vector,
             num_trj=app_trj_num,
             draw_map=draw_map,
             device=args.device,
@@ -320,50 +322,6 @@ def get_eigenvectors(
         print(
             f"Selecting clustered {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
         )
-
-    elif args.algo_name == "EigenOption3":
-        if args.num_vector < 8:
-            raise ValueError(
-                f"Warning: Minimum num vectors for {args.algo_name} is > {8}"
-            )
-        option_vals, options, S_list, V_list, names, batch = discover_options(
-            policy=network,
-            sampler=sampler,
-            plotter=plotter,
-            grid_type=args.grid_type,
-            algo_name=args.algo_name,
-            method="SVD",
-            classification="all",
-            num_trj=app_trj_num,
-            draw_map=draw_map,
-            device=args.device,
-        )
-
-        half_dividend = int(args.num_vector / 2)
-
-        new_option_vals = option_vals[:half_dividend]
-        new_options = options[:half_dividend, :]
-
-        S_list = [S_list[0][half_dividend:]]
-        V_list = [V_list[0][half_dividend:, :]]
-
-        option_vals, options, metaData = cluster_vecvtors(
-            S_list, V_list, k=half_dividend
-        )  # replacing original V with cluster centroids
-
-        option_vals = torch.cat((new_option_vals, option_vals), axis=0)
-        options = torch.cat((new_options, options), axis=0)
-        print(
-            f"Selecting clustered {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
-        )
-        if draw_map:
-            plotter.plotClusteredVectors(
-                V_list=[options],
-                centroids=metaData["centroids_list"],
-                labels=metaData["labels_list"],
-                names=names,
-                dir=plotter.sf_path,
-            )
     elif args.algo_name == "CoveringOption":
         """It is separately implemented in CoveringOption class"""
         pass
