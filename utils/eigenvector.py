@@ -79,140 +79,120 @@ def discover_options(
         torch.cuda.empty_cache()
 
     ### Compute the vectors via SVD
-    def vectors():
-        if algo_name == "SNAC":
-            option_dim = psi_r.shape[-1]
-            if option_dim < num:
-                raise ValueError(
-                    f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{num}"
-                )
-
-            divide_num = (option_dim - 2 * num) // num
-
-            first_indices = list(range(0, num))
-            middle_indices = list(range(num, option_dim - num, divide_num))
-            final_indices = list(range(option_dim - num, option_dim))
-            indices = first_indices + middle_indices + final_indices
-
-            _, S_r, V_r = torch.svd(psi_r)  # S: max - min
-            _, S_s, V_s = torch.svd(psi_s)  # S: max - min
-
-            if classification == "all":
-                pass
-            elif classification == "top":
-                S_r = S_r[first_indices]
-                S_s = S_s[first_indices]
-                V_r = V_r[first_indices, :]
-                V_s = V_s[first_indices, :]
-            elif classification == "mid":
-                S_r = S_r[middle_indices]
-                S_s = S_s[middle_indices]
-                V_r = V_r[middle_indices, :]
-                V_s = V_s[middle_indices, :]
-            elif classification == "bot":
-                S_r = S_r[final_indices]
-                S_s = S_s[final_indices]
-                V_r = V_r[final_indices, :]
-                V_s = V_s[final_indices, :]
-            elif classification == "mix":
-                S_r = S_r[indices]
-                S_s = S_s[indices]
-                V_r = V_r[indices, :]
-                V_s = V_s[indices, :]
-            else:
-                NotImplementedError(
-                    f"Given classification is not implemented {classification}"
-                )
-
-            S_r = torch.cat((S_r, -S_r), axis=0)
-            S_s = torch.cat((S_s, -S_s), axis=0)
-            V_r = torch.cat((V_r, -V_r), axis=0)
-            V_s = torch.cat((V_s, -V_s), axis=0)
-
-            S = torch.cat((S_r, S_s), axis=0)
-            V = torch.cat((V_r, V_s), axis=0)
-
-            S_list, V_list = [S_r, S_s], [V_r, V_s]
-            return S, V, S_list, V_list
-        else:
-            option_dim = psi.shape[-1]
-            if option_dim < 3 * num:
-                raise ValueError(
-                    f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
-                )
-            divide_num = (option_dim - 2 * num) // num
-
-            first_indices = list(range(0, num))
-            middle_indices = list(range(num, option_dim - num, divide_num))
-            final_indices = list(range(option_dim - num, option_dim))
-            indices = first_indices + middle_indices + final_indices
-
-            _, S, V = torch.svd(psi)  # S: max - min
-
-            if classification == "all":
-                pass
-            elif classification == "top":
-                S = S[first_indices]
-                V = V[first_indices, :]
-            elif classification == "mid":
-                S = S[middle_indices]
-                V = V[middle_indices, :]
-            elif classification == "bot":
-                S = S[final_indices]
-                V = V[final_indices, :]
-            elif classification == "mix":
-                S = S[indices]
-                V = V[indices, :]
-            else:
-                NotImplementedError(
-                    f"Given classification is not implemented {classification}"
-                )
-
-            S = torch.cat((S, -S), axis=0)
-            V = torch.cat((V, -V), axis=0)
-
-            return S, V, [S], [V]
-
     if algo_name == "SNAC":
-        S, V, S_list, V_list = vectors()
+        _, S_r, V_r = torch.svd(psi_r)  # S: max - min
+        _, S_s, V_s = torch.svd(psi_s)  # S: max - min
+
+        S_r = torch.cat((S_r, -S_r), axis=0)
+        S_s = torch.cat((S_s, -S_s), axis=0)
+        V_r = torch.cat((V_r, -V_r), axis=0)
+        V_s = torch.cat((V_s, -V_s), axis=0)
 
         option_vals, options, metaData = cluster_vecvtors(
-            S_list, V_list, k=int(num / 2)
+            [S_r, S_s], [V_r, V_s], k=int(num / 2)
         )  # replacing original V with cluster centroids
 
         if draw_map:
             plotter.plotClusteredVectors(
-                V_list=V_list,
+                V_list=[V_r, V_s],
                 centroids=metaData["centroids_list"],
                 labels=metaData["labels_list"],
                 names=["R-feature", "S-feature"],
                 dir=plotter.sf_path,
             )
-
-        return option_vals, options, batch
-
-    elif algo_name == "EigenOption" or algo_name == "CoveringOption":
-        S, V, S_list, V_list = vectors()
-        return S, V, batch
-
+    elif algo_name == "CoveringOption":
+        pass
     elif algo_name == "EigenOption2":
-        S, V, S_list, V_list = vectors()
+        option_dim = psi.shape[-1]
+        if option_dim < 3 * num:
+            raise ValueError(
+                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
+            )
+        _, S, V = torch.svd(psi)  # S: max - min
 
-        option_vals, options, metaData = cluster_vecvtors(S_list, V_list, k=num)
+        S = torch.cat((S, -S), axis=0)
+        V = torch.cat((V, -V), axis=0)
+
+        ##### cluster in feature space #####
+        option_vals, options, metaData = cluster_vecvtors([S], [V], k=num)
 
         if draw_map:
             plotter.plotClusteredVectors(
-                V_list=V_list,
+                V_list=[V],
                 centroids=metaData["centroids_list"],
                 labels=metaData["labels_list"],
                 names=["S-feature"],
                 dir=plotter.sf_path,
             )
+    elif algo_name == "EigenOption3":
+        option_dim = psi.shape[-1]
+        if option_dim < 3 * num:
+            raise ValueError(
+                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
+            )
+        _, S, V = torch.svd(psi)  # S: max - min
 
-        return option_vals, options, batch
+        S = torch.cat((S, -S), axis=0)
+        V = torch.cat((V, -V), axis=0)
 
+        ##### cluster in feature space #####
+        rewards = V @ psi.T  # (num options) x T
+        option_vals, options, metaData = cluster_vecvtors([S], [rewards], k=num)
+
+        option_vals = torch.empty(num)
+        options = torch.empty(num, option_dim)
+
+        for k in range(num):
+            idx = metaData["labels_list"] == k
+            option_vals[k] = torch.mean(S[idx])
+            options[k, :] = torch.mean(V[idx, :], axis=0)
+
+        if draw_map:
+            plotter.plotClusteredVectors(
+                V_list=[V],
+                centroids=options,
+                labels=metaData["labels_list"],
+                names=["R-feature", "S-feature"],
+                dir=plotter.sf_path,
+            )
     else:
-        raise ValueError(f"Unknown algo-name: {algo_name}")
+        option_dim = psi.shape[-1]
+        if option_dim < 3 * num:
+            raise ValueError(
+                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
+            )
+        divide_num = (option_dim - 2 * num) // num
+
+        first_indices = list(range(0, num))
+        middle_indices = list(range(num, option_dim - num, divide_num))
+        final_indices = list(range(option_dim - num, option_dim))
+        indices = first_indices + middle_indices + final_indices
+
+        _, S, V = torch.svd(psi)  # S: max - min
+
+        if classification == "all":
+            pass
+        elif classification == "top":
+            S = S[first_indices]
+            V = V[first_indices, :]
+        elif classification == "mid":
+            S = S[middle_indices]
+            V = V[middle_indices, :]
+        elif classification == "bot":
+            S = S[final_indices]
+            V = V[final_indices, :]
+        elif classification == "mix":
+            S = S[indices]
+            V = V[indices, :]
+        else:
+            NotImplementedError(
+                f"Given classification is not implemented {classification}"
+            )
+
+        option_vals = torch.cat((S, -S), axis=0)
+        options = torch.cat((V, -V), axis=0)
+
+    return option_vals, options, batch
 
 
 def cluster_vecvtors(S_list, V_list, k=10):

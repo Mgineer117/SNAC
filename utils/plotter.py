@@ -328,7 +328,7 @@ class Plotter:
 
             k = centroid.shape[0]
 
-            tsne = TSNE(n_components=2, random_state=0)
+            tsne = TSNE(n_components=2, perplexity=10, random_state=0)
 
             data = np.concatenate((vector, centroid), axis=0)
             data_2d = tsne.fit_transform(data)
