@@ -209,7 +209,7 @@ def discover_options(
                 dir=plotter.sf_path,
             )
 
-        return S, V, batch
+        return option_vals, options, batch
 
     else:
         raise ValueError(f"Unknown algo-name: {algo_name}")
