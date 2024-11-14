@@ -31,9 +31,8 @@ class PPO_Policy(nn.Module):
     def forward(self, x: torch.Tensor):
         logits = self.model(x)
 
-        probs = F.softmax(logits, dim=-1)
-        p_probs = torch.clamp(probs, min=self._min_val, max=self._max_val)
-        probs = (p_probs - self._min_val) / (self._max_val - self._min_val)
+        logprobs = F.log_softmax(logits, dim=-1)
+        probs = torch.exp(logprobs)
 
         # probs = F.softmax(logits, dim=-1)
         dist = torch.distributions.categorical.Categorical(probs)
