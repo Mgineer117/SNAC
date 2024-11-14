@@ -41,14 +41,8 @@ class HC_Policy(nn.Module):
     def forward(self, x: torch.Tensor, deterministic=False):
         logits = self.model(x)
 
-        probs = F.softmax(logits, dim=-1)
-        p_probs = torch.clamp(probs, min=self._min_val, max=self._max_val)
-        probs = (p_probs - self._min_val) / (self._max_val - self._min_val)
-
-        logprobs = torch.log(probs)
-
-        # probs = F.softmax(logits, dim=-1) + 1e-7
-        # logprobs = F.log_softmax(logits, dim=-1) + 1e-7
+        logprobs = F.log_softmax(logits, dim=-1)
+        probs = torch.exp(logprobs)
 
         dist = torch.distributions.categorical.Categorical(probs)
 

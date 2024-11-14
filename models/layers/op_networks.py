@@ -43,11 +43,8 @@ class OptionPolicy(nn.Module):
         logits = self.models[z](x)
         # implement std for cat distribution
 
-        probs = F.softmax(logits, dim=-1)
-        p_probs = torch.clamp(probs, min=self._min_val, max=self._max_val)
-        probs = (p_probs - self._min_val) / (self._max_val - self._min_val)
-
-        logprobs = torch.log(probs)
+        logprobs = F.log_softmax(logits, dim=-1)
+        probs = torch.exp(logprobs)
 
         dist = torch.distributions.categorical.Categorical(probs)
         if deterministic:
