@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.cluster import KMeans
 
+from log.logger_util import colorize
 from utils.get_all_states import get_grid_tensor, get_grid_tensor2
 from utils.utils import estimate_psi
 from utils.plotter import Plotter
@@ -13,6 +14,27 @@ from utils.buffer import TrajectoryBuffer
 from models.policy.base_policy import BasePolicy
 from torch.utils.tensorboard import SummaryWriter
 from log.wandb_logger import WandbLogger
+
+
+def print_option_info(option_vals, options, algo_name, desired_num):
+    if algo_name in ("SNAC", "SNAC+", "SNAC++"):
+        vec_num = int(len(option_vals) / 2)
+
+        msg = colorize(
+            f"{algo_name} with R:{vec_num} S:{vec_num} / {desired_num} vectors with shape {options.shape}",
+            "magenta",
+            bold=True,
+        )
+        print(msg)
+
+    elif algo_name in ("EigenOption", "EigenOption+", "EigenOption++"):
+        vec_num = len(option_vals)
+        msg = colorize(
+            f"{algo_name} with {vec_num} / {desired_num} vectors with shape {options.shape}",
+            "magenta",
+            bold=True,
+        )
+        print(msg)
 
 
 def discover_options(
@@ -124,13 +146,14 @@ def discover_options(
         if algo_name == "SNAC":
             S_r, V_r = vector(S_r, V_r, classification="top")
             S_s, V_s = vector(S_s, V_s, classification="top")
-            option_vals = torch.cat(S_r, S_s, dim=0)
-            options = torch.cat(V_r, V_s, dim=0)
+            option_vals = torch.cat((S_r, S_s), dim=0)
+            options = torch.cat((V_r, V_s), dim=0)
         elif algo_name == "SNAC+":
             # replacing original V with cluster centroids
             option_vals, options, metaData = cluster_vecvtors(
                 [S_r, S_s], [V_r, V_s], k=num
             )
+            vec_list = metaData["centroids_list"]
         elif algo_name == "SNAC++":
             r_rewards = V_r @ psi_r.T  # F x T (Num options (row) and rewards (column))
             s_rewards = V_s @ psi_s.T  # F x T
@@ -281,10 +304,7 @@ def get_eigenvectors(
             draw_map=draw_map,
             device=args.device,
         )
-
-        print(
-            f"Selecting clustered R:{int(len(option_vals)/2)}  S:{int(len(option_vals)/2)} vector !!! | Given total options: {args.num_vector}"
-        )
+        print_option_info(option_vals, options, args.algo_name, args.num_vector)
     elif args.algo_name in ("EigenOption", "EigenOption+", "EigenOption++"):
         option_vals, options, batch = discover_options(
             policy=network,
@@ -297,9 +317,7 @@ def get_eigenvectors(
             draw_map=draw_map,
             device=args.device,
         )
-        print(
-            f"Selecting top {len(option_vals)} vector!!! | Given total options: {args.num_vector}"
-        )
+        print_option_info(option_vals, options, args.algo_name, args.num_vector)
     elif args.algo_name == "CoveringOption":
         """It is separately implemented in CoveringOption class"""
         pass

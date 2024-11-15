@@ -124,7 +124,7 @@ class OP_Controller(BasePolicy):
         # compute q
         psi, _ = self.psiNet(phi, z)
 
-        if self._algo_name == "SNAC":
+        if self._algo_name in ("SNAC", "SNAC+", "SNAC++"):
             psi_r, psi_s = self.split(psi)
 
             if z < (self._num_options / 2):
@@ -148,7 +148,7 @@ class OP_Controller(BasePolicy):
         # F x 1
         option = self._options[z, :]
 
-        if self._algo_name == "SNAC":
+        if self._algo_name in ("SNAC", "SNAC+", "SNAC++"):
             # divide phi in half
             phi_r, phi_s = self.split(phi)
             next_phi_r, next_phi_s = self.split(next_phi)
