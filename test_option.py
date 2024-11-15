@@ -177,7 +177,7 @@ def get_similarity_metric(features, option_vals, options, pos, args):
 
 
 if __name__ == "__main__":
-    args = init_args(num_vector=8)
+    args = init_args(num_vector=16)
 
     env = call_env(args)
     sf_network = call_sfNetwork(args)

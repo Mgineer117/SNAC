@@ -154,16 +154,8 @@ old_main.py
 # Ignore all shell scripts (any .sh files)
 *.sh
 
-# ignore practice file
-practice.py
-
 # Ignore nohup output file (in any directory)
 nohup.out
 
 # Ignore VS Code settings (entire .vscode folder)
 .vscode/
-
-# Ignore VS Code settings (entire .vscode folder)
-heatmap/
-
-RewardMap/
