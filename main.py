@@ -29,6 +29,16 @@ def check_all_devices(module):
 # Parameter definitions
 #########################################################
 def train(args, unique_id):
+    """Initiate the training process upon given args
+
+    Args:
+        args (arguments): includes all hyperparameters
+            - Algorithms: SNAC, EigenOption, CoveringOption, PPO
+                - The '+' sign after the algorithm denotes clustering
+                    - +: clustering in eigenspace
+                    - ++: clustering in value space
+        unique_id (int): This is an unique running id for the experiment
+    """
     # call logger
     env = call_env(args)
     save_dim_to_args(env, args)  # given env, save its state and action dim
