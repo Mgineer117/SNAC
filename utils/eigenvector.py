@@ -150,6 +150,8 @@ def discover_options(
             option_vals = torch.cat((S_r, S_s), dim=0)
             options = torch.cat((V_r, V_s), dim=0)
         elif algo_name == "SNAC+":
+            V_list = [torch.cat((V_r, -V_r), axis=0), torch.cat((V_s, -V_s), axis=0)]
+
             # replacing original V with cluster centroids
             _, _, metaData = cluster_vecvtors([S_r, S_s], [V_r, V_s], k=num)
 
@@ -170,8 +172,7 @@ def discover_options(
 
             vec_list = [V_r, V_s]
         elif algo_name == "SNAC++":
-            S = [S_r, S_s]
-            V = [V_r, V_s]
+            V_list = [torch.cat((V_r, -V_r), axis=0), torch.cat((V_s, -V_s), axis=0)]
 
             r_rewards = V_r @ psi_r.T  # F x T (Num options (row) and rewards (column))
             s_rewards = V_s @ psi_s.T  # F x T
@@ -203,7 +204,7 @@ def discover_options(
 
         if algo_name in ("SNAC+", "SNAC++") and draw_map:
             plotter.plotClusteredVectors(
-                V_list=[V_r, V_s],
+                V_list=V_list,
                 centroids=vec_list,
                 labels=metaData["labels_list"],
                 names=["R-feature", "S-feature"],
@@ -226,13 +227,17 @@ def discover_options(
             option_vals = torch.cat((S, -S), axis=0)
             options = torch.cat((V, -V), axis=0)
         elif algo_name == "EigenOption+":
+            V_list = [V]
+
             ##### cluster in eigen space #####
-            S, V, _ = cluster_vecvtors([S], [V], k=num)
+            S, V, metaData = cluster_vecvtors([S], [V], k=num)
 
             # Obtain (+/-) of vectors
             option_vals = torch.cat((S, -S), axis=0)
             options = torch.cat((V, -V), axis=0)
         elif algo_name == "EigenOption++":
+            V_list = [V]
+
             ##### cluster in action-value space #####
             rewards = V @ psi.T  # (num options) x T
 
@@ -255,7 +260,7 @@ def discover_options(
 
         if algo_name in ("EigenOption+", "EigenOption++") and draw_map:
             plotter.plotClusteredVectors(
-                V_list=[V],
+                V_list=V_list,
                 centroids=[options],
                 labels=metaData["labels_list"],
                 names=["S-feature"],
@@ -292,18 +297,15 @@ def cluster_vecvtors(S_list, V_list, k=10):
         sorted_indices = sorted(
             range(len(eigVals)), key=lambda i: eigVals[i], reverse=True
         )
-        eigVals = np.array(sorted(eigVals, reverse=True))
-        centroids = centroids[sorted_indices, :]
+        eigVals = torch.tensor(sorted(eigVals, reverse=True))
+        centroids = torch.tensor(centroids[sorted_indices, :])
 
         centroids_list.append(centroids)
         labels_list.append(labels)
         eigVals_list.append(eigVals)
 
-    eigVals = np.concatenate(eigVals_list)
-    eigVals = torch.from_numpy(eigVals)
-
-    centroids = np.concatenate(centroids_list, axis=0)
-    centroids = torch.from_numpy(centroids)
+    eigVals = torch.cat(eigVals_list)
+    centroids = torch.cat(centroids_list, axis=0)
 
     return (
         eigVals,
