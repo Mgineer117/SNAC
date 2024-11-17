@@ -150,7 +150,7 @@ def discover_options(
             option_vals = torch.cat((S_r, S_s), dim=0)
             options = torch.cat((V_r, V_s), dim=0)
         elif algo_name == "SNAC+":
-            V_list = [torch.cat((V_r, -V_r), axis=0), torch.cat((V_s, -V_s), axis=0)]
+            V_list = [V_r, V_s]
 
             # replacing original V with cluster centroids
             _, _, metaData = cluster_vecvtors([S_r, S_s], [V_r, V_s], k=num)
@@ -172,7 +172,9 @@ def discover_options(
 
             vec_list = [V_r, V_s]
         elif algo_name == "SNAC++":
-            V_list = [torch.cat((V_r, -V_r), axis=0), torch.cat((V_s, -V_s), axis=0)]
+            # V_list = [torch.cat((V_r, -V_r), axis=0), torch.cat((V_s, -V_s), axis=0)]
+            S_list = [S_r, S_s]
+            V_list = [V_r, V_s]
 
             r_rewards = V_r @ psi_r.T  # F x T (Num options (row) and rewards (column))
             s_rewards = V_s @ psi_s.T  # F x T
@@ -187,8 +189,8 @@ def discover_options(
                 vecs = torch.empty(num, option_dim)
                 for k in range(num):
                     idx = label == k
-                    vals[k] = torch.mean(S[i][idx])
-                    vecs[k, :] = torch.mean(V[i][idx, :], axis=0)
+                    vals[k] = torch.mean(S_list[i][idx])
+                    vecs[k, :] = torch.mean(V_list[i][idx, :], axis=0)
 
                 sorted_vals, indices = torch.sort(vals, descending=True)
                 sorted_vecs = vecs[indices]
