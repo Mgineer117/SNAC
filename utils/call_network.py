@@ -19,6 +19,8 @@ from models.layers import (
     PPO_Critic,
 )
 
+from log.logger_util import colorize
+
 
 def get_conv_layer(args):
     _, _, in_channels = args.s_dim
@@ -122,6 +124,12 @@ def call_sfNetwork(args):
             encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
 
             if args.env_name in ("PointNavigation"):
+                msg = colorize(
+                    "\nVAE Feature Extractor is selected!!!",
+                    "yellow",
+                    bold=True,
+                )
+                print(msg)
                 feaNet = VAE(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
@@ -131,6 +139,12 @@ def call_sfNetwork(args):
                     activation=nn.Tanh(),
                 )
             else:
+                msg = colorize(
+                    "\nCNN Feature Extractor is selected!!!",
+                    "yellow",
+                    bold=True,
+                )
+                print(msg)
                 feaNet = ConvNetwork(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
@@ -178,7 +192,7 @@ def call_sfNetwork(args):
                     fc_dim=args.conv_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=int(args.sf_dim / 2),
-                    activation=nn.Tanh(),
+                    activation=nn.ELU(),
                 )
             else:
                 feaNet = ConvNetwork(
@@ -189,7 +203,7 @@ def call_sfNetwork(args):
                     fc_dim=args.conv_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=args.sf_dim,
-                    activation=nn.Tanh(),
+                    activation=nn.ELU(),
                 )
 
             psiNet = PsiCritic(

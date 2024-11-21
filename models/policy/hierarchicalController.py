@@ -186,12 +186,12 @@ class HC_Controller(BasePolicy):
 
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
+        # features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
         actions = (
             torch.from_numpy(batch["option_actions"]).to(self._dtype).to(self.device)
         )
         rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
-        terminals = torch.from_numpy(batch["terminals"]).to(torch.int32).to(self.device)
+        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
         old_logprobs = (
             torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
         )

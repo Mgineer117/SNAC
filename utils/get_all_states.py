@@ -3,7 +3,6 @@ import numpy as np
 import gymnasium as gym
 from tqdm import trange
 import matplotlib.pyplot as plt
-from utils.wrappers import NoStateDictWrapper
 
 
 def get_grid_tensor(env, grid_type):

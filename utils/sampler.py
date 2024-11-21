@@ -81,16 +81,16 @@ class Base:
         The remainder of zero arrays will be cut in the end.
         """
         data = dict(
-            states=np.zeros(((batch_size,) + self.state_dim)),
-            next_states=np.zeros(((batch_size,) + self.state_dim)),
-            features=np.zeros(((batch_size, self.feature_dim))),
-            actions=np.zeros((batch_size, 1)),
-            option_actions=np.zeros((batch_size, 1)),
-            agent_pos=np.zeros(((batch_size, 2))),
-            next_agent_pos=np.zeros(((batch_size, 2))),
-            rewards=np.zeros((batch_size, 1)),
-            terminals=np.zeros((batch_size, 1)),
-            logprobs=np.zeros((batch_size, 1)),
+            states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
+            next_states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
+            features=np.empty(((batch_size, self.feature_dim)), dtype=np.float32),
+            actions=np.empty((batch_size, 1), dtype=np.float32),
+            option_actions=np.empty((batch_size, 1), dtype=np.float32),
+            agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
+            next_agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
+            rewards=np.empty((batch_size, 1), dtype=np.float32),
+            terminals=np.empty((batch_size, 1), dtype=np.float32),
+            logprobs=np.empty((batch_size, 1), dtype=np.float32),
         )
         return data
 
@@ -290,13 +290,9 @@ class OnlineSampler(Base):
         deterministic: bool = False,
     ):
         # estimate the batch size to hava a large batch
-        batch_size = thread_batch_size + episode_len
-        data = self.get_reset_data(batch_size=batch_size)  # allocate memory
+        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
 
-        current_step = 0
-        ep_num = 0
-
-        # For each episode, apply different seed for stochasticity
+        # If no seed is given, generate one
         if seed is None:
             seed = random.randint(0, 1_000_000)
 
@@ -304,17 +300,12 @@ class OnlineSampler(Base):
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
 
-        while current_step < thread_batch_size:
-            if ep_num >= episode_num:
-                break
-
+        current_step = 0
+        for iter in range(episode_num):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
-            s = obs["observation"]
-            agent_pos = obs["agent_pos"]
 
-            t = 0
-            while t < episode_len:
+            for t in range(episode_len):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
@@ -322,61 +313,44 @@ class OnlineSampler(Base):
 
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    ns = next_obs["observation"]
-                    next_agent_pos = next_obs["agent_pos"]
-
                     done = term or trunc
 
+                # Done must be True for the last trajectory
+                # This is used for the case gym.Env does not give
+                # termination tho set threshold was reached
+                done = True if t == (episode_len - 1) else False
+
                 # saving the data
-                data["states"][current_step + t, :, :, :] = s
+                data["states"][current_step + t, :, :, :] = obs["observation"]
                 data["features"][current_step + t, :] = feature
-                data["next_states"][current_step + t, :, :, :] = ns
+                data["next_states"][current_step + t, :, :, :] = next_obs["observation"]
                 data["actions"][current_step + t, :] = a
                 data["option_actions"][current_step + t, :] = None
-                data["agent_pos"][current_step + t, :] = agent_pos
-                data["next_agent_pos"][current_step + t, :] = next_agent_pos
+                data["agent_pos"][current_step + t, :] = obs["agent_pos"]
+                data["next_agent_pos"][current_step + t, :] = next_obs["agent_pos"]
                 data["rewards"][current_step + t, :] = rew
                 data["terminals"][current_step + t, :] = done
                 data["logprobs"][current_step + t, :] = (
                     metaData["logprobs"].detach().numpy()
                 )
 
-                obs = next_obs
-                s = ns
-                agent_pos = next_agent_pos
-
-                t += 1
-
                 if done:
                     # clear log
-                    ep_num += 1
                     current_step += t + 1
-                    t = 0
                     break
 
-        memory = dict(
-            states=data["states"].astype(np.float32),
-            features=data["features"].astype(np.float32),
-            actions=data["actions"].astype(np.float32),
-            option_actions=data["option_actions"].astype(np.float32),
-            next_states=data["next_states"].astype(np.float32),
-            agent_pos=data["agent_pos"].astype(np.float32),
-            next_agent_pos=data["next_agent_pos"].astype(np.float32),
-            rewards=data["rewards"].astype(np.float32),
-            terminals=data["terminals"].astype(np.int32),
-            logprobs=data["logprobs"].astype(np.float32),
-        )
+                obs = next_obs
 
         end_idx = (
             current_step if current_step < thread_batch_size else thread_batch_size
         )
-        for k in memory:
-            memory[k] = memory[k][:end_idx]
+        for k in data:
+            data[k] = data[k][:end_idx]
 
         if queue is not None:
-            queue.put([pid, memory])
+            queue.put([pid, data])
         else:
-            return memory
+            return data
 
     def collect_trajectory4Option(
         self,
@@ -393,11 +367,7 @@ class OnlineSampler(Base):
         deterministic: bool = False,
     ):
         # estimate the batch size to hava a large batch
-        batch_size = thread_batch_size + episode_len
-        data = self.get_reset_data(batch_size=batch_size)  # allocate memory
-
-        current_step = 0
-        ep_num = 0
+        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
 
         # For each episode, apply different seed for stochasticity
         if seed is None:
@@ -407,52 +377,38 @@ class OnlineSampler(Base):
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
 
-        while current_step < thread_batch_size:
-            if ep_num >= episode_num:
-                break
-
+        current_step = 0
+        for iter in range(episode_num):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
-            s = obs["observation"]
-            agent_pos = obs["agent_pos"]
 
-            t = 0
-            while t < episode_len:
-                # for t in range(episode_len):
+            for t in range(episode_len):
                 # sample action
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
-                    feature = metaData["phi"]
 
+                    feature = metaData["phi"]
                     option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    ns = next_obs["observation"]
-                    next_agent_pos = next_obs["agent_pos"]
-
                     done = term or trunc
-
-                    # option_termination = metaData["termination"]
 
                     op_rew = rew
                     step_count = 1
 
                     option_termination = False
                     while not (done or option_termination):
-                        option_s = next_obs
-
                         # env stepping
-                        option_a, _ = policy(
-                            option_s, option_idx, deterministic=deterministic
-                        )
-                        option_a = option_a.cpu().numpy().squeeze()
+                        with torch.no_grad():
+                            option_a, _ = policy(
+                                next_obs, option_idx, deterministic=deterministic
+                            )
+                            option_a = option_a.cpu().numpy().squeeze()
 
                         next_obs, rew, term, trunc, infos = env.step(option_a)
-                        ns = next_obs["observation"]
-                        next_agent_pos = next_obs["agent_pos"]
 
                         op_rew += 0.99**step_count * rew
                         step_count += 1
@@ -461,7 +417,6 @@ class OnlineSampler(Base):
                             True if step_count >= self.min_option_length else False
                         )
                         done = term or trunc
-                    # print(f"step count: {step_count} with option_idx {option_idx}")
                     rew = op_rew
 
                 ### Conventional Loop
@@ -469,60 +424,44 @@ class OnlineSampler(Base):
                     step_count = 1  # dummy
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    ns = next_obs["observation"]
-                    next_agent_pos = next_obs["agent_pos"]
-
                     done = term or trunc
 
+                # Done must be True for the last trajectory
+                # This is used for the case gym.Env does not give
+                # termination tho set threshold was reached
+                done = True if t == (episode_len - 1) else False
+
                 # saving the data
-                data["states"][current_step + t, :, :, :] = s
+                data["states"][current_step + t, :, :, :] = obs["observation"]
                 data["features"][current_step + t, :] = feature
-                data["next_states"][current_step + t, :, :, :] = ns
+                data["next_states"][current_step + t, :, :, :] = next_obs["observation"]
                 data["actions"][current_step + t, :] = a
                 data["option_actions"][current_step + t, :] = option_idx
-                data["agent_pos"][current_step + t, :] = agent_pos
-                data["next_agent_pos"][current_step + t, :] = next_agent_pos
+                data["agent_pos"][current_step + t, :] = obs["agent_pos"]
+                data["next_agent_pos"][current_step + t, :] = next_obs["agent_pos"]
                 data["rewards"][current_step + t, :] = rew
                 data["terminals"][current_step + t, :] = done
                 data["logprobs"][current_step + t, :] = (
                     metaData["logprobs"].detach().numpy()
                 )
 
-                obs = next_obs
-                s = ns
-                agent_pos = next_agent_pos
-
-                t += step_count
-
                 if done:
                     # clear log
-                    ep_num += 1
                     current_step += t + 1
-                    t = 0
                     break
 
-        memory = dict(
-            states=data["states"].astype(np.float32),
-            features=data["features"].astype(np.float32),
-            actions=data["actions"].astype(np.float32),
-            option_actions=data["option_actions"].astype(np.float32),
-            next_states=data["next_states"].astype(np.float32),
-            agent_pos=data["agent_pos"].astype(np.float32),
-            next_agent_pos=data["next_agent_pos"].astype(np.float32),
-            rewards=data["rewards"].astype(np.float32),
-            terminals=data["terminals"].astype(np.int32),
-            logprobs=data["logprobs"].astype(np.float32),
-        )
+                obs = next_obs
+
         end_idx = (
             current_step if current_step < thread_batch_size else thread_batch_size
         )
-        for k in memory:
-            memory[k] = memory[k][:end_idx]
+        for k in data:
+            data[k] = data[k][:end_idx]
 
         if queue is not None:
-            queue.put([pid, memory])
+            queue.put([pid, data])
         else:
-            return memory
+            return data
 
     def collect_trajectory4CoveringOption(
         self,
@@ -547,11 +486,7 @@ class OnlineSampler(Base):
         Machado, Marlos C., et al. "Temporal abstraction in reinforcement learning with the successor representation."
         """
         # estimate the batch size to hava a large batch
-        batch_size = thread_batch_size + episode_len
-        data = self.get_reset_data(batch_size=batch_size)  # allocate memory
-
-        current_step = 0
-        ep_num = 0
+        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
 
         # For each episode, apply different seed for stochasticity
         if seed is None:
@@ -561,53 +496,40 @@ class OnlineSampler(Base):
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
 
-        while current_step < thread_batch_size:
-            if ep_num >= episode_num:
-                break
-
+        current_step = 0
+        for iter in range(episode_num):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
-            s = obs["observation"]
-            agent_pos = obs["agent_pos"]
 
-            t = 0
             is_first_iter = True
-            while t < episode_len:
+            for t in range(episode_len):
                 # for t in range(episode_len):
                 # sample action
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
-                    feature = metaData["phi"]
 
+                    feature = metaData["phi"]
                     option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
                 if is_first_iter:
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    ns = next_obs["observation"]
-                    next_agent_pos = next_obs["agent_pos"]
-
                     done = term or trunc
-
-                    # option_termination = metaData["termination"]
 
                     op_rew = rew
                     step_count = 1
 
                     option_termination = False
                     while not (done or option_termination):
-                        option_s = next_obs
-
-                        # env stepping
-                        option_a, _ = policy(
-                            option_s, option_idx, deterministic=deterministic
-                        )
-                        option_a = option_a.cpu().numpy().squeeze()
+                        with torch.no_grad():
+                            # env stepping
+                            option_a, _ = policy(
+                                next_obs, option_idx, deterministic=deterministic
+                            )
+                            option_a = option_a.cpu().numpy().squeeze()
 
                         next_obs, rew, term, trunc, infos = env.step(option_a)
-                        ns = next_obs["observation"]
-                        next_agent_pos = next_obs["agent_pos"]
 
                         op_rew += 0.99**step_count * rew
                         step_count += 1
@@ -621,65 +543,47 @@ class OnlineSampler(Base):
 
                     rew = op_rew
                     is_first_iter = False
-                ### Conventional Loop
                 else:
-                    step_count = 1
-                    # env stepping
+                    ### Conventional Loop
                     # forcing random walk after option activation
                     a = torch.randint(0, self.action_dim, (1,)).squeeze()
 
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    ns = next_obs["observation"]
-                    next_agent_pos = next_obs["agent_pos"]
-
                     done = term or trunc
 
+                # Done must be True for the last trajectory
+                # This is used for the case gym.Env does not give
+                # termination tho set threshold was reached
+                done = True if t == (episode_len - 1) else False
+
                 # saving the data
-                data["states"][current_step + t, :, :, :] = s
+                data["states"][current_step + t, :, :, :] = obs["observation"]
                 data["features"][current_step + t, :] = feature
-                data["next_states"][current_step + t, :, :, :] = ns
+                data["next_states"][current_step + t, :, :, :] = next_obs["observation"]
                 data["actions"][current_step + t, :] = a
                 data["option_actions"][current_step + t, :] = option_idx
-                data["agent_pos"][current_step + t, :] = agent_pos
-                data["next_agent_pos"][current_step + t, :] = next_agent_pos
+                data["agent_pos"][current_step + t, :] = obs["agent_pos"]
+                data["next_agent_pos"][current_step + t, :] = next_obs["agent_pos"]
                 data["rewards"][current_step + t, :] = rew
                 data["terminals"][current_step + t, :] = done
                 data["logprobs"][current_step + t, :] = (
                     metaData["logprobs"].detach().numpy()
                 )
 
-                obs = next_obs
-                s = ns
-                agent_pos = next_agent_pos
-
-                t += step_count
-
                 if done:
                     # clear log
-                    ep_num += 1
                     current_step += t + 1
-                    t = 0
                     break
 
-        memory = dict(
-            states=data["states"].astype(np.float32),
-            features=data["features"].astype(np.float32),
-            actions=data["actions"].astype(np.float32),
-            option_actions=data["option_actions"].astype(np.float32),
-            next_states=data["next_states"].astype(np.float32),
-            agent_pos=data["agent_pos"].astype(np.float32),
-            next_agent_pos=data["next_agent_pos"].astype(np.float32),
-            rewards=data["rewards"].astype(np.float32),
-            terminals=data["terminals"].astype(np.int32),
-            logprobs=data["logprobs"].astype(np.float32),
-        )
+                obs = next_obs
+
         end_idx = (
             current_step if current_step < thread_batch_size else thread_batch_size
         )
-        for k in memory:
-            memory[k] = memory[k][:end_idx]
+        for k in data:
+            data[k] = data[k][:end_idx]
 
         if queue is not None:
-            queue.put([pid, memory])
+            queue.put([pid, data])
         else:
-            return memory
+            return data

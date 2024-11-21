@@ -85,7 +85,6 @@ class ConvNetwork(nn.Module):
         s_dim, _, in_channels = state_dim
 
         # Parameters
-        self._dtype = torch.float32
         self._fc_dim = fc_dim
         self._sf_dim = sf_dim
 
@@ -238,23 +237,39 @@ class ConvNetwork(nn.Module):
         return out
 
     def forward(
-        self, x: torch.Tensor, agent_pos: torch.Tensor, deterministic: bool = True
+        self,
+        state: torch.Tensor,
+        agent_pos: torch.Tensor,
+        deterministic: bool | None = None,
     ):
-        """
-        x: list = [image, pos]
+        """forward eats in observation and agent_pos (informational supplement) to output the feature vector
+
+        Args:
+            state (torch.Tensor): 1D or 2d state of the environment
+            agent_pos (torch.Tensor): the position of agent (supplement)
+            deterministic (bool, optional): Not used but here exists for code consistency
+
+        Returns:
+            feature: latent representations of the given state
         """
         indices = []
         sizes = []
 
-        out = self.en_pmt(x)
-        # print(out.shape)
+        # dimensional work for images
+        if len(state.shape) == 3:
+            state = state.unsqueeze(0)
+        if len(agent_pos.shape) == 1:
+            agent_pos = agent_pos.unsqueeze(0)
+
+        out = self.en_pmt(state)
+
         for fn in self.conv:
             output_dim = out.shape
             out, info = fn(out)
             if isinstance(fn, nn.MaxPool2d):
                 indices.append(info)
                 sizes.append(output_dim)
-            # print(out.shape)
+
         out = self.en_flatter(out)
         out = torch.cat((out, agent_pos), axis=-1)
         out = self.en_feature(out)
@@ -264,25 +279,19 @@ class ConvNetwork(nn.Module):
         out = self.en_last_act(out)
         return out, {"indices": indices, "output_dim": sizes, "loss": torch.tensor(0.0)}
 
-    def decode(self, features, actions, conv_dict):
+    def decode(self, features, actions_oh, conv_dict):
         """This reconstruct full state given phi_state and actions"""
-        if isinstance(features, np.ndarray):
-            features = torch.from_numpy(features).to(self._dtype)
-        if isinstance(actions, np.ndarray):
-            actions = torch.from_numpy(actions).to(self._dtype)
-        if len(actions.shape) == 1:
-            actions = actions.unsqueeze(0)
 
         indices = conv_dict["indices"][::-1]  # indices should be backward
         output_dim = conv_dict["output_dim"][::-1]  # to keep dim correct
 
         features = self.de_state_feature(features)
-        actions = self.de_action(actions)
+        actions_oh = self.de_action(actions_oh)
 
-        out = torch.cat((features, actions), axis=-1)
+        out = torch.cat((features, actions_oh), axis=-1)
         out = self.de_concat(out)
         out = self.reshape(out)
-        # print(out.shape)
+
         i = 0
         for fn in self.de_conv:
             if isinstance(fn, nn.MaxUnpool2d):
@@ -290,12 +299,9 @@ class ConvNetwork(nn.Module):
                 i += 1
             else:
                 out, _ = fn(out)
-            # print(out.shape)
         out = self.de_last_act(out)
-        # print(out.shape)
-        out = self.de_pmt(out)
-        # print(out.shape)
-        return out
+        reconstructed_state = self.de_pmt(out)
+        return reconstructed_state
 
 
 class VAE(nn.Module):
@@ -332,24 +338,11 @@ class VAE(nn.Module):
         input_dim = int(first_dim * second_dim * in_channels)
 
         # Parameters
-        self._dtype = torch.float32
         self._fc_dim = fc_dim
         self._sf_dim = sf_dim
 
         # Activation functions
         self.act = activation
-
-        ### embedding
-        # self.tensorEmbed = MLP(
-        #     input_dim=input_dim,
-        #     hidden_dims=(input_dim,),
-        #     activation=nn.Tanh(),
-        # )
-        # self.actionEmbed = MLP(
-        #     input_dim=action_dim,
-        #     hidden_dims=(action_dim,),
-        #     activation=nn.Tanh(),
-        # )
 
         ### Encoding module
         self.flatter = nn.Flatten()
@@ -367,18 +360,16 @@ class VAE(nn.Module):
             input_dim=int(fc_dim / 2),
             hidden_dims=(fc_dim,),
             output_dim=sf_dim,
-            activation=self.act,
+            activation=nn.Identity,
         )
         self.logstd = MLP(
             input_dim=int(fc_dim / 2),
             hidden_dims=(fc_dim,),
             output_dim=sf_dim,
-            activation=self.act,
+            activation=nn.Softplus,
         )
 
         ### Decoding module
-        self.unflatter = Reshape(fc_dim, first_dim)
-
         self.de_latent = MLP(
             input_dim=decoder_inpuit_dim,
             hidden_dims=(fc_dim,),
@@ -399,62 +390,47 @@ class VAE(nn.Module):
 
         self.de_vae = MLP(
             input_dim=fc_dim,
-            hidden_dims=(fc_dim,),
+            hidden_dims=(fc_dim, fc_dim, fc_dim),
             output_dim=input_dim,
             activation=self.act,
         )
 
-        self.de_pmt = Permute((0, 2, 3, 1))
+        self.decoder = nn.Sequential(self.concat, self.de_vae)
 
-        self.decoder = nn.Sequential(
-            self.concat, self.de_vae, self.unflatter, self.de_pmt
-        )
-
-    def forward(self, x, deterministic=True):
+    def forward(self, state: torch.Tensor, agent_pos: None = None, deterministic=True):
         """
-        Input = x: 4D tensor arrays
+        Input = x: 1D or 2D tensor arrays
         """
-        if len(x.shape) == 1:
-            x = x[None, :]
-        out = self.flatter(x)
+        # 1D -> 2D for consistency
+        if len(state.shape) == 1:
+            state = state.unsqueeze(0)
+        out = self.flatter(state)
         out = self.encoder(out)
 
         mu = self.mu(out)
         logstd = self.logstd(out)
 
         std = torch.exp(logstd + 1e-7)
-        cov = torch.diag_embed(std)
+        cov = torch.diag_embed(std**2)
 
         dist = MultivariateNormal(loc=mu, covariance_matrix=cov)
 
-        if deterministic:
-            feature = mu
-        else:
-            feature = dist.rsample()
+        feature = mu if deterministic else dist.rsample()
 
-        kl = std**2 + mu**2 - torch.log(std) - 0.5
-        kl_loss = torch.mean(torch.mean(kl, axis=-1), axis=-1)
+        kl = std**2 + mu**2 - 1 - torch.log(std)
+        # Sum over latent dimensions, then mean over batch
+        kl_loss = torch.mean(torch.sum(kl, dim=-1))
 
         return feature, {"loss": kl_loss}
 
-    def decode(self, features, actions, conv_dict):
+    def decode(self, features, actions_oh, conv_dict: None = None):
         """This reconstruct full state given phi_state and actions"""
-        if isinstance(features, np.ndarray):
-            features = torch.from_numpy(features).to(self._dtype)
-        if isinstance(actions, np.ndarray):
-            actions = torch.from_numpy(actions).to(self._dtype)
-        if len(actions.shape) == 1:
-            actions = actions.unsqueeze(0)
-
-        # actions = self.actionEmbed(actions)
-        out1 = self.de_action(actions)
         out2 = self.de_latent(features)
+        out1 = self.de_action(actions_oh)
 
         out = torch.cat((out1, out2), axis=-1)
-
-        out = self.decoder(out)
-        # print(out.shape)
-        return out
+        reconstructed_state = self.decoder(out)
+        return reconstructed_state
 
 
 class PsiAdvantage(nn.Module):
@@ -499,7 +475,6 @@ class PsiCritic(nn.Module):
         # Algorithmic parameters
         self.act = activation
         self._a_dim = a_dim
-        self._dtype = torch.float32
 
         self.psi_advantage = PsiAdvantage(fc_dim, sf_dim, a_dim, self.act)
         self.psi_state = MLP(

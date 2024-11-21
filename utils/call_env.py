@@ -5,10 +5,10 @@ import random
 
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.lavarooms import LavaRooms
-
 from gym_multigrid.envs.ctf import CtF
-from utils import NoStateDictWrapper, get_grid_tensor
-from utils.wrappers import NoStateDictCtfWrapper
+import safety_gymnasium as gym
+
+from utils.wrappers import GridWrapper, CtFWrapper, NavigationWrapper
 
 
 def call_env(args):
@@ -23,7 +23,7 @@ def call_env(args):
             partial_observability=False,
             render_mode="rgb_array",
         )
-        return NoStateDictWrapper(env, tile_size=args.tile_size)
+        return GridWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "LavaRooms":
         # first call dummy env to find possible location for agent
         env = LavaRooms(
@@ -34,9 +34,9 @@ def call_env(args):
             partial_observability=False,
             render_mode="rgb_array",
         )
-        return NoStateDictWrapper(env, tile_size=args.tile_size)
+        return GridWrapper(env, tile_size=args.tile_size)
 
-    elif args.env_name == "CtF1v1" or "CtF1v2" or "CtF1v3" or "CtF1v4":
+    elif args.env_name in ("CtF1v1", "CtF1v2", "CtF1v3", "CtF1v4"):
         map_path: str = "assets/ctf_avoid_obj.txt"
         observation_option: str = "tensor"
         if args.env_name == "CtF1v1":
@@ -73,6 +73,9 @@ def call_env(args):
             )
         else:
             raise NotImplementedError(f"{args.env_name} not implemented")
-        return NoStateDictCtfWrapper(env, tile_size=args.tile_size)
+        return CtFWrapper(env, tile_size=args.tile_size)
+    elif args.env_name == "PointNavigation":
+        env = gym.make("SafetyPointButton1-v0")
+        return NavigationWrapper(env, tile_size=args.tile_size)
     else:
         raise ValueError(f"Invalid environment key: {args.env_name}")
