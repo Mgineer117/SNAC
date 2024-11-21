@@ -127,7 +127,7 @@ class SF_Combined(BasePolicy):
 
         #
         self.dummy = torch.tensor(0.0)
-        self.to(self.device).to(torch.float16)
+        self.to(self.device).to(self._dtype)
 
     def to_device(self, device):
         self.device = device

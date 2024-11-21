@@ -50,7 +50,7 @@ class PPO_Critic(nn.Module):
         # |A| duplicate networks
         self.act = activation
 
-        self._dtype = torch.float16
+        self._dtype = torch.float32
 
         self.model = MLP(input_dim, (fc_dim, fc_dim), 1, activation=self.act)
 

@@ -150,7 +150,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-option-length",
         type=int,
-        default=5,
+        default=1,
         help="Minimum time step requirement for option",
     )
     parser.add_argument(

@@ -290,11 +290,7 @@ class OnlineSampler(Base):
         deterministic: bool = False,
     ):
         # estimate the batch size to hava a large batch
-        batch_size = thread_batch_size + episode_len
-        data = self.get_reset_data(batch_size=batch_size)  # allocate memory
-
-        current_step = 0
-        ep_num = 0
+        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
 
         # If no seed is given, generate one
         if seed is None:
@@ -304,15 +300,12 @@ class OnlineSampler(Base):
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
 
-        while current_step < thread_batch_size:
-            if ep_num >= episode_num:
-                break
-
+        current_step = 0
+        for iter in range(episode_num):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
 
-            t = 0
-            while t < episode_len:
+            for t in range(episode_len):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
@@ -321,6 +314,11 @@ class OnlineSampler(Base):
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc
+
+                # Done must be True for the last trajectory
+                # This is used for the case gym.Env does not give
+                # termination tho set threshold was reached
+                done = True if t == (episode_len - 1) else False
 
                 # saving the data
                 data["states"][current_step + t, :, :, :] = obs["observation"]
@@ -338,19 +336,16 @@ class OnlineSampler(Base):
 
                 if done:
                     # clear log
-                    ep_num += 1
                     current_step += t + 1
                     break
 
                 obs = next_obs
-                t += 1
 
         end_idx = (
             current_step if current_step < thread_batch_size else thread_batch_size
         )
         for k in data:
             data[k] = data[k][:end_idx]
-            
 
         if queue is not None:
             queue.put([pid, data])
@@ -372,11 +367,7 @@ class OnlineSampler(Base):
         deterministic: bool = False,
     ):
         # estimate the batch size to hava a large batch
-        batch_size = thread_batch_size + episode_len
-        data = self.get_reset_data(batch_size=batch_size)  # allocate memory
-
-        current_step = 0
-        ep_num = 0
+        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
 
         # For each episode, apply different seed for stochasticity
         if seed is None:
@@ -386,15 +377,12 @@ class OnlineSampler(Base):
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
 
-        while current_step < thread_batch_size:
-            if ep_num >= episode_num:
-                break
-
+        current_step = 0
+        for iter in range(episode_num):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
 
-            t = 0
-            while t < episode_len:
+            for t in range(episode_len):
                 # sample action
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
@@ -407,8 +395,6 @@ class OnlineSampler(Base):
                 if metaData["is_option"]:
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc
-
-                    # option_termination = metaData["termination"]
 
                     op_rew = rew
                     step_count = 1
@@ -431,7 +417,6 @@ class OnlineSampler(Base):
                             True if step_count >= self.min_option_length else False
                         )
                         done = term or trunc
-                    # print(f"step count: {step_count} with option_idx {option_idx}")
                     rew = op_rew
 
                 ### Conventional Loop
@@ -440,6 +425,11 @@ class OnlineSampler(Base):
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc
+
+                # Done must be True for the last trajectory
+                # This is used for the case gym.Env does not give
+                # termination tho set threshold was reached
+                done = True if t == (episode_len - 1) else False
 
                 # saving the data
                 data["states"][current_step + t, :, :, :] = obs["observation"]
@@ -457,12 +447,10 @@ class OnlineSampler(Base):
 
                 if done:
                     # clear log
-                    ep_num += 1
                     current_step += t + 1
                     break
 
                 obs = next_obs
-                t += step_count
 
         end_idx = (
             current_step if current_step < thread_batch_size else thread_batch_size
@@ -498,11 +486,7 @@ class OnlineSampler(Base):
         Machado, Marlos C., et al. "Temporal abstraction in reinforcement learning with the successor representation."
         """
         # estimate the batch size to hava a large batch
-        batch_size = thread_batch_size + episode_len
-        data = self.get_reset_data(batch_size=batch_size)  # allocate memory
-
-        current_step = 0
-        ep_num = 0
+        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
 
         # For each episode, apply different seed for stochasticity
         if seed is None:
@@ -512,16 +496,13 @@ class OnlineSampler(Base):
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
 
-        while current_step < thread_batch_size:
-            if ep_num >= episode_num:
-                break
-
+        current_step = 0
+        for iter in range(episode_num):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
 
-            t = 0
             is_first_iter = True
-            while t < episode_len:
+            for t in range(episode_len):
                 # for t in range(episode_len):
                 # sample action
                 with torch.no_grad():
@@ -562,15 +543,18 @@ class OnlineSampler(Base):
 
                     rew = op_rew
                     is_first_iter = False
-                ### Conventional Loop
                 else:
-                    step_count = 1
-                    # env stepping
+                    ### Conventional Loop
                     # forcing random walk after option activation
                     a = torch.randint(0, self.action_dim, (1,)).squeeze()
 
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc
+
+                # Done must be True for the last trajectory
+                # This is used for the case gym.Env does not give
+                # termination tho set threshold was reached
+                done = True if t == (episode_len - 1) else False
 
                 # saving the data
                 data["states"][current_step + t, :, :, :] = obs["observation"]
@@ -588,12 +572,10 @@ class OnlineSampler(Base):
 
                 if done:
                     # clear log
-                    ep_num += 1
                     current_step += t + 1
                     break
 
                 obs = next_obs
-                t += step_count
 
         end_idx = (
             current_step if current_step < thread_batch_size else thread_batch_size

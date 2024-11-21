@@ -85,7 +85,7 @@ class OptionCritic(nn.Module):
         # |A| duplicate networks
         self.act = activation
 
-        self._dtype = torch.float16
+        self._dtype = torch.float32
 
         # ex_layer = self.create_sequential_model(sf_dim, fc_dim, 1)
 
@@ -156,7 +156,7 @@ class PsiCritic2(nn.Module):
         # Algorithmic parameters
         self.act = activation
         self._a_dim = a_dim
-        self._dtype = torch.float16
+        self._dtype = torch.float32
         self._num_options = num_options
 
         self.psi_advantages = nn.ModuleList()
