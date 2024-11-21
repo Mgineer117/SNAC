@@ -23,175 +23,84 @@ from models.layers import (
 def get_conv_layer(args):
     _, _, in_channels = args.s_dim
 
-    if args.env_name == "FourRooms" or args.env_name == "LavaRooms":
-        encoder_conv_layers = [
-            {
-                "type": "conv",
-                "kernel_size": 4,
-                "stride": 2,
-                "padding": 2,
-                "activation": nn.Tanh(),
-                "in_filters": in_channels,
-                "out_filters": 16,
-            },  # Halve the spatial dimensions
-            # {
-            #     "type": "pool",
-            #     "kernel_size": 3,
-            #     "stride": 1,
-            #     "padding": 1,
-            # },  # Halve the spatial dimensions
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 16,
-                "out_filters": 32,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 32,
-                "out_filters": 64,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 64,
-                "out_filters": 128,
-            },  # Halve spatial dimensions again
-        ]
+    encoder_conv_layers = [
+        {
+            "type": "conv",
+            "kernel_size": 4,
+            "stride": 2,
+            "padding": 2,
+            "activation": nn.Tanh(),
+            "in_filters": in_channels,
+            "out_filters": 16,
+        },  # Halve the spatial dimensions
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "activation": nn.Tanh(),
+            "in_filters": 16,
+            "out_filters": 32,
+        },  # Halve spatial dimensions again
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "activation": nn.Tanh(),
+            "in_filters": 32,
+            "out_filters": 64,
+        },  # Halve spatial dimensions again
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "activation": nn.Tanh(),
+            "in_filters": 64,
+            "out_filters": 128,
+        },  # Halve spatial dimensions again
+    ]
 
-        decoder_conv_layers = [
-            {
-                "type": "conv",
-                "kernel_size": 4,
-                "stride": 2,
-                "padding": 2,
-                "activation": nn.Tanh(),
-                "in_filters": in_channels,
-                "out_filters": 16,
-            },  # Halve the spatial dimensions
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 16,
-                "out_filters": 32,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 32,
-                "out_filters": 64,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 64,
-                "out_filters": 128,
-            },  # Halve spatial dimensions again
-        ]
-    elif (
-        args.env_name == "CtF1v1"
-        or args.env_name == "CtF1v2"
-        or args.env_name == "CtF1v3"
-        or args.env_name == "CtF1v4"
-    ):
-        encoder_conv_layers = [
-            {
-                "type": "conv",
-                "kernel_size": 4,
-                "stride": 2,
-                "padding": 2,
-                "activation": nn.Tanh(),
-                "in_filters": in_channels,
-                "out_filters": 16,
-            },  # Halve the spatial dimensions
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 16,
-                "out_filters": 32,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 32,
-                "out_filters": 64,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 64,
-                "out_filters": 128,
-            },  # Halve spatial dimensions again
-        ]
+    decoder_conv_layers = [
+        {
+            "type": "conv",
+            "kernel_size": 4,
+            "stride": 2,
+            "padding": 2,
+            "activation": nn.Tanh(),
+            "in_filters": in_channels,
+            "out_filters": 16,
+        },  # Halve the spatial dimensions
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "activation": nn.Tanh(),
+            "in_filters": 16,
+            "out_filters": 32,
+        },  # Halve spatial dimensions again
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "activation": nn.Tanh(),
+            "in_filters": 32,
+            "out_filters": 64,
+        },  # Halve spatial dimensions again
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "activation": nn.Tanh(),
+            "in_filters": 64,
+            "out_filters": 128,
+        },  # Halve spatial dimensions again
+    ]
 
-        decoder_conv_layers = [
-            {
-                "type": "conv",
-                "kernel_size": 4,
-                "stride": 2,
-                "padding": 2,
-                "activation": nn.Tanh(),
-                "in_filters": in_channels,
-                "out_filters": 16,
-            },  # Halve the spatial dimensions
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 16,
-                "out_filters": 32,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 32,
-                "out_filters": 64,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.Tanh(),
-                "in_filters": 64,
-                "out_filters": 128,
-            },  # Halve spatial dimensions again
-        ]
-    else:
-        raise NotImplementedError(f"{args.env_name} is not implemented")
     return encoder_conv_layers, decoder_conv_layers
 
 
@@ -203,24 +112,16 @@ def check_all_devices(module):
 def call_sfNetwork(args):
     from models.policy import SF_Combined, SF_Split
 
-    if args.algo_name == "SNAC":
+    if args.algo_name in ("SNAC", "SNAC+", "SNAC++"):
         if args.import_sf_model:
             print("Loading previous SF parameters....")
             feaNet, psiNet, options = pickle.load(
                 open("log/eval_log/model_for_eval/sf_model.p", "rb")
             )
         else:
+            encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
 
-            psiNet = PsiCritic(
-                fc_dim=args.fc_dim,
-                sf_dim=args.sf_dim,
-                a_dim=args.a_dim,
-                activation=nn.Tanh(),
-            )
-
-            options = None
-
-            if args.feaNet_type == "VAE":
+            if args.env_name in ("PointNavigation"):
                 feaNet = VAE(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
@@ -229,8 +130,7 @@ def call_sfNetwork(args):
                     decoder_inpuit_dim=int(args.sf_dim / 2),
                     activation=nn.Tanh(),
                 )
-            elif args.feaNet_type == "CNN":
-                encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
+            else:
                 feaNet = ConvNetwork(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
@@ -241,8 +141,15 @@ def call_sfNetwork(args):
                     decoder_inpuit_dim=int(args.sf_dim / 2),
                     activation=nn.Tanh(),
                 )
-            else:
-                raise ValueError(f"Unknown feature net: {args.feaNet_type}")
+
+            psiNet = PsiCritic(
+                fc_dim=args.fc_dim,
+                sf_dim=args.sf_dim,
+                a_dim=args.a_dim,
+                activation=nn.Tanh(),
+            )
+
+            options = None
 
         policy = SF_Split(
             feaNet=feaNet,
@@ -262,7 +169,9 @@ def call_sfNetwork(args):
                 open("log/eval_log/model_for_eval/sf_model.p", "rb")
             )
         else:
-            if args.feaNet_type == "VAE":
+            encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
+
+            if args.env_name in ("PointNavigation"):
                 feaNet = VAE(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
@@ -271,8 +180,7 @@ def call_sfNetwork(args):
                     decoder_inpuit_dim=int(args.sf_dim / 2),
                     activation=nn.Tanh(),
                 )
-            elif args.feaNet_type == "CNN":
-                encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
+            else:
                 feaNet = ConvNetwork(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
