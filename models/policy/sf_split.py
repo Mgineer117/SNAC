@@ -163,7 +163,7 @@ class SF_Split(BasePolicy):
 
         #
         self.dummy = torch.tensor(0.0)
-        self.to(self.device)
+        self.to(self.device).to(self._dtype)
 
     def to_device(self, device):
         self.device = device
@@ -179,38 +179,34 @@ class SF_Split(BasePolicy):
             ).squeeze()  # ~ [N, |A|, 1] -> [N, |A|]
         return q
 
-    def forward(self, obs, z=None, deterministic=False):
-        self._forward_steps += 1
-        x = obs["observation"]
+    def preprocess_obs(self, obs):
+        observation = obs["observation"]
         agent_pos = obs["agent_pos"]
 
         # preprocessing
-        if isinstance(x, np.ndarray):
-            x = torch.from_numpy(x)
-        if isinstance(agent_pos, np.ndarray):
-            agent_pos = torch.from_numpy(agent_pos)
-        if len(x.shape) == 3:
-            x = x[None, :, :, :]
-        if len(agent_pos.shape) == 1:
-            agent_pos = agent_pos[None, :]
-        x = x.to(self._dtype).to(self.device)
+        observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
+
+        if np.any(agent_pos != None):
+            agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
+
+        return {"observation": observation, "agent_pos": agent_pos}
+
+    def forward(self, obs, z=None, deterministic: bool | None = False):
+        self._forward_steps += 1
+        obs = self.preprocess_obs(obs)
 
         # features
         with torch.no_grad():
-            phi, conv_dict = self.feaNet(x, agent_pos)
+            phi, conv_dict = self.feaNet(
+                obs["observation"], obs["agent_pos"], deterministic
+            )
             phi_r, phi_s = self.split(phi)
 
-        # actions
-        if deterministic:
-            q = self.compute_q(phi)
-        else:
-            q = torch.rand((1, self._a_dim)).to(self.device)
-
-        a = torch.argmax(q, dim=-1)
+        a = torch.rand((1, self._a_dim)).to(self.device)
+        a = torch.argmax(a, dim=-1)
         a_oh = F.one_hot(a.long(), num_classes=self._a_dim).to(self._dtype)
 
         return a, {
-            "q": torch.mean(self.compute_q(phi), axis=-1),  # for plotting
             "a_oh": a_oh,
             "phi": phi,  # for plotting
             "phi_r": phi_r,  # for plotting
@@ -223,7 +219,23 @@ class SF_Split(BasePolicy):
             "logprobs": self.dummy,  # dummy
         }
 
-    def _phi_Loss(self, states, actions, next_states, agent_pos, rewards):
+    def decode(self, features, actions_oh, conv_dict):
+        # Does some dimensional and np <-> tensor work
+        # and pass it to feature decoder
+        # actions should be one-hot
+        if isinstance(features, np.ndarray):
+            features = torch.from_numpy(features).to(self.device).to(self._dtype)
+            if len(features.shape) == 1:
+                features = features.unsqueeze(0)
+        if isinstance(actions_oh, np.ndarray):
+            actions_oh = torch.from_numpy(actions_oh).to(self.device).to(self._dtype)
+            if len(actions_oh.shape) == 1:
+                actions_oh = actions_oh.unsqueeze(0)
+
+        reconstructed_state = self.feaNet.decode(features, actions_oh, conv_dict)
+        return reconstructed_state
+
+    def _phi_Loss(self, states, actions_oh, next_states, agent_pos, rewards):
         """
         Training target: phi_r (reward), phi_s (state)  -->  (Critic: feaNet)
         Method: reward mse (r - phi_r * w), state_pred mse (s' - D(phi_s, a))
@@ -237,10 +249,8 @@ class SF_Split(BasePolicy):
         reward_pred = torch.sum(phi_r * self._options, axis=-1, keepdim=True)
         phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(rewards, reward_pred)
 
-        state_pred = self.feaNet.decode(phi_s, actions, conv_dict)
+        state_pred = self.decode(phi_s, actions_oh, conv_dict)
         phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
-        # loc_diff = next_states[0, :, :, 0] - state_pred[0, :, :, 0]
-        # print(torch.norm(loc_diff))
 
         option_loss_scaler = 1.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
@@ -265,7 +275,7 @@ class SF_Split(BasePolicy):
             "phi_regul": 1e-6 * l2_norm,
         }
 
-    def _psi_Loss(self, features, actions, terminals):
+    def _psi_Loss(self, features, actions_oh, terminals):
         """
         Training target: psi  -->  (Critic: psi_advantage, psi_state)
         Method: reducing TD error
@@ -278,7 +288,7 @@ class SF_Split(BasePolicy):
         psi, _ = self.psiNet(features)
 
         filteredPsi = torch.sum(
-            psi * actions.unsqueeze(-1), axis=1
+            psi * actions_oh.unsqueeze(-1), axis=1
         )  # -> filteredPsi ~ [N, F] since no keepdim=True
 
         psi_est = estimate_psi(features, terminals, self._gamma, self.device)
@@ -333,19 +343,19 @@ class SF_Split(BasePolicy):
         self.train()
         t0 = time.time()
 
-        buffer_batch = buffer.sample(self._trj_per_iter)
-        (
-            states,
-            _,
-            _,
-            actions_oh,
-            next_states,
-            agent_pos,
-            next_agent_pos,
-            rewards,
-            _,
-            _,
-        ) = self.preprocess_batch(buffer_batch, self.device)
+        batch = buffer.sample(self._trj_per_iter)
+        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
+        # features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
+        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
+        actions_oh = (
+            F.one_hot(actions.long(), num_classes=self._a_dim).to(self._dtype).squeeze()
+        )
+
+        next_states = (
+            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
+        )
+        agent_pos = torch.from_numpy(batch["agent_pos"]).to(self._dtype).to(self.device)
+        rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
 
         phi_loss, phi_loss_dict = self._phi_Loss(
             states, actions_oh, next_states, agent_pos, rewards

@@ -41,55 +41,6 @@ class BasePolicy(nn.Module):
             torch.mul(x, y), axis=-1, keepdim=True
         )
 
-    def preprocess_batch(self, batch, device):
-        (
-            states,
-            features,
-            actions,
-            next_states,
-            agent_pos,
-            next_agent_pos,
-            rewards,
-            terminals,
-            logprobs,
-        ) = (
-            batch["states"],
-            batch["features"],
-            batch["actions"],
-            batch["next_states"],
-            batch["agent_pos"],
-            batch["next_agent_pos"],
-            batch["rewards"],
-            batch["terminals"],
-            batch["logprobs"],
-        )
-
-        states = torch.from_numpy(states).to(self._dtype).to(device)
-        features = torch.from_numpy(features).to(self._dtype).to(device)
-        actions = torch.from_numpy(actions).to(self._dtype).to(device)
-        actions_oh = (
-            F.one_hot(actions.long(), num_classes=self._a_dim).to(self._dtype).squeeze()
-        )
-        next_states = torch.from_numpy(next_states).to(self._dtype).to(device)
-        agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(device)
-        next_agent_pos = torch.from_numpy(next_agent_pos).to(self._dtype).to(device)
-        rewards = torch.from_numpy(rewards).to(self._dtype).to(device)
-        terminals = torch.from_numpy(terminals).to(torch.int32).to(device)
-        logprobs = torch.from_numpy(logprobs).to(self._dtype).to(device)
-
-        return (
-            states,
-            features,
-            actions,
-            actions_oh,
-            next_states,
-            agent_pos,
-            next_agent_pos,
-            rewards,
-            terminals,
-            logprobs,
-        )
-
     def compute_gradient_norm(self, models, names, device, dir="None", norm_type=2):
         grad_dict = {}
         for i, model in enumerate(models):

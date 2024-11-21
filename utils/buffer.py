@@ -44,7 +44,7 @@ class TrajectoryBuffer:
             batch["terminals"],
             batch["logprobs"],
         )
-
+        
         trajs = []
         prev_i = 0
         for i, terminal in enumerate(terminals.squeeze()):

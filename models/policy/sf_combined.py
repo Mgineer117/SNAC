@@ -123,11 +123,11 @@ class SF_Combined(BasePolicy):
             ]
         )
 
-        self.psi_optim = torch.optim.AdamW(params=self.psiNet.parameters(), lr=psi_lr)
+        self.psi_optim = torch.optim.Adam(params=self.psiNet.parameters(), lr=psi_lr)
 
         #
         self.dummy = torch.tensor(0.0)
-        self.to(self.device)
+        self.to(self.device).to(torch.float16)
 
     def to_device(self, device):
         self.device = device
@@ -145,51 +145,33 @@ class SF_Combined(BasePolicy):
             ).squeeze()  # ~ [N, |A|, 1] -> [N, |A|]
         return q
 
-    def forward(self, obs, z=None, deterministic=False):
-        self._forward_steps += 1
-        x = obs["observation"]
+    def preprocess_obs(self, obs):
+        observation = obs["observation"]
         agent_pos = obs["agent_pos"]
 
         # preprocessing
-        if isinstance(x, np.ndarray):
-            x = torch.from_numpy(x)
-        if isinstance(agent_pos, np.ndarray):
-            agent_pos = torch.from_numpy(agent_pos)
-        if len(x.shape) == 3:
-            x = x[None, :, :, :]
-        if len(agent_pos.shape) == 1:
-            agent_pos = agent_pos[None, :]
-        x = x.to(self._dtype).to(self.device)
+        observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
+
+        if np.any(agent_pos != None):
+            agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
+
+        return {"observation": observation, "agent_pos": agent_pos}
+
+    def forward(self, obs, z=None, deterministic=False):
+        self._forward_steps += 1
+        obs = self.preprocess_obs(obs)
 
         # features
         with torch.no_grad():
-            phi, conv_dict = self.feaNet(x, agent_pos)
+            phi, conv_dict = self.feaNet(
+                obs["observation"], obs["agent_pos"], deterministic
+            )
 
-        # actions
-        if deterministic:
-            q = self.compute_q(phi)
-        else:
-            if self.decision_mode == "random":
-                q = torch.rand((1, self._a_dim)).to(self.device)
-            elif self.decision_mode == "e-greedy":
-                is_greedy = np.random.rand() >= self._epsilon
-                q = (
-                    self.compute_q(phi)
-                    if is_greedy
-                    else torch.rand((1, self._a_dim)).to(self.device)
-                )
-            else:
-                raise NotImplementedError(
-                    f"{self.decision_mode} is not implemented. Select among ['random', 'e-greedy']"
-                )
-        a = torch.argmax(q, dim=-1)
+        a = torch.rand((1, self._a_dim)).to(self.device)
+        a = torch.argmax(a, dim=-1)
         a_oh = F.one_hot(a.long(), num_classes=self._a_dim).to(self._dtype)
 
-        if self._epsilon >= 0 and self._anneal is not None:
-            self._epsilon = self._epsilon - self._anneal * self._forward_steps
-
         return a, {
-            "q": torch.mean(self.compute_q(phi), axis=-1),  # for plotting
             "a_oh": a_oh,
             "phi": phi,  # for plotting
             "phi_r": phi,  # for plotting
@@ -202,7 +184,23 @@ class SF_Combined(BasePolicy):
             "logprobs": self.dummy,  # dummy
         }
 
-    def _phi_Loss(self, states, actions, next_states, agent_pos, rewards):
+    def decode(self, features, actions_oh, conv_dict):
+        # Does some dimensional and np <-> tensor work
+        # and pass it to feature decoder
+        # actions should be one-hot
+        if isinstance(features, np.ndarray):
+            features = torch.from_numpy(features).to(self.device).to(self._dtype)
+            if len(features.shape) == 1:
+                features = features.unsqueeze(0)
+        if isinstance(actions_oh, np.ndarray):
+            actions_oh = torch.from_numpy(actions_oh).to(self.device).to(self._dtype)
+            if len(actions_oh.shape) == 1:
+                actions_oh = actions_oh.unsqueeze(0)
+
+        reconstructed_state = self.feaNet.decode(features, actions_oh, conv_dict)
+        return reconstructed_state
+
+    def _phi_Loss(self, states, actions_oh, next_states, agent_pos, rewards):
         """
         Training target: phi_r (reward), phi_s (state)  -->  (Critic: feaNet)
         Method: reward mse (r - phi_r * w), state_pred mse (s' - D(phi_s, a))
@@ -212,7 +210,7 @@ class SF_Combined(BasePolicy):
         """
         phi, conv_dict = self.feaNet(states, agent_pos, deterministic=False)
 
-        state_pred = self.feaNet.decode(phi, actions, conv_dict)
+        state_pred = self.feaNet.decode(phi, actions_oh, conv_dict)
         phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
 
         l2_norm = 0
@@ -236,7 +234,7 @@ class SF_Combined(BasePolicy):
             "phi_regul": 1e-6 * l2_norm,
         }
 
-    def _psi_Loss(self, features, actions, terminals):
+    def _psi_Loss(self, features, actions_oh, terminals):
         """
         Training target: psi  -->  (Critic: psi_advantage, psi_state)
         Method: reducing TD error
@@ -249,7 +247,7 @@ class SF_Combined(BasePolicy):
         psi, _ = self.psiNet(features)
 
         filteredPsi = torch.sum(
-            psi * actions.unsqueeze(-1), axis=1
+            psi * actions_oh.unsqueeze(-1), axis=1
         )  # -> filteredPsi ~ [N, F] since no keepdim=True
 
         psi_est = estimate_psi(features, terminals, self._gamma, self.device)
@@ -303,24 +301,27 @@ class SF_Combined(BasePolicy):
         self.train()
         t0 = time.time()
 
-        buffer_batch = buffer.sample(self._trj_per_iter)
-        (
-            states,
-            _,
-            _,
-            actions_oh,
-            next_states,
-            agent_pos,
-            next_agent_pos,
-            rewards,
-            _,
-            _,
-        ) = self.preprocess_batch(buffer_batch, self.device)
+        ### Pull data from the batch
+        batch = buffer.sample(self._trj_per_iter)
+        # Ingredients
+        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
+        # features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
+        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
+        actions_oh = (
+            F.one_hot(actions.long(), num_classes=self._a_dim).to(self._dtype).squeeze()
+        )
+        next_states = (
+            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
+        )
+        agent_pos = torch.from_numpy(batch["agent_pos"]).to(self._dtype).to(self.device)
+        rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
 
+        ### Compute the Loss
         phi_loss, phi_loss_dict = self._phi_Loss(
             states, actions_oh, next_states, agent_pos, rewards
         )
 
+        ### Update the network
         self.feature_optims.zero_grad()
         phi_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=10.0)
@@ -330,14 +331,13 @@ class SF_Combined(BasePolicy):
             dir="SF",
             device=self.device,
         )
-        self.feature_optims.step()
-
         norm_dict = self.compute_weight_norm(
             [self.feaNet, self.psiNet, self._options],
             ["feaNet", "psiNet", "options"],
             dir="SF",
             device=self.device,
         )
+        self.feature_optims.step()
 
         loss_dict = {
             "SF/loss": phi_loss.item(),

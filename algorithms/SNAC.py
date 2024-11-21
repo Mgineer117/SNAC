@@ -5,21 +5,19 @@ import uuid
 import numpy as np
 import matplotlib.pyplot as plt
 import gymnasium as gym
-from gym_multigrid.envs.fourrooms import FourRooms
 
 from models.evaulators import (
-    SF_Evaluator,
     OP_Evaluator,
-    UG_Evaluator,
     HC_Evaluator,
 )
-from models import SFTrainer, OPTrainer, HCTrainer
+from models import OPTrainer, HCTrainer
 from utils import *
-from utils.call_env import call_env
 
 
 class SNAC:
-    def __init__(self, env: gym.Env, sf_network: nn.Module, prev_epoch: int, logger, writer, args):
+    def __init__(
+        self, env: gym.Env, sf_network: nn.Module, prev_epoch: int, logger, writer, args
+    ):
         """
         SNAC Specialized Neurons and Clustering Architecture
         ---------------------------------------------------------------------------
@@ -34,8 +32,8 @@ class SNAC:
                 - PPO is used to train OP network
             - Train HC network (Hierarchical Controller that alternates between option and random walk)
         """
-        self.env= env
-        
+        self.env = env
+
         # define buffers and sampler for Monte-Carlo sampling
         self.sampler = OnlineSampler(
             training_envs=self.env,

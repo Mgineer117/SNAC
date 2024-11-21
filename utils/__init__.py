@@ -26,8 +26,9 @@ from utils.sampler import OnlineSampler
 from utils.plotter import Plotter
 from utils.wrappers import (
     StateImageWrapper,
-    NoStateDictWrapper,
-    NoStateDictCtfWrapper,
+    GridWrapper,
+    CtFWrapper,
+    NavigationWrapper,
 )
 
 
@@ -43,17 +44,18 @@ __all__ = [
     "discover_options",
     "generate_possible_tensors",
     "get_grid_tensor",
+    "get_grid_tensor2",
     "TrajectoryBuffer",
     "OnlineSampler",
     "save_dim_to_args",
     "get_eigenvectors",
     "Plotter",
     "StateImageWrapper",
-    "NoStateDictWrapper",
     "print_model_summary",
     "get_args",
     "estimate_advantages",
     "estimate_psi",
-    "NoStateDictCtfWrapper",
-    "get_grid_tensor2",
+    "GridWrapper",
+    "CtFWrapper",
+    "NavigationWrapper",
 ]

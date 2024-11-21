@@ -9,9 +9,6 @@ import gymnasium as gym
 import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.cluster import KMeans
-
-from utils.sampler import OnlineSampler
-from utils.buffer import TrajectoryBuffer
 from models.policy.base_policy import BasePolicy
 from torch.utils.tensorboard import SummaryWriter
 from log.wandb_logger import WandbLogger
