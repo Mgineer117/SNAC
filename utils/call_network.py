@@ -192,7 +192,7 @@ def call_sfNetwork(args):
                     fc_dim=args.conv_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=int(args.sf_dim / 2),
-                    activation=nn.ELU(),
+                    activation=nn.Tanh(),
                 )
             else:
                 feaNet = ConvNetwork(
@@ -203,7 +203,7 @@ def call_sfNetwork(args):
                     fc_dim=args.conv_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=args.sf_dim,
-                    activation=nn.ELU(),
+                    activation=nn.Tanh(),
                 )
 
             psiNet = PsiCritic(

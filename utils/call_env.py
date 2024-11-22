@@ -11,6 +11,15 @@ import safety_gymnasium as gym
 from utils.wrappers import GridWrapper, CtFWrapper, NavigationWrapper
 
 
+def disc_or_cont(env, args):
+    if isinstance(env.action_space, gym.spaces.Discrete):
+        args.is_discrete = True
+    elif isinstance(env.action_space, gym.spaces.Box):
+        args.is_discrete = False
+    else:
+        raise ValueError(f"Unknown action space type {env.action_space}.")
+
+
 def call_env(args):
     # define the env
     if args.env_name == "FourRooms":
@@ -23,6 +32,7 @@ def call_env(args):
             partial_observability=False,
             render_mode="rgb_array",
         )
+        disc_or_cont(env, args)
         return GridWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "LavaRooms":
         # first call dummy env to find possible location for agent
@@ -34,6 +44,7 @@ def call_env(args):
             partial_observability=False,
             render_mode="rgb_array",
         )
+        disc_or_cont(env, args)
         return GridWrapper(env, tile_size=args.tile_size)
 
     elif args.env_name in ("CtF1v1", "CtF1v2", "CtF1v3", "CtF1v4"):
@@ -73,9 +84,11 @@ def call_env(args):
             )
         else:
             raise NotImplementedError(f"{args.env_name} not implemented")
+        disc_or_cont(env, args)
         return CtFWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "PointNavigation":
         env = gym.make("SafetyPointButton1-v0")
+        disc_or_cont(env, args)
         return NavigationWrapper(env, tile_size=args.tile_size)
     else:
         raise ValueError(f"Invalid environment key: {args.env_name}")
