@@ -25,7 +25,6 @@ class TrajectoryBuffer:
         """
         (
             states,
-            features,
             actions,
             next_states,
             agent_pos,
@@ -35,7 +34,6 @@ class TrajectoryBuffer:
             logprobs,
         ) = (
             batch["states"],
-            batch["features"],
             batch["actions"],
             batch["next_states"],
             batch["agent_pos"],
@@ -44,14 +42,13 @@ class TrajectoryBuffer:
             batch["terminals"],
             batch["logprobs"],
         )
-        
+
         trajs = []
         prev_i = 0
         for i, terminal in enumerate(terminals.squeeze()):
             if terminal == 1:
                 data = {
                     "states": states[prev_i : i + 1],
-                    "features": features[prev_i : i + 1],
                     "actions": actions[prev_i : i + 1],
                     "next_states": next_states[prev_i : i + 1],
                     "agent_pos": agent_pos[prev_i : i + 1],
@@ -113,9 +110,6 @@ class TrajectoryBuffer:
 
         sampled_batch = {
             "states": np.concatenate([traj["states"] for traj in sampled_data], axis=0),
-            "features": np.concatenate(
-                [traj["features"] for traj in sampled_data], axis=0
-            ),
             "actions": np.concatenate(
                 [traj["actions"] for traj in sampled_data], axis=0
             ),
@@ -150,9 +144,6 @@ class TrajectoryBuffer:
 
         sampled_batch = {
             "states": np.concatenate([traj["states"] for traj in sampled_data], axis=0),
-            "features": np.concatenate(
-                [traj["features"] for traj in sampled_data], axis=0
-            ),
             "actions": np.concatenate(
                 [traj["actions"] for traj in sampled_data], axis=0
             ),

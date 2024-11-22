@@ -276,8 +276,12 @@ class ConvNetwork(nn.Module):
         r_out = self.en_reward(out)
         s_out = self.en_state(out)
         out = torch.cat((r_out, s_out), axis=-1)
-        out = self.en_last_act(out)
-        return out, {"indices": indices, "output_dim": sizes, "loss": torch.tensor(0.0)}
+        features = self.en_last_act(out)
+        return features, {
+            "indices": indices,
+            "output_dim": sizes,
+            "loss": torch.tensor(0.0),
+        }
 
     def decode(self, features, actions_oh, conv_dict):
         """This reconstruct full state given phi_state and actions"""

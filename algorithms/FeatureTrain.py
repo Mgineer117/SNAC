@@ -51,6 +51,7 @@ class FeatureTrain:
             episode_len=args.episode_len,
             episode_num=args.episode_num,
             num_cores=args.num_cores,
+            gamma=args.gamma,
         )
 
         # object initialization

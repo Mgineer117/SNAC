@@ -307,9 +307,6 @@ class SF_Combined(BasePolicy):
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         # features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
-        actions_oh = (
-            F.one_hot(actions.long(), num_classes=self._a_dim).to(self._dtype).squeeze()
-        )
         next_states = (
             torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
         )
@@ -318,7 +315,7 @@ class SF_Combined(BasePolicy):
 
         ### Compute the Loss
         phi_loss, phi_loss_dict = self._phi_Loss(
-            states, actions_oh, next_states, agent_pos, rewards
+            states, actions, next_states, agent_pos, rewards
         )
 
         ### Update the network

@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torch.distributions import MultivariateNormal, Categorical
 from models.layers.building_blocks import MLP, Conv, DeConv
-from typing import Optional, Dict, List, Tuple
 
 
 class PPO_Policy(nn.Module):
@@ -13,7 +13,12 @@ class PPO_Policy(nn.Module):
     """
 
     def __init__(
-        self, input_dim: int, fc_dim: int, a_dim: int, activation: nn.Module = nn.ReLU()
+        self,
+        input_dim: int,
+        fc_dim: int,
+        a_dim: int,
+        activation: nn.Module = nn.Tanh(),
+        is_discrete: bool = False,
     ):
         super(PPO_Policy, self).__init__()
 
@@ -23,20 +28,67 @@ class PPO_Policy(nn.Module):
         self._a_dim = a_dim
         self._dtype = torch.float32
 
-        self._max_val = 0.6
-        self._min_val = 0.1
+        self.logstd_range = (-10, 2)
 
-        self.model = MLP(input_dim, (fc_dim, fc_dim), a_dim, activation=self.act)
+        self.is_discrete = is_discrete
+        self.dist = None
 
-    def forward(self, x: torch.Tensor):
-        logits = self.model(x)
+        if self.is_discrete:
+            self.model = MLP(input_dim, (fc_dim, fc_dim), a_dim, activation=self.act)
+        else:
+            self.model = MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
+            self.mu = MLP(fc_dim, (a_dim,), activation=nn.Identity())
+            self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Softplus())
 
-        logprobs = F.log_softmax(logits, dim=-1)
-        probs = torch.exp(logprobs)
+    def forward(self, state: torch.Tensor, deterministic: bool = False):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+        state = state.reshape(state.shape[0], -1)
 
-        # probs = F.softmax(logits, dim=-1)
-        dist = torch.distributions.categorical.Categorical(probs)
-        return dist
+        logits = self.model(state)
+
+        if self.is_discrete:
+            logprobs = F.log_softmax(logits, dim=-1)
+            probs = torch.exp(logprobs)
+            dist = Categorical(probs)
+
+            if deterministic:
+                a = torch.argmax(probs, dim=-1)  # .to(self._dtype)
+            else:
+                a = dist.sample()
+
+            logprobs = dist.log_prob(a)
+            probs = torch.exp(logprobs)
+
+            a = F.one_hot(a, num_classes=self._a_dim)
+        else:
+            ### Shape the output as desired
+            mu = F.tanh(self.mu(logits))
+            logstd = torch.clamp(
+                self.logstd(logits), min=self.logstd_range[0], max=self.logstd_range[1]
+            )
+            std = torch.exp(logstd)
+
+            covariance_matrix = torch.diag_embed(std**2)  # Variance is std^2
+            dist = MultivariateNormal(loc=mu, covariance_matrix=covariance_matrix)
+
+            if deterministic:
+                a = mu
+            else:
+                a = dist.rsample()
+
+            logprobs = dist.log_prob(a)
+            probs = torch.exp(logprobs)
+
+        self.dist = dist
+        entropy = dist.entropy()
+        return a, {"entropy": entropy, "probs": probs, "logprobs": logprobs}
+
+    def log_prob(self, actions):
+        if self.is_discrete:
+            return self.dist.log_prob(torch.argmax(actions))
+        else:
+            return self.dist.log_prob(actions)
 
 
 class PPO_Critic(nn.Module):
@@ -44,7 +96,7 @@ class PPO_Critic(nn.Module):
     Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
     """
 
-    def __init__(self, input_dim: int, fc_dim: int, activation: nn.Module = nn.ReLU()):
+    def __init__(self, input_dim: int, fc_dim: int, activation: nn.Module = nn.Tanh()):
         super(PPO_Critic, self).__init__()
 
         # |A| duplicate networks

@@ -124,7 +124,7 @@ class OPTrainer:
             self.last_reward_mean.append(rew_mean)
             self.last_reward_std.append(rew_std)
 
-            self.save_model(e+1)
+            self.save_model(e + 1)
 
             ### training loop
             self.policy.train()
@@ -163,7 +163,7 @@ class OPTrainer:
         second_init_epoch = self._epoch
         second_final_epoch = self._epoch + self._psi_epoch
         for e in trange(second_init_epoch, second_final_epoch, desc=f"OP Psi Epoch"):
-            self.save_model(e+1)
+            self.save_model(e + 1)
 
             ### training loop
             self.policy.train()

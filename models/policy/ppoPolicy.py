@@ -70,42 +70,33 @@ class PPO_Learner(BasePolicy):
         self.device = device
         self.to(device)
 
-    def forward(self, obs, z=None, deterministic=False):
-        self._forward_steps += 1
-        x = obs["observation"]
+    def preprocess_obs(self, obs):
+        observation = obs["observation"]
         agent_pos = obs["agent_pos"]
 
+        # preprocessing
+        observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
+
+        if np.any(agent_pos != None):
+            agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
+
+        return {"observation": observation, "agent_pos": agent_pos}
+
+    def forward(self, obs, z=None, deterministic=False):
         """
-        x is state ~ (7, 7, 3)
+        Image-based state dimension ~ [Batch, width, height, channel] or [width, height, channel]
+        Flat tensor-based state dimension ~ [Batch, tensor] or [tensor]
         """
-        if isinstance(x, np.ndarray):
-            x = torch.from_numpy(x)
-        if len(x.shape) == 3:
-            x = x[None, :, :, :]
-        x = x.to(self._dtype).to(self.device)
-        raw_state = x.reshape(x.shape[0], -1)
-        # phi = self.getPhi(x)
+        self._forward_steps += 1
+        obs = self.preprocess_obs(obs)
 
-        # dist = self.policy(phi)
-        dist = self.policy(raw_state)
-
-        if deterministic:
-            # [N, |O|]
-            a = torch.argmax(dist.probs, dim=-1).to(self._dtype)
-        else:
-            a = dist.sample()
-
-        logprobs = dist.log_prob(a)
-        probs = torch.exp(logprobs)
+        a, metaData = self.policy(obs["observation"], deterministic=deterministic)
 
         return a, {
-            "q": self.dummy,  # dummy
-            "phi": self.dummy,
-            "is_option": False,  # dummy
-            "z": self.dummy.item(),
-            "probs": probs,
-            "logprobs": logprobs,
-            "entropy": dist.entropy(),
+            # "z": self.dummy.item(),
+            "probs": metaData["probs"],
+            "logprobs": metaData["logprobs"],
+            "entropy": metaData["entropy"],
         }
 
     def learn(self, batch, z=0):
@@ -115,7 +106,7 @@ class PPO_Learner(BasePolicy):
         # Ingredients
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        raw_states = states.reshape(states.shape[0], -1)
+        states = states.reshape(states.shape[0], -1)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
         rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
         terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
@@ -125,8 +116,7 @@ class PPO_Learner(BasePolicy):
 
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
-            # values = self.critic(features)
-            values = self.critic(raw_states)
+            values = self.critic(states)
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
@@ -144,7 +134,7 @@ class PPO_Learner(BasePolicy):
                 for param in self.critic.parameters():
                     if param.grad is not None:
                         param.grad.data.fill_(0)
-                values = self.critic(raw_states)
+                values = self.critic(states)
                 valueLoss = self.mse_loss(values, returns)
                 for param in self.critic.parameters():
                     valueLoss += param.pow(2).sum() * self._l2_reg
@@ -166,14 +156,13 @@ class PPO_Learner(BasePolicy):
         # K - Loop
         for _ in range(self._K):
             if not self.is_bfgs:
-                values = self.critic(raw_states)
+                values = self.critic(states)
                 valueLoss = self.mse_loss(returns, values)
             # policy ingredients
-            # dist = self.policy(features)
-            dist = self.policy(raw_states)
+            _, metaData = self.policy(states)
 
-            logprobs = dist.log_prob(actions.squeeze()).unsqueeze(-1)
-            entropy = dist.entropy().unsqueeze(-1)
+            logprobs = self.policy.log_prob(actions.squeeze()).unsqueeze(-1)
+            entropy = metaData["entropy"].unsqueeze(-1)
 
             ratios = torch.exp(logprobs - old_logprobs)
 

@@ -26,7 +26,9 @@ class EigenOption:
             - this heuristics ignores other info of eigs
     """
 
-    def __init__(self, env:gym.Env, sf_network: nn.Module, prev_epoch: int, logger, writer, args):
+    def __init__(
+        self, env: gym.Env, sf_network: nn.Module, prev_epoch: int, logger, writer, args
+    ):
         self.env = env
 
         # define buffers and sampler for Monte-Carlo sampling
@@ -40,6 +42,7 @@ class EigenOption:
             episode_len=args.episode_len,
             episode_num=args.episode_num,
             num_cores=args.num_cores,
+            gamma=args.gamma,
         )
 
         # object initialization

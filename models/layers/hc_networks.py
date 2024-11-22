@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.layers.building_blocks import MLP, Conv, DeConv
-from typing import Optional, Dict, List, Tuple
+from torch.distributions import Categorical
+from models.layers.building_blocks import MLP
 
 
 class HC_Policy(nn.Module):
@@ -30,39 +30,45 @@ class HC_Policy(nn.Module):
         self._dtype = torch.float32
         self._num_options = num_options
 
-        self._max_val = 0.6
-        self._min_val = 0.1
+        self.dist = None
 
         self.model = MLP(input_dim, (fc_dim, fc_dim), num_options, activation=self.act)
 
         # parameters
         self._num_options = num_options
 
-    def forward(self, x: torch.Tensor, deterministic=False):
-        logits = self.model(x)
+    def forward(self, state: torch.Tensor, deterministic=False):
+        # when the input is raw by forawrd() not learn()
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+            state = state.reshape(state.shape[0], -1)
+
+        logits = self.model(state)
 
         logprobs = F.log_softmax(logits, dim=-1)
         probs = torch.exp(logprobs)
-
-        dist = torch.distributions.categorical.Categorical(probs)
+        dist = Categorical(probs)
 
         if deterministic:
-            z = torch.argmax(
-                probs, dim=-1
-            ).long()  # convert to long for indexing purpose
+            z = torch.argmax(probs, dim=-1).long()
         else:
             z = dist.sample().long()
-        z_oh = F.one_hot(z.long(), num_classes=self._num_options)
-        probs = torch.sum(probs * z_oh, axis=-1, keepdim=True)
-        logprobs = (
-            torch.sum(logprobs * z_oh, axis=-1, keepdim=True) + 1e-7
-        )  # for numeric stability
+
+        logprobs = dist.log_prob(z)
+        probs = torch.exp(logprobs)
+
+        self.dist = dist
+        entropy = dist.entropy()
+
         return z, {
             "logits": logits,
+            "entropy": entropy,
             "probs": probs,
             "logprobs": logprobs,
-            "dist": dist,
         }
+
+    def log_prob(self, actions):
+        return self.dist.log_prob(actions)
 
 
 class HC_PrimitivePolicy(nn.Module):

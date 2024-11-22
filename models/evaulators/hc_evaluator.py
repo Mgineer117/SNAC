@@ -75,9 +75,8 @@ class HC_Evaluator(Evaluator):
         ep_buffer = []
         if queue is not None:
             self.set_any_seed(grid_type, seed)
-        
 
-        red_flag_captured = np.zeros((self.eval_ep_num, ))
+        red_flag_captured = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
@@ -105,7 +104,6 @@ class HC_Evaluator(Evaluator):
                         self.get_agent_pos(env)
 
                     next_obs, rew, term, trunc, infos = env.step(a)
-
                     done = term or trunc
 
                     op_rew = rew
@@ -113,11 +111,12 @@ class HC_Evaluator(Evaluator):
 
                     option_termination = False
                     while not (done or option_termination):
-                        option_s = next_obs
-
                         # env stepping
-                        option_a, _ = policy(option_s, option_idx, deterministic=True)
-                        option_a = option_a.cpu().numpy().squeeze()
+                        with torch.no_grad():
+                            option_a, _ = policy(
+                                next_obs, option_idx, deterministic=True
+                            )
+                            option_a = option_a.cpu().numpy().squeeze()
 
                         # Update the grid
                         if self.gridCriteria:
@@ -144,13 +143,14 @@ class HC_Evaluator(Evaluator):
                     step_count = 1  # dummy
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
-
                     done = term or trunc
-                
+
                 obs = next_obs
 
                 if "red_flag_captured" in infos:
-                    red_flag_captured[num_episodes] = np.maximum(red_flag_captured[num_episodes], infos["red_flag_captured"])
+                    red_flag_captured[num_episodes] = np.maximum(
+                        red_flag_captured[num_episodes], infos["red_flag_captured"]
+                    )
                 ep_reward += rew
                 ep_length += step_count
 
@@ -158,7 +158,7 @@ class HC_Evaluator(Evaluator):
                 if self.renderCriteria:
                     img = env.render()
                     self.recorded_frames.append(img)
-                    option_indices.append(option_idx)
+                    option_indices.append(option_idx.numpy())
 
                 if done:
                     if self.gridCriteria:
@@ -197,7 +197,9 @@ class HC_Evaluator(Evaluator):
 
         rew_mean, rew_std = np.mean(reward_list), np.std(reward_list)
         ln_mean, ln_std = np.mean(length_list), np.std(length_list)
-        winRate_mean, winRate_std = np.mean(red_flag_captured), np.std(red_flag_captured)
+        winRate_mean, winRate_std = np.mean(red_flag_captured), np.std(
+            red_flag_captured
+        )
 
         if queue is not None:
             queue.put([rew_mean, rew_std, ln_mean, ln_std, winRate_mean, winRate_std])
@@ -215,9 +217,4 @@ class HC_Evaluator(Evaluator):
     def get_agent_pos(self, env):
         # Update the grid
         if self.gridCriteria:
-            if hasattr(env.env, "agent_pos"):
-                self.path.append(env.get_wrapper_attr("agent_pos"))
-            elif hasattr(env.env, "agents"):
-                self.path.append(env.get_wrapper_attr("agents")[0].pos)
-            else:
-                raise ValueError("No agent position information.")
+            self.path.append(env.get_agent_pos())

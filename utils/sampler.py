@@ -83,8 +83,7 @@ class Base:
         data = dict(
             states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
             next_states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
-            features=np.empty(((batch_size, self.feature_dim)), dtype=np.float32),
-            actions=np.empty((batch_size, 1), dtype=np.float32),
+            actions=np.empty((batch_size, self.action_dim), dtype=np.float32),
             option_actions=np.empty((batch_size, 1), dtype=np.float32),
             agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
             next_agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
@@ -218,6 +217,7 @@ class OnlineSampler(Base):
         episode_len: int,
         episode_num: int,
         num_cores: int = None,
+        gamma: float = 0.99,
         verbose: bool = True,
     ) -> None:
         super(Base, self).__init__()
@@ -230,7 +230,7 @@ class OnlineSampler(Base):
         the task is assigned. 
         This assigned appropriate parameters assuming one worker work with 2 trajectories.
         """
-
+        self.gamma = gamma
         self.state_dim = state_dim
         self.feature_dim = feature_dim
         self.action_dim = action_dim
@@ -309,7 +309,6 @@ class OnlineSampler(Base):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
-                    feature = metaData["phi"]
 
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
@@ -321,16 +320,14 @@ class OnlineSampler(Base):
                 done = True if t == (episode_len - 1) else False
 
                 # saving the data
-                data["states"][current_step + t, :, :, :] = obs["observation"]
-                data["features"][current_step + t, :] = feature
-                data["next_states"][current_step + t, :, :, :] = next_obs["observation"]
-                data["actions"][current_step + t, :] = a
-                data["option_actions"][current_step + t, :] = None
-                data["agent_pos"][current_step + t, :] = obs["agent_pos"]
-                data["next_agent_pos"][current_step + t, :] = next_obs["agent_pos"]
-                data["rewards"][current_step + t, :] = rew
-                data["terminals"][current_step + t, :] = done
-                data["logprobs"][current_step + t, :] = (
+                data["states"][current_step + t] = obs["observation"]
+                data["next_states"][current_step + t] = next_obs["observation"]
+                data["actions"][current_step + t] = a
+                data["agent_pos"][current_step + t] = obs["agent_pos"]
+                data["next_agent_pos"][current_step + t] = next_obs["agent_pos"]
+                data["rewards"][current_step + t] = rew
+                data["terminals"][current_step + t] = done
+                data["logprobs"][current_step + t] = (
                     metaData["logprobs"].detach().numpy()
                 )
 
@@ -387,8 +384,6 @@ class OnlineSampler(Base):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
-
-                    feature = metaData["phi"]
                     option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
@@ -410,7 +405,7 @@ class OnlineSampler(Base):
 
                         next_obs, rew, term, trunc, infos = env.step(option_a)
 
-                        op_rew += 0.99**step_count * rew
+                        op_rew += self.gamma**step_count * rew
                         step_count += 1
 
                         option_termination = (
@@ -433,7 +428,6 @@ class OnlineSampler(Base):
 
                 # saving the data
                 data["states"][current_step + t, :, :, :] = obs["observation"]
-                data["features"][current_step + t, :] = feature
                 data["next_states"][current_step + t, :, :, :] = next_obs["observation"]
                 data["actions"][current_step + t, :] = a
                 data["option_actions"][current_step + t, :] = option_idx
@@ -508,8 +502,6 @@ class OnlineSampler(Base):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze()
-
-                    feature = metaData["phi"]
                     option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
@@ -531,7 +523,7 @@ class OnlineSampler(Base):
 
                         next_obs, rew, term, trunc, infos = env.step(option_a)
 
-                        op_rew += 0.99**step_count * rew
+                        op_rew += self.gamma**step_count * rew
                         step_count += 1
 
                         option_termination = (
@@ -557,16 +549,15 @@ class OnlineSampler(Base):
                 done = True if t == (episode_len - 1) else False
 
                 # saving the data
-                data["states"][current_step + t, :, :, :] = obs["observation"]
-                data["features"][current_step + t, :] = feature
-                data["next_states"][current_step + t, :, :, :] = next_obs["observation"]
-                data["actions"][current_step + t, :] = a
-                data["option_actions"][current_step + t, :] = option_idx
-                data["agent_pos"][current_step + t, :] = obs["agent_pos"]
-                data["next_agent_pos"][current_step + t, :] = next_obs["agent_pos"]
-                data["rewards"][current_step + t, :] = rew
-                data["terminals"][current_step + t, :] = done
-                data["logprobs"][current_step + t, :] = (
+                data["states"][current_step + t] = obs["observation"]
+                data["next_states"][current_step + t] = next_obs["observation"]
+                data["actions"][current_step + t] = a
+                data["option_actions"][current_step + t] = option_idx
+                data["agent_pos"][current_step + t] = obs["agent_pos"]
+                data["next_agent_pos"][current_step + t] = next_obs["agent_pos"]
+                data["rewards"][current_step + t] = rew
+                data["terminals"][current_step + t] = done
+                data["logprobs"][current_step + t] = (
                     metaData["logprobs"].detach().numpy()
                 )
 

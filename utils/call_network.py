@@ -242,6 +242,7 @@ def call_ppoNetwork(args):
             fc_dim=args.fc_dim,
             a_dim=args.a_dim,
             activation=nn.Tanh(),
+            is_discrete=args.is_discrete,
         )
         optionCritic = PPO_Critic(
             input_dim=args.s_flat_dim,

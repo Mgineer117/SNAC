@@ -119,63 +119,48 @@ class HC_Controller(BasePolicy):
 
     def getPhi(self, x, agent_pos):
         with torch.no_grad():
-            phi, _ = self.convNet(x, agent_pos)
+            phi, _ = self.convNet(x, agent_pos, deterministic=True)
         return phi
 
-    def forward(self, obs, idx=None, deterministic=False):
-        self._forward_steps += 1
-        x = obs["observation"]
+    def preprocess_obs(self, obs):
+        observation = obs["observation"]
         agent_pos = obs["agent_pos"]
-        """
-        x is state ~ (7, 7, 3)
-        """
-        if isinstance(x, np.ndarray):
-            x = torch.from_numpy(x)
-        if isinstance(agent_pos, np.ndarray):
-            agent_pos = torch.from_numpy(agent_pos)
-        if len(x.shape) == 3:
-            x = x[None, :, :, :]
-        if len(agent_pos.shape) == 1:
-            agent_pos = agent_pos[None, :]
-        x = x.to(self._dtype).to(self.device)
-        raw_state = x.reshape(x.shape[0], -1)
 
-        # if not self._is_randomWalk:
-        phi = self.getPhi(x, agent_pos)
-        # x = x.view(x.size(0), -1)
+        if not torch.is_tensor(observation):
+            observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
+
+        if agent_pos is not None and not torch.is_tensor(agent_pos):
+            agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
+
+        return {"observation": observation, "agent_pos": agent_pos}
+
+    def forward(self, obs, idx=None, deterministic=False):
+        """
+        Image-based state dimension ~ [Batch, width, height, channel] or [width, height, channel]
+        Flat tensor-based state dimension ~ [Batch, tensor] or [tensor]
+        """
+        self._forward_steps += 1
+        obs = self.preprocess_obs(obs)
 
         if idx is None:
-            # z, metaData = self.policy(phi, deterministic)
-            z, metaData = self.policy(raw_state, deterministic)
+            z, metaData = self.policy(obs["observation"], deterministic)
         else:
             z = idx
             metaData = {"probs": None, "logprobs": None}  # dummy
 
         is_option = True if z < self._num_options else False
-        # print(z, is_option, self._num_options)
 
         if is_option:
             # option selection
-            # x automatically converted in the optionpolicy
-            a, option_metaData = self.optionPolicy(obs, z, deterministic=deterministic)
-            termination = option_metaData["termination"]
+            a, _ = self.optionPolicy(obs, z, deterministic=deterministic)
         else:
             # primitive action selection
-            # a, _ = self.primitivePolicy(phi)
-            # I selected randomized action for primitive to prevent
-            # it dominates over option
-
-            q = torch.rand((1, self._a_dim)).to(self.device)
-            a = torch.argmax(q, dim=-1)
-
-            termination = True
-        # print(z_idx, is_option, actions.shape, a)
+            a = torch.argmax(torch.rand((1, self._a_dim)).to(self.device), dim=-1)
 
         return a, {
             "z": z,
-            "phi": phi,
+            # "phi": phi,
             "is_option": is_option,
-            "termination": termination,
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
         }
@@ -186,7 +171,7 @@ class HC_Controller(BasePolicy):
 
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        # features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
+        states = states.reshape(states.shape[0], -1)
         actions = (
             torch.from_numpy(batch["option_actions"]).to(self._dtype).to(self.device)
         )
@@ -196,11 +181,8 @@ class HC_Controller(BasePolicy):
             torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
         )
 
-        raw_states = states.reshape(states.shape[0], -1)
-
         with torch.no_grad():
-            # values, _ = self.critic(features)
-            values, _ = self.critic(raw_states)
+            values, _ = self.critic(states)
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
@@ -218,12 +200,12 @@ class HC_Controller(BasePolicy):
                 for param in self.critic.parameters():
                     if param.grad is not None:
                         param.grad.data.fill_(0)
-                values, _ = self.critic(raw_states)
+                values, _ = self.critic(states)
                 valueLoss = self.mse_loss(values, returns)
                 for param in self.critic.parameters():
                     valueLoss += param.pow(2).sum() * self._l2_reg
                 valueLoss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
 
                 return (
                     valueLoss.item(),
@@ -240,15 +222,14 @@ class HC_Controller(BasePolicy):
         # K - Loop
         for _ in range(self._K):
             if not self.is_bfgs:
-                values, _ = self.critic(raw_states)
+                values, _ = self.critic(states)
                 valueLoss = self.mse_loss(returns, values)
 
             # _, metaData = self.policy(features)
-            _, metaData = self.policy(raw_states)
-            dist = metaData["dist"]
+            _, metaData = self.policy(states)
 
-            logprobs = dist.log_prob(actions.squeeze()).unsqueeze(-1)
-            entropy = dist.entropy().unsqueeze(-1)
+            logprobs = self.policy.log_prob(actions.squeeze()).unsqueeze(-1)
+            entropy = metaData["entropy"].unsqueeze(-1)
 
             ratios = torch.exp(logprobs - old_logprobs)
 

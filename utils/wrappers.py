@@ -41,6 +41,9 @@ class GridWrapper(gym.Wrapper):
         super(GridWrapper, self).__init__(env)
         self.tile_size = tile_size
 
+    def get_agent_pos(self):
+        return np.array(self.env.agents[0].pos)
+
     def reset(self, **kwargs):
         observation, info = self.env.reset(**kwargs)
         observation = observation["image"]
@@ -49,12 +52,11 @@ class GridWrapper(gym.Wrapper):
         )
         obs = {}
         obs["observation"] = observation
-
-        agent_pos = self.get_wrapper_attr("agent_pos")
-        obs["agent_pos"] = np.array(agent_pos)
+        obs["agent_pos"] = self.get_agent_pos()
         return obs, info
 
     def step(self, action):
+        action = np.argmax(action)
         # Call the original step method
         observation, reward, termination, truncation, info = self.env.step(action)
         observation = observation["image"]
@@ -63,9 +65,7 @@ class GridWrapper(gym.Wrapper):
         )
         obs = {}
         obs["observation"] = observation
-
-        agent_pos = self.get_wrapper_attr("agent_pos")
-        obs["agent_pos"] = np.array(agent_pos)
+        obs["agent_pos"] = self.get_agent_pos()
         return obs, reward, termination, truncation, info
 
 
@@ -74,6 +74,9 @@ class CtFWrapper(gym.Wrapper):
         super(CtFWrapper, self).__init__(env)
         self.tile_size = tile_size
 
+    def get_agent_pos(self):
+        return np.array(self.env.agents[0].pos)
+
     def reset(self, **kwargs):
         observation, _ = self.env.reset(**kwargs)
         observation = np.repeat(
@@ -81,12 +84,11 @@ class CtFWrapper(gym.Wrapper):
         )
         obs = {}
         obs["observation"] = observation
-
-        agent_pos = self.get_wrapper_attr("agents")[0].pos
-        obs["agent_pos"] = np.array(agent_pos)
+        obs["agent_pos"] = self.get_agent_pos()
         return obs, {}
 
     def step(self, action):
+        action = np.argmax(action)
         # Call the original step method
         observation, reward, termination, truncation, info = self.env.step(action)
         observation = np.repeat(
@@ -94,9 +96,8 @@ class CtFWrapper(gym.Wrapper):
         )
         obs = {}
         obs["observation"] = observation
+        obs["agent_pos"] = self.get_agent_pos()
 
-        agent_pos = self.get_wrapper_attr("agents")[0].pos
-        obs["agent_pos"] = np.array(agent_pos)
         return obs, reward, termination, truncation, info
 
 
@@ -105,21 +106,23 @@ class NavigationWrapper(gym.Wrapper):
         super(NavigationWrapper, self).__init__(env)
         self.tile_size = tile_size
 
+    def get_agent_pos(self):
+        return np.array([0, 0])
+
     def reset(self, **kwargs):
         observation, _ = self.env.reset(**kwargs)
         obs = {}
         obs["observation"] = observation
-        obs["agent_pos"] = np.array([0, 0])
+        obs["agent_pos"] = self.get_agent_pos()
         return obs, {}
 
     def step(self, action):
         # Call the original step method
-        print(action)
         observation, reward, cost, termination, truncation, info = self.env.step(action)
 
         obs = {}
         obs["observation"] = observation
-        obs["agent_pos"] = np.array([0, 0])
+        obs["agent_pos"] = self.get_agent_pos()
 
         reward -= cost
 

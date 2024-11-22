@@ -78,7 +78,10 @@ def discover_options(
     option_buffer.wipe()
 
     ### Convert to the tensor
-    features = torch.from_numpy(batch["features"]).to(torch.float32).to(device)
+    states = torch.from_numpy(batch["states"]).to(torch.float32).to(device)
+    agent_pos = torch.from_numpy(batch["agent_pos"]).to(torch.float32).to(device)
+
+    features, _ = policy.feaNet(states, agent_pos, deterministic=True)
     terminals = torch.from_numpy(batch["terminals"]).to(torch.float32).to(device)
 
     #### Compute Psi from Phi
@@ -322,7 +325,7 @@ def cluster_vecvtors(S_list, V_list, k=10):
 
 def get_eigenvectors(
     env,
-    network,
+    sf_network,
     sampler,
     plotter,
     args,
@@ -333,7 +336,7 @@ def get_eigenvectors(
 ):
     if args.algo_name in ("SNAC", "SNAC+", "SNAC++"):
         option_vals, options, batch = discover_options(
-            policy=network,
+            policy=sf_network,
             sampler=sampler,
             plotter=plotter,
             grid_type=args.grid_type,
@@ -346,7 +349,7 @@ def get_eigenvectors(
         print_option_info(option_vals, options, args.algo_name, args.num_vector)
     elif args.algo_name in ("EigenOption", "EigenOption+", "EigenOption++"):
         option_vals, options, batch = discover_options(
-            policy=network,
+            policy=sf_network,
             sampler=sampler,
             plotter=plotter,
             grid_type=args.grid_type,
@@ -365,7 +368,7 @@ def get_eigenvectors(
         if args.env_name == "FourRooms":
             grid_tensor, coords, loc = get_grid_tensor(env, args.grid_type)
             plotter.plotRewardMap(
-                feaNet=network.feaNet,
+                feaNet=sf_network.feaNet,
                 S=option_vals,
                 V=options,
                 feature_dim=args.sf_dim,  # since V = [V, -V]
@@ -379,7 +382,7 @@ def get_eigenvectors(
         elif args.env_name == "LavaRooms":
             grid_tensor, coords, loc = get_grid_tensor(env, args.grid_type)
             plotter.plotRewardMap(
-                feaNet=network.feaNet,
+                feaNet=sf_network.feaNet,
                 S=option_vals,
                 V=options,
                 feature_dim=args.sf_dim,  # since V = [V, -V]
@@ -393,7 +396,7 @@ def get_eigenvectors(
         elif args.env_name == "CtF1v1" or args.env_name == "CtF1v2":
             grid_tensor, coords, loc = get_grid_tensor2(env, args.grid_type)
             plotter.plotRewardMap2(
-                feaNet=network.feaNet,
+                feaNet=sf_network.feaNet,
                 S=option_vals,
                 V=options,
                 feature_dim=args.sf_dim,  # since V = [V, -V]

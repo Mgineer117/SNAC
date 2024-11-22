@@ -75,7 +75,7 @@ class OP_Evaluator(Evaluator):
         if queue is not None:
             self.set_any_seed(grid_type, seed)
 
-        red_flag_captured = np.zeros((self.eval_ep_num, ))
+        red_flag_captured = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
@@ -91,7 +91,7 @@ class OP_Evaluator(Evaluator):
             done = False
             while not done:
                 with torch.no_grad():
-                    a, phi_dict = policy(obs, idx, deterministic=True)
+                    a, _ = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze()
 
                 if self.gridCriteria:
@@ -99,15 +99,14 @@ class OP_Evaluator(Evaluator):
 
                 # env stepping
                 next_obs, rew, term, trunc, infos = env.step(a)
-                ns = next_obs["observation"]
-                next_agent_pos = next_obs["agent_pos"]
-
                 done = term or trunc
 
                 obs = next_obs
 
                 if "red_flag_captured" in infos:
-                    red_flag_captured[num_episodes] = np.maximum(red_flag_captured[num_episodes], infos["red_flag_captured"])
+                    red_flag_captured[num_episodes] = np.maximum(
+                        red_flag_captured[num_episodes], infos["red_flag_captured"]
+                    )
                 ep_reward += rew
                 ep_length += 1
 
@@ -148,7 +147,9 @@ class OP_Evaluator(Evaluator):
 
         rew_mean, rew_std = np.mean(reward_list), np.std(reward_list)
         ln_mean, ln_std = np.mean(length_list), np.std(length_list)
-        winRate_mean, winRate_std = np.mean(red_flag_captured), np.std(red_flag_captured)
+        winRate_mean, winRate_std = np.mean(red_flag_captured), np.std(
+            red_flag_captured
+        )
 
         if queue is not None:
             queue.put([rew_mean, rew_std, ln_mean, ln_std, winRate_mean, winRate_std])
@@ -166,12 +167,7 @@ class OP_Evaluator(Evaluator):
     def get_agent_pos(self, env):
         # Update the grid
         if self.gridCriteria:
-            if hasattr(env.env, "agent_pos"):
-                self.path.append(env.get_wrapper_attr("agent_pos"))
-            elif hasattr(env.env, "agents"):
-                self.path.append(env.get_wrapper_attr("agents")[0].pos)
-            else:
-                raise ValueError("No agent position information.")
+            self.path.append(env.get_agent_pos())
 
 
 class OP_Evaluator2(Evaluator):
@@ -234,7 +230,7 @@ class OP_Evaluator2(Evaluator):
         if queue is not None:
             self.set_any_seed(grid_type, seed)
 
-        red_flag_captured = np.zeros((self.eval_ep_num, ))
+        red_flag_captured = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
@@ -263,7 +259,9 @@ class OP_Evaluator2(Evaluator):
                 s = ns
 
                 if "red_flag_captured" in infos:
-                    red_flag_captured[num_episodes] = np.maximum(red_flag_captured[num_episodes], infos["red_flag_captured"])
+                    red_flag_captured[num_episodes] = np.maximum(
+                        red_flag_captured[num_episodes], infos["red_flag_captured"]
+                    )
                 ep_reward += rew
                 ep_length += 1
 
@@ -303,12 +301,14 @@ class OP_Evaluator2(Evaluator):
 
         rew_mean, rew_std = np.mean(reward_list), np.std(reward_list)
         ln_mean, ln_std = np.mean(length_list), np.std(length_list)
-        winRate_mean, winRate_std = np.mean(red_flag_captured), np.std(red_flag_captured)
+        winRate_mean, winRate_std = np.mean(red_flag_captured), np.std(
+            red_flag_captured
+        )
 
         if queue is not None:
-            queue.put([rew_mean, rew_std, ln_mean, ln_std,  winRate_mean, winRate_std])
+            queue.put([rew_mean, rew_std, ln_mean, ln_std, winRate_mean, winRate_std])
         else:
-            return rew_mean, rew_std, ln_mean, ln_std,  winRate_mean, winRate_std
+            return rew_mean, rew_std, ln_mean, ln_std, winRate_mean, winRate_std
 
     def update_render_criteria(self, epoch, num_episodes):
         basisCriteria = epoch % self.log_interval == 0 and num_episodes == 0
@@ -321,9 +321,4 @@ class OP_Evaluator2(Evaluator):
     def get_agent_pos(self, env):
         # Update the grid
         if self.gridCriteria:
-            if hasattr(env.env, "agent_pos"):
-                self.path.append(env.get_wrapper_attr("agent_pos"))
-            elif hasattr(env.env, "agents"):
-                self.path.append(env.get_wrapper_attr("agents")[0].pos)
-            else:
-                raise ValueError("No agent position information.")
+            self.path.append(env.get_agent_pos())

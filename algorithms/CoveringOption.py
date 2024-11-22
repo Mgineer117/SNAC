@@ -26,7 +26,9 @@ class CoveringOption:
             - this heuristics ignores other info of eigs
     """
 
-    def __init__(self, env:gym.Env, sf_network: nn.Module, prev_epoch: int, logger, writer, args):
+    def __init__(
+        self, env: gym.Env, sf_network: nn.Module, prev_epoch: int, logger, writer, args
+    ):
         self.env = env
 
         # define buffers and sampler for Monte-Carlo sampling
@@ -40,6 +42,7 @@ class CoveringOption:
             episode_len=args.episode_len,
             episode_num=args.episode_num,
             num_cores=args.num_cores,
+            gamma=args.gamma,
         )
 
         # object initialization
@@ -161,7 +164,9 @@ class CoveringOption:
                 self.train_op_network(vec_idx=vec_idx)
 
             if self.args.draw_map:
-                grid_tensor, coords, loc = get_grid_tensor(self.env, self.args.grid_type)
+                grid_tensor, coords, loc = get_grid_tensor(
+                    self.env, self.args.grid_type
+                )
                 self.plotter.plotRewardMap(
                     feaNet=self.sf_network.feaNet,
                     S=self.option_vals,
@@ -239,9 +244,13 @@ class CoveringOption:
         This discovers vectors from the feature set given batch.
         Additionally, we use both (+/-) of vectors (top 1 vector => 2 vectors)
         """
-        features = (
-            torch.from_numpy(batch["features"]).to(torch.float32).to(self.args.device)
+        states = (
+            torch.from_numpy(batch["states"]).to(torch.float32).to(self.args.device)
         )
+        agent_pos = (
+            torch.from_numpy(batch["agent_pos"]).to(torch.float32).to(self.args.device)
+        )
+        features, _ = self.sf_network.feaNet(states, agent_pos, deterministic=True)
         terminals = (
             torch.from_numpy(batch["terminals"]).to(torch.float32).to(self.args.device)
         )

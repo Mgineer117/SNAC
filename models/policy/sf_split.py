@@ -219,7 +219,7 @@ class SF_Split(BasePolicy):
             "logprobs": self.dummy,  # dummy
         }
 
-    def decode(self, features, actions_oh, conv_dict):
+    def decode(self, features, actions, conv_dict):
         # Does some dimensional and np <-> tensor work
         # and pass it to feature decoder
         # actions should be one-hot
@@ -227,15 +227,15 @@ class SF_Split(BasePolicy):
             features = torch.from_numpy(features).to(self.device).to(self._dtype)
             if len(features.shape) == 1:
                 features = features.unsqueeze(0)
-        if isinstance(actions_oh, np.ndarray):
-            actions_oh = torch.from_numpy(actions_oh).to(self.device).to(self._dtype)
-            if len(actions_oh.shape) == 1:
-                actions_oh = actions_oh.unsqueeze(0)
+        if isinstance(actions, np.ndarray):
+            actions = torch.from_numpy(actions).to(self.device).to(self._dtype)
+            if len(actions.shape) == 1:
+                actions = actions.unsqueeze(0)
 
-        reconstructed_state = self.feaNet.decode(features, actions_oh, conv_dict)
+        reconstructed_state = self.feaNet.decode(features, actions, conv_dict)
         return reconstructed_state
 
-    def _phi_Loss(self, states, actions_oh, next_states, agent_pos, rewards):
+    def _phi_Loss(self, states, actions, next_states, agent_pos, rewards):
         """
         Training target: phi_r (reward), phi_s (state)  -->  (Critic: feaNet)
         Method: reward mse (r - phi_r * w), state_pred mse (s' - D(phi_s, a))
@@ -249,7 +249,7 @@ class SF_Split(BasePolicy):
         reward_pred = torch.sum(phi_r * self._options, axis=-1, keepdim=True)
         phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(rewards, reward_pred)
 
-        state_pred = self.decode(phi_s, actions_oh, conv_dict)
+        state_pred = self.decode(phi_s, actions, conv_dict)
         phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
 
         option_loss_scaler = 1.0
@@ -347,10 +347,6 @@ class SF_Split(BasePolicy):
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         # features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
-        actions_oh = (
-            F.one_hot(actions.long(), num_classes=self._a_dim).to(self._dtype).squeeze()
-        )
-
         next_states = (
             torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
         )
@@ -358,7 +354,7 @@ class SF_Split(BasePolicy):
         rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
 
         phi_loss, phi_loss_dict = self._phi_Loss(
-            states, actions_oh, next_states, agent_pos, rewards
+            states, actions, next_states, agent_pos, rewards
         )
 
         self.feature_optims.zero_grad()
@@ -396,6 +392,10 @@ class SF_Split(BasePolicy):
         return loss_dict, t1 - t0
 
     def learnPsi(self, batch):
+        """
+        deprecared
+        """
+
         self.train()
         t0 = time.time()
 

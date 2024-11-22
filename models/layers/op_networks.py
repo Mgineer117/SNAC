@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.layers.building_blocks import MLP, Conv, DeConv
-from typing import Optional, Dict, List, Tuple
+from torch.distributions import MultivariateNormal, Categorical
+from models.layers.building_blocks import MLP
 
 
 class OptionPolicy(nn.Module):
@@ -19,6 +19,7 @@ class OptionPolicy(nn.Module):
         a_dim: int,
         num_options: int,
         activation: nn.Module = nn.Tanh(),
+        is_discrete: bool = False,
     ):
         super(OptionPolicy, self).__init__()
 
@@ -29,43 +30,94 @@ class OptionPolicy(nn.Module):
         self._dtype = torch.float32
         self._num_options = num_options
 
-        self._max_val = 0.6
-        self._min_val = 0.1
+        self.logstd_range = (-10, 2)
 
-        self.models = nn.ModuleList()
-        for _ in range(num_options):
-            self.models.append(self.create_sequential_model(input_dim, fc_dim, a_dim))
+        self.is_discrete = is_discrete
+        self.dist = None
 
-    def create_sequential_model(self, input_dim, fc_dim, output_dim):
-        return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
-
-    def forward(self, x: torch.Tensor, z: int, deterministic=False):
-        logits = self.models[z](x)
-        # implement std for cat distribution
-
-        logprobs = F.log_softmax(logits, dim=-1)
-        probs = torch.exp(logprobs)
-
-        dist = torch.distributions.categorical.Categorical(probs)
-        if deterministic:
-            # [N, |O|]
-            a = torch.argmax(probs, dim=-1).to(self._dtype)
+        if self.is_discrete:
+            self.models = nn.ModuleList()
+            for _ in range(num_options):
+                self.models.append(self.create_model(input_dim, fc_dim, a_dim))
         else:
-            a = dist.sample()
-        a_oh = F.one_hot(
-            a.long(),
-            num_classes=self._a_dim,
-        )
-        probs = torch.sum(probs * a_oh, axis=-1, keepdim=True)
-        logprobs = torch.sum(logprobs * a_oh, axis=-1, keepdim=True)
+            self.models = nn.ModuleList()
+            self.mus = nn.ModuleList()
+            self.logstds = nn.ModuleList()
+            for _ in range(num_options):
+                self.models.append(self.create_model(input_dim, fc_dim, a_dim))
+                self.mus.append(self.create_mu_model(input_dim, fc_dim, a_dim))
+                self.logstds.append(self.create_logstd_model(input_dim, fc_dim, a_dim))
+
+    def create_model(self, input_dim, fc_dim, output_dim):
+        if self.is_discrete:
+            return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
+        else:
+            return MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
+
+    def create_mu_model(self, input_dim, fc_dim, output_dim):
+        return MLP(fc_dim, (output_dim,), activation=nn.Identity())
+
+    def create_logstd_model(self, input_dim, fc_dim, output_dim):
+        return MLP(fc_dim, (output_dim,), activation=nn.Softplus())
+
+    def forward(self, state: torch.Tensor, z: int, deterministic=False):
+        # when the input is raw by forawrd() not learn()
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+            state = state.reshape(state.shape[0], -1)
+
+        logits = self.models[z](state)
+
+        if self.is_discrete:
+            logprobs = F.log_softmax(logits, dim=-1)
+            probs = torch.exp(logprobs)
+            dist = Categorical(probs)
+
+            if deterministic:
+                a = torch.argmax(probs, dim=-1)  # .to(self._dtype)
+            else:
+                a = dist.sample()
+
+            logprobs = dist.log_prob(a)
+            probs = torch.exp(logprobs)
+
+            a = F.one_hot(a, num_classes=self._a_dim)
+        else:
+            ### Shape the output as desired
+            mu = F.tanh(self.mus[z](logits))
+            logstd = torch.clamp(
+                self.logstds[z](logits),
+                min=self.logstd_range[0],
+                max=self.logstd_range[1],
+            )
+            std = torch.exp(logstd)
+
+            covariance_matrix = torch.diag_embed(std**2)  # Variance is std^2
+            dist = MultivariateNormal(loc=mu, covariance_matrix=covariance_matrix)
+
+            if deterministic:
+                a = mu
+            else:
+                a = dist.rsample()
+
+            logprobs = dist.log_prob(a)
+            probs = torch.exp(logprobs)
+
+        self.dist = dist
+        entropy = dist.entropy()
 
         return a, {
             "z": z,
-            "logits": logits,
+            "entropy": entropy,
             "probs": probs,
             "logprobs": logprobs,
-            "dist": dist,
         }
+
+    def log_prob(self, actions):
+        if self.is_discrete:
+            return self.dist.log_prob(torch.argmax(actions))
+        else:
+            return self.dist.log_prob(actions)
 
 
 class OptionCritic(nn.Module):
@@ -91,20 +143,13 @@ class OptionCritic(nn.Module):
 
         self.models = nn.ModuleList()
         for _ in range(num_options):
-            self.models.append(self.create_sequential_model(input_dim, fc_dim, 1))
+            self.models.append(self.create_model(input_dim, fc_dim, 1))
 
-    def create_sequential_model(self, input_dim, fc_dim, output_dim):
+    def create_model(self, input_dim, fc_dim, output_dim):
         return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
 
     def forward(self, x: torch.Tensor, z: int):
         value = self.models[z](x)
-        # for name, param in self.models[z].named_parameters():
-        #     if "weight" in name:
-        #         print(torch.norm(param.data, p=2).detach().cpu().numpy(), end=" ")
-        #     if "bias" in name:
-        #         print(torch.norm(param.data, p=2).detach().cpu().numpy(), end=" ")
-        # print(torch.norm(value, p=2).clone().detach().cpu().numpy())
-
         return value, {"z": z}
 
 
@@ -124,9 +169,9 @@ class PsiAdvantage2(nn.Module):
 
         self.models = nn.ModuleList()
         for _ in range(a_dim):
-            self.models.append(self.create_sequential_model(fc_dim, sf_dim))
+            self.models.append(self.create_model(fc_dim, sf_dim))
 
-    def create_sequential_model(self, fc_dim, sf_dim):
+    def create_model(self, fc_dim, sf_dim):
         return MLP(sf_dim, (fc_dim, fc_dim), sf_dim, activation=self.act)
 
     def forward(self, x: torch.Tensor):

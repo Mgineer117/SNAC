@@ -92,80 +92,54 @@ class OP_Controller(BasePolicy):
         self.device = device
         self.to(device)
 
-    def getPhi(self, x, agent_pos):
+    def getPhi(self, states, agent_pos):
         with torch.no_grad():
-            phi, _ = self.convNet(x, agent_pos)
+            phi, _ = self.convNet(states, agent_pos, deterministic=True)
         return phi
+
+    def preprocess_obs(self, obs):
+        observation = obs["observation"]
+        agent_pos = obs["agent_pos"]
+
+        if not torch.is_tensor(observation):
+            observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
+
+        if agent_pos is not None and not torch.is_tensor(agent_pos):
+            agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
+
+        return {"observation": observation, "agent_pos": agent_pos}
 
     def forward(self, obs, z, deterministic=False):
         """
-        x is state ~ (7, 7, 3)
+        Image-based state dimension ~ [Batch, width, height, channel] or [width, height, channel]
+        Flat tensor-based state dimension ~ [Batch, tensor] or [tensor]
         """
         self._forward_steps += 1
-        x = obs["observation"]
-        agent_pos = obs["agent_pos"]
+        obs = self.preprocess_obs(obs)
 
-        if isinstance(x, np.ndarray):
-            x = torch.from_numpy(x).to(self._dtype).to(self.device)
-        if isinstance(agent_pos, np.ndarray):
-            agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
-
-        if len(x.shape) == 3:
-            x = x[None, :, :, :]
-        if len(agent_pos.shape) == 1:
-            agent_pos = agent_pos[None, :]
-        x = x.to(self._dtype).to(self.device)
-        raw_state = x.reshape(x.shape[0], -1)
-        phi = self.getPhi(x, agent_pos)
-
-        # a, metaData = self.optionPolicy(phi, z, deterministic)
-        a, metaData = self.optionPolicy(raw_state, z, deterministic)
-
-        # compute q
-        psi, _ = self.psiNet(phi, z)
-
-        if self._algo_name in ("SNAC", "SNAC+", "SNAC++"):
-            psi_r, psi_s = self.split(psi)
-
-            if z < (self._num_options / 2):
-                q = self.multiply_options(psi_r, self._options[z, :]).squeeze()
-            else:
-                q = self.multiply_options(psi_s, self._options[z, :]).squeeze()
-        else:
-            q = self.multiply_options(psi, self._options[z, :]).squeeze()
+        a, metaData = self.optionPolicy(
+            obs["observation"], z=z, deterministic=deterministic
+        )
 
         return a, {
-            "q": q,
-            "phi": phi,
-            "is_option": False,  # dummy
-            "z": 0,
-            "termination": False,
+            "z": z,
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
         }
 
-    def _intricsicReward(self, phi, next_phi, z):
-        # F x 1
+    def _intricsicReward(self, phi, z):
         option = self._options[z, :]
 
         if self._algo_name in ("SNAC", "SNAC+", "SNAC++"):
             # divide phi in half
             phi_r, phi_s = self.split(phi)
-            next_phi_r, next_phi_s = self.split(next_phi)
-
             if z < int(self._num_options / 2):
-                # deltaPhi = next_phi_r - phi_r  # N x F/2
                 deltaPhi = phi_r  # N x F/2
             else:
-                # deltaPhi = next_phi_s - phi_s  # N x F/2
                 deltaPhi = phi_s  # N x F/2
         else:
-            # deltaPhi = next_phi - phi  # N x F
             deltaPhi = phi  # N x F
-
-        # N x 1
         rew = self.multiply_options(deltaPhi, option)
-
         return rew
 
     def learn(self, batch, z):
@@ -174,31 +148,20 @@ class OP_Controller(BasePolicy):
 
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
-        next_states = (
-            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
-        )
         agent_pos = torch.from_numpy(batch["agent_pos"]).to(self._dtype).to(self.device)
-        next_agent_pos = (
-            torch.from_numpy(batch["next_agent_pos"]).to(self._dtype).to(self.device)
-        )
+        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
         terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
         old_logprobs = (
             torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
         )
 
-        n, w, h, c = states.shape
-        raw_states = states.reshape(n, w * h * c)
-
         phi = self.getPhi(states, agent_pos)
-        next_phi = self.getPhi(next_states, next_agent_pos)
-
-        rewards = self._intricsicReward(phi, next_phi, z)
+        states = states.reshape(states.shape[0], -1)
+        rewards = self._intricsicReward(phi, z)
 
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
-            # values = self.critic(features)
-            values, _ = self.optionCritic(raw_states, z)
+            values, _ = self.optionCritic(states, z)
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
@@ -216,13 +179,13 @@ class OP_Controller(BasePolicy):
                 for param in self.optionCritic.parameters():
                     if param.grad is not None:
                         param.grad.data.fill_(0)
-                values, _ = self.optionCritic(raw_states, z)
+                values, _ = self.optionCritic(states, z)
                 valueLoss = self.mse_loss(values, returns)
                 for param in self.optionCritic.parameters():
                     valueLoss += param.pow(2).sum() * self._l2_reg
                 valueLoss.backward()
                 torch.nn.utils.clip_grad_norm_(
-                    self.optionCritic.parameters(), max_norm=1.0
+                    self.optionCritic.parameters(), max_norm=10.0
                 )
 
                 return (
@@ -240,14 +203,13 @@ class OP_Controller(BasePolicy):
         # K - Loop
         for _ in range(self._K):
             if not self.is_bfgs:
-                values, _ = self.optionCritic(raw_states, z)
+                values, _ = self.optionCritic(states, z)
                 valueLoss = self.mse_loss(returns, values)
 
-            _, metaData = self.optionPolicy(raw_states, z)
-            dist = metaData["dist"]
+            _, metaData = self.optionPolicy(states, z)
 
-            logprobs = dist.log_prob(actions.squeeze()).unsqueeze(-1)
-            entropy = dist.entropy().unsqueeze(-1)
+            logprobs = self.optionPolicy.log_prob(actions.squeeze()).unsqueeze(-1)
+            entropy = metaData["entropy"].unsqueeze(-1)
 
             ratios = torch.exp(logprobs - old_logprobs)
 
@@ -286,11 +248,6 @@ class OP_Controller(BasePolicy):
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
 
-        # avgRewDict = {
-        #     f"OP/ScldIntEpRew:{z}": (
-        #         torch.sum(self.scale_reward(rewards)) / torch.sum(terminals)
-        #     ).item(),
-        # }
         avgRewDict = {
             f"OP/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
