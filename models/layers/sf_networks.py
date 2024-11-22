@@ -360,13 +360,13 @@ class VAE(nn.Module):
             input_dim=int(fc_dim / 2),
             hidden_dims=(fc_dim,),
             output_dim=sf_dim,
-            activation=nn.Identity,
+            activation=nn.Identity(),
         )
         self.logstd = MLP(
             input_dim=int(fc_dim / 2),
             hidden_dims=(fc_dim,),
             output_dim=sf_dim,
-            activation=nn.Softplus,
+            activation=nn.Softplus(),
         )
 
         ### Decoding module

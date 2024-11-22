@@ -2,8 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import pickle
-
-import gymnasium as gym
+from typing import Union
 
 from models.layers import (
     VAE,
@@ -121,8 +120,6 @@ def call_sfNetwork(args):
                 open("log/eval_log/model_for_eval/sf_model.p", "rb")
             )
         else:
-            encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
-
             if args.env_name in ("PointNavigation"):
                 msg = colorize(
                     "\nVAE Feature Extractor is selected!!!",
@@ -145,6 +142,8 @@ def call_sfNetwork(args):
                     bold=True,
                 )
                 print(msg)
+
+                encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
                 feaNet = ConvNetwork(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
@@ -183,8 +182,6 @@ def call_sfNetwork(args):
                 open("log/eval_log/model_for_eval/sf_model.p", "rb")
             )
         else:
-            encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
-
             if args.env_name in ("PointNavigation"):
                 feaNet = VAE(
                     state_dim=args.s_dim,
@@ -195,6 +192,7 @@ def call_sfNetwork(args):
                     activation=nn.Tanh(),
                 )
             else:
+                encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
                 feaNet = ConvNetwork(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
@@ -270,8 +268,8 @@ def call_ppoNetwork(args):
 def call_opNetwork(
     sf_network: nn.Module,
     args,
-    option_vals: torch.Tensor | None = None,
-    options: torch.Tensor | None = None,
+    option_vals: Union[torch.Tensor, None] = None,
+    options: Union[torch.Tensor, None] = None,
 ):
     from models.policy import OP_Controller
 

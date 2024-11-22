@@ -59,13 +59,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--env-name",
         type=str,
-        default="FourRooms",
+        default="PointNavigation",
         help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
     )
     parser.add_argument(
         "--algo-name",
         type=str,
-        default="SNAC",
+        default="PPO",
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
