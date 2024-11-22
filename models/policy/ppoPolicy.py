@@ -43,7 +43,7 @@ class PPO_Learner(BasePolicy):
         self._tau = tau
         self._K = K
         self._l2_reg = 1e-5
-        self._bfgs_iter = 5
+        self._bfgs_iter = 10
         self._forward_steps = 0
 
         # trainable networks
@@ -139,7 +139,7 @@ class PPO_Learner(BasePolicy):
                 for param in self.critic.parameters():
                     valueLoss += param.pow(2).sum() * self._l2_reg
                 valueLoss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
 
                 return (
                     valueLoss.item(),
