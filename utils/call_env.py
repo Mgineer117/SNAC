@@ -6,7 +6,8 @@ import random
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.lavarooms import LavaRooms
 from gym_multigrid.envs.ctf import CtF
-import safety_gymnasium as gym
+import safety_gymnasium as sgym
+import gymnasium as gym
 
 from utils.wrappers import GridWrapper, CtFWrapper, NavigationWrapper
 
@@ -87,7 +88,7 @@ def call_env(args):
         disc_or_cont(env, args)
         return CtFWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "PointNavigation":
-        env = gym.make("SafetyPointButton1-v0")
+        env = sgym.make("SafetyPointButton1-v0")
         disc_or_cont(env, args)
         return NavigationWrapper(env, tile_size=args.tile_size)
     else:
