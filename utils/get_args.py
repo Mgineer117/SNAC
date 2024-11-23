@@ -150,7 +150,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-option-length",
         type=int,
-        default=1,
+        default=5,
         help="Minimum time step requirement for option",
     )
     parser.add_argument(
@@ -188,7 +188,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--cost-scaler",
         type=float,
-        default=1e-1,
+        default=1e-2,
         help="reward shaping parameter r = reawrd - scaler * cost",
     )
 
@@ -283,7 +283,7 @@ def get_args(verbose=True):
 
     # PPO parameters
     parser.add_argument(
-        "--K-epochs", type=int, default=3, help="PPO update per one iter"
+        "--K-epochs", type=int, default=5, help="PPO update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"
@@ -300,9 +300,7 @@ def get_args(verbose=True):
         default=0.95,
         help="Used in advantage estimation for numerical stability",
     )
-    parser.add_argument(
-        "--gamma", type=float, default=0.999, help="discount parameters"
-    )
+    parser.add_argument("--gamma", type=float, default=0.99, help="discount parameters")
 
     # Training parameters
     parser.add_argument(

@@ -1,0 +1,9 @@
+{
+    "FourRooms": {
+        "episode_length": 100,
+        "reward_threshold": 195
+    },
+    "MountainCar": {
+        "reward_threshold": -110
+    }
+}
