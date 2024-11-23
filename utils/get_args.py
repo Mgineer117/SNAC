@@ -156,7 +156,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-cover-option-length",
         type=int,
-        default=20,
+        default=25,
         help="Minimum time step requirement for covering option",
     )
     parser.add_argument(
@@ -188,7 +188,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--cost-scaler",
         type=float,
-        default=1e-2,
+        default=1e-3,
         help="reward shaping parameter r = reawrd - scaler * cost",
     )
 
@@ -246,7 +246,7 @@ def get_args(verbose=True):
         help="Intermediate-level model learning rate",
     )
     parser.add_argument(
-        "--op-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
+        "--op-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--op-critic-lr",
@@ -255,7 +255,7 @@ def get_args(verbose=True):
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--hc-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
+        "--hc-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--hc-critic-lr",
@@ -264,7 +264,7 @@ def get_args(verbose=True):
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--ppo-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
+        "--ppo-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--ppo-critic-lr",
@@ -283,7 +283,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-2,
+        default=1e-3,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
