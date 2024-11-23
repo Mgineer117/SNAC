@@ -192,14 +192,6 @@ def get_args(verbose=True):
         help="reward shaping parameter r = reawrd - scaler * cost",
     )
 
-    # network params
-    parser.add_argument(
-        "--feaNet-type",
-        type=str,
-        default="CNN",
-        help="CNN or VAE",
-    )
-
     # dimensional params
     parser.add_argument(
         "--a-dim",

@@ -1,9 +1,17 @@
 {
     "FourRooms": {
         "episode_length": 100,
-        "reward_threshold": 195
+        "episode_num": 6,
+        "gamma": 0.999
     },
-    "MountainCar": {
-        "reward_threshold": -110
+    "CtF1v2": {
+        "episode_length": 100,
+        "episode_num": 6,
+        "gamma": 0.99
+    },
+    "PointNavigation": {
+        "episode_length": 500,
+        "episode_num": 6,
+        "gamma": 0.99
     }
 }
