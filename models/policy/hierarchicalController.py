@@ -155,7 +155,7 @@ class HC_Controller(BasePolicy):
             a, _ = self.optionPolicy(obs, z, deterministic=deterministic)
         else:
             # primitive action selection
-            a = torch.argmax(torch.rand((1, self._a_dim)).to(self.device), dim=-1)
+            a = torch.rand((1, self._a_dim)).to(self.device)
 
         return a, {
             "z": z,

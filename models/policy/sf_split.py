@@ -198,18 +198,7 @@ class SF_Split(BasePolicy):
         self._forward_steps += 1
         obs = self.preprocess_obs(obs)
 
-        # features
-        with torch.no_grad():
-            phi, conv_dict = self.feaNet(
-                obs["observation"], obs["agent_pos"], deterministic
-            )
-            phi_r, phi_s = self.split(phi)
-
-        if self.is_discrete:
-            a = torch.rand((1, self._a_dim)).to(self.device)
-            a = torch.argmax(a, dim=-1)
-        else:
-            a = torch.rand((1, self._a_dim)).to(self.device)
+        a = torch.rand((1, self._a_dim)).to(self.device)
 
         return a, {
             "probs": self.dummy,  # dummy
@@ -218,8 +207,7 @@ class SF_Split(BasePolicy):
 
     def decode(self, features, actions, conv_dict):
         # Does some dimensional and np <-> tensor work
-        # and pass it to feature decoder
-        # actions should be one-hot
+        # and pass it to feature decoder actions should be one-hot
         if isinstance(features, np.ndarray):
             features = torch.from_numpy(features).to(self.device).to(self._dtype)
             if len(features.shape) == 1:
@@ -300,49 +288,13 @@ class SF_Split(BasePolicy):
         psi_norm = torch.norm(filteredPsi.detach())
         return psi_loss, {"psi_norm": psi_norm}
 
-    # def _q_Loss(self, states, next_states, actions, rewards, terminals):
-    #     """
-    #     Training target: w (to stabilize phi_r loss)  -->  w (trainable tensors)
-    #     Method: Q TD learning
-    #     ---------------------------------------------------------------------------
-    #     q ~ [N, |A|]
-    #     w ~ [1, F/2]
-    #     """
-    #     with torch.no_grad():
-    #         phi, _ = self.feaNet(states)
-    #         next_phi, _ = self.target_feaNet(next_states)
-    #         next_psi, _ = self.target_psiNet(next_phi)
-    #         next_psi_r, _ = self.split(next_psi)
-
-    #     # ~ [N, |A|, 1] -> [N, |A|]
-    #     psi, _ = self.psiNet(phi)
-    #     psi_r, _ = self.split(psi)
-
-    #     q = self.multiply_options(psi_r, self._options).squeeze()
-
-    #     # dimTrue~ [N,] -> [N, 1]
-    #     # print(q[:3, :])
-    #     curr_q = torch.sum(torch.mul(q, actions), axis=-1, keepdim=True)
-
-    #     next_q = self.multiply_options(next_psi_r, self._target_options).squeeze()
-    #     # ~ [N,] -> [N, 1]
-    #     max_next_q = torch.max(next_q, axis=-1, keepdim=True)[0]
-
-    #     ### could be trained with target q
-    #     td_target = rewards + self._gamma * max_next_q * (1 - terminals).to(self._dtype)
-
-    #     q_loss = self._q_loss_scaler * self.huber_loss(td_target, curr_q)
-
-    #     w_norm = torch.norm(self._options.detach())
-    #     return q_loss, {"w_norm": w_norm}
-
     def learn(self, buffer):
         self.train()
         t0 = time.time()
 
+        ### Pull data from the batch
         batch = buffer.sample(self._trj_per_iter)
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        # features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
         next_states = (
             torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
@@ -363,14 +315,13 @@ class SF_Split(BasePolicy):
             dir="SF",
             device=self.device,
         )
-        self.feature_optims.step()
-
         norm_dict = self.compute_weight_norm(
             [self.feaNet, self.psiNet, self._options],
             ["feaNet", "psiNet", "options"],
             dir="SF",
             device=self.device,
         )
+        self.feature_optims.step()
 
         loss_dict = {
             "SF/loss": phi_loss.item(),

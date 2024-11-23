@@ -26,6 +26,7 @@ class OP_Evaluator(Evaluator):
         dir: str = None,
         gridPlot: bool = True,
         renderPlot: bool = False,
+        min_option_length: int = 3,
         eval_ep_num: int = 1,
         log_interval: int = 1,
     ):

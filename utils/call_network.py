@@ -183,15 +183,27 @@ def call_sfNetwork(args):
             )
         else:
             if args.env_name in ("PointNavigation"):
+                msg = colorize(
+                    "\nVAE Feature Extractor is selected!!!",
+                    "yellow",
+                    bold=True,
+                )
+                print(msg)
                 feaNet = VAE(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
                     fc_dim=args.conv_fc_dim,
                     sf_dim=args.sf_dim,
-                    decoder_inpuit_dim=int(args.sf_dim / 2),
+                    decoder_inpuit_dim=args.sf_dim,
                     activation=nn.Tanh(),
                 )
             else:
+                msg = colorize(
+                    "\nCNN Feature Extractor is selected!!!",
+                    "yellow",
+                    bold=True,
+                )
+                print(msg)
                 encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
                 feaNet = ConvNetwork(
                     state_dim=args.s_dim,

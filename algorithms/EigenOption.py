@@ -72,25 +72,26 @@ class EigenOption:
 
         ### Define evaulators tailored for each process
         # each evaluator has slight deviations
+        evaluator_params = {
+            "logger": logger,
+            "writer": writer,
+            "training_env": self.env,
+            "plotter": self.plotter,
+            "gridPlot": True,
+            "renderPlot": args.rendering,
+            "eval_ep_num": args.eval_episodes,
+        }
+        if args.env_name in ("PointNavigation"):
+            evaluator_params.update({"gridPlot": False})
+
         self.op_evaluator = OP_Evaluator(
-            logger=logger,
-            writer=writer,
-            training_env=self.env,
-            plotter=self.plotter,
-            dir=self.op_path,
-            log_interval=args.op_log_interval,
-            eval_ep_num=5,
+            dir=self.op_path, log_interval=args.op_log_interval, **evaluator_params
         )
         self.hc_evaluator = HC_Evaluator(
-            logger=logger,
-            writer=writer,
-            training_env=self.env,
-            plotter=self.plotter,
-            renderPlot=args.rendering,
             dir=self.hc_path,
-            min_option_length=args.min_option_length,
             log_interval=args.hc_log_interval,
-            eval_ep_num=10,
+            min_option_length=args.min_option_length,
+            **evaluator_params
         )
 
     def run(self):

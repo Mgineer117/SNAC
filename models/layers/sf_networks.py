@@ -427,10 +427,10 @@ class VAE(nn.Module):
 
         return feature, {"loss": kl_loss}
 
-    def decode(self, features, actions_oh, conv_dict: None = None):
+    def decode(self, features, actions, conv_dict: None = None):
         """This reconstruct full state given phi_state and actions"""
         out2 = self.de_latent(features)
-        out1 = self.de_action(actions_oh)
+        out1 = self.de_action(actions)
 
         out = torch.cat((out1, out2), axis=-1)
         reconstructed_state = self.decoder(out)

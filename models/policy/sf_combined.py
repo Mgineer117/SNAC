@@ -73,6 +73,7 @@ class SF_Combined(BasePolicy):
         phi_loss_s_scaler: float = 0.1,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
+        is_discrete: bool = False,
         device: str = "cpu",
     ):
         super(SF_Combined, self).__init__()
@@ -93,6 +94,8 @@ class SF_Combined(BasePolicy):
         self._phi_loss_s_scaler = phi_loss_s_scaler
         self._psi_loss_scaler = psi_loss_scaler
         self._q_loss_scaler = q_loss_scaler
+
+        self.is_discrete = is_discrete
 
         # trainable networks
         self.feaNet = feaNet
@@ -161,46 +164,29 @@ class SF_Combined(BasePolicy):
         self._forward_steps += 1
         obs = self.preprocess_obs(obs)
 
-        # features
-        with torch.no_grad():
-            phi, conv_dict = self.feaNet(
-                obs["observation"], obs["agent_pos"], deterministic
-            )
-
         a = torch.rand((1, self._a_dim)).to(self.device)
-        a = torch.argmax(a, dim=-1)
-        a_oh = F.one_hot(a.long(), num_classes=self._a_dim).to(self._dtype)
 
         return a, {
-            "a_oh": a_oh,
-            "phi": phi,  # for plotting
-            "phi_r": phi,  # for plotting
-            "phi_s": phi,  # for plotting
-            "conv_dict": conv_dict,
-            "z": 0,  # dummy
-            "termination": True,  # dummy
-            "is_option": False,  # dummy
             "probs": self.dummy,  # dummy
             "logprobs": self.dummy,  # dummy
         }
 
-    def decode(self, features, actions_oh, conv_dict):
+    def decode(self, features, actions, conv_dict):
         # Does some dimensional and np <-> tensor work
-        # and pass it to feature decoder
-        # actions should be one-hot
+        # and pass it to feature decoder actions should be one-hot
         if isinstance(features, np.ndarray):
             features = torch.from_numpy(features).to(self.device).to(self._dtype)
             if len(features.shape) == 1:
                 features = features.unsqueeze(0)
-        if isinstance(actions_oh, np.ndarray):
-            actions_oh = torch.from_numpy(actions_oh).to(self.device).to(self._dtype)
-            if len(actions_oh.shape) == 1:
-                actions_oh = actions_oh.unsqueeze(0)
+        if isinstance(actions, np.ndarray):
+            actions = torch.from_numpy(actions).to(self.device).to(self._dtype)
+            if len(actions.shape) == 1:
+                actions = actions.unsqueeze(0)
 
-        reconstructed_state = self.feaNet.decode(features, actions_oh, conv_dict)
+        reconstructed_state = self.feaNet.decode(features, actions, conv_dict)
         return reconstructed_state
 
-    def _phi_Loss(self, states, actions_oh, next_states, agent_pos, rewards):
+    def _phi_Loss(self, states, actions, next_states, agent_pos, rewards):
         """
         Training target: phi_r (reward), phi_s (state)  -->  (Critic: feaNet)
         Method: reward mse (r - phi_r * w), state_pred mse (s' - D(phi_s, a))
@@ -210,16 +196,16 @@ class SF_Combined(BasePolicy):
         """
         phi, conv_dict = self.feaNet(states, agent_pos, deterministic=False)
 
-        state_pred = self.feaNet.decode(phi, actions_oh, conv_dict)
+        state_pred = self.feaNet.decode(phi, actions, conv_dict)
         phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
+
+        option_loss_scaler = 1.0
+        option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
 
         l2_norm = 0
         for param in self.feaNet.parameters():
             if param.requires_grad:  # Only include parameters that require gradients
                 l2_norm += torch.norm(param, p=2)  # L
-
-        option_loss_scaler = 1.0
-        option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
 
         phi_loss = conv_dict["loss"] + phi_s_loss + option_loss + 1e-6 * l2_norm
 
@@ -262,50 +248,13 @@ class SF_Combined(BasePolicy):
         psi_norm = torch.norm(filteredPsi.detach())
         return psi_loss, {"psi_norm": psi_norm}
 
-    # def _q_Loss(self, states, next_states, actions, rewards, terminals):
-    #     """
-    #     Training target: w (to stabilize phi_r loss)  -->  w (trainable tensors)
-    #     Method: Q TD learning
-    #     ---------------------------------------------------------------------------
-    #     q ~ [N, |A|]
-    #     w ~ [1, F/2]
-    #     """
-    #     with torch.no_grad():
-    #         phi = self.convNet(states)
-
-    #         next_phi = self.target_convNet(next_states)
-    #         next_psi, _ = self.target_qNet(next_phi)
-
-    #     psi, _ = self.qNet(phi)
-    #     # ~ [N, |A|, 1] -> [N, |A|]
-    #     q = self.multiply_options(psi, self._options).squeeze()
-
-    #     # dimTrue~ [N,] -> [N, 1]
-    #     curr_q = torch.sum(torch.mul(q, actions), axis=-1, keepdim=True)
-
-    #     target_next_q = self.multiply_options(next_psi, self._target_options).squeeze()
-    #     # ~ [N,] -> [N, 1]
-    #     max_next_q = torch.max(target_next_q, axis=-1, keepdim=True)[0]
-
-    #     ### could be trained with target q
-    #     td_target = (
-    #         rewards + self._gamma * max_next_q * (1 - terminals).to(self._dtype)
-    #     ).detach()
-
-    #     q_loss = self._q_loss_scaler * self.mqe_loss(td_target, curr_q)
-
-    #     w_norm = torch.norm(self._options.detach())
-    #     return q_loss, {"w_norm": w_norm}
-
     def learn(self, buffer):
         self.train()
         t0 = time.time()
 
         ### Pull data from the batch
         batch = buffer.sample(self._trj_per_iter)
-        # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        # features = torch.from_numpy(batch["features"]).to(self._dtype).to(self.device)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
         next_states = (
             torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
