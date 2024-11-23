@@ -144,7 +144,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--episode-len",
         type=int,
-        default=100,
+        default=None,
         help="episodic length; useful when one wants to constrain to long to short horizon",
     )
     parser.add_argument(
@@ -162,13 +162,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--episode-num",
         type=int,
-        default=6,
+        default=None,
         help="number of episodes to collect for one env",
     )
     parser.add_argument(
         "--eval-episodes",
         type=int,
-        default=5,
+        default=None,
         help="number of episodes for evaluation; mean of those is returned as eval performance",
     )
 
@@ -222,7 +222,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--num-vector",
         type=int,
-        default=8,
+        default=16,
         help="Must be divided by 2. ex) 10, 20, 30. Minimum = 4 for SNAC.",
     )
 
@@ -292,7 +292,7 @@ def get_args(verbose=True):
         default=0.95,
         help="Used in advantage estimation for numerical stability",
     )
-    parser.add_argument("--gamma", type=float, default=0.99, help="discount parameters")
+    parser.add_argument("--gamma", type=float, default=None, help="discount parameters")
 
     # Training parameters
     parser.add_argument(
@@ -321,6 +321,12 @@ def get_args(verbose=True):
         "--rendering",
         type=bool,
         default=True,
+        help="saves the rendering during evaluation",
+    )
+    parser.add_argument(
+        "--render-fps",
+        type=int,
+        default=None,
         help="saves the rendering during evaluation",
     )
     parser.add_argument(

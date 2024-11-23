@@ -2,16 +2,22 @@
     "FourRooms": {
         "episode_length": 100,
         "episode_num": 6,
+        "eval_episodes": 6,
+        "render_fps":10,
         "gamma": 0.999
     },
     "CtF1v2": {
         "episode_length": 100,
         "episode_num": 6,
+        "eval_episodes": 6,
+        "render_fps":10,
         "gamma": 0.99
     },
     "PointNavigation": {
         "episode_length": 500,
         "episode_num": 6,
+        "eval_episodes": 6,
+        "render_fps":60,
         "gamma": 0.99
     }
 }

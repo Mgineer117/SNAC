@@ -5,8 +5,9 @@ from algorithms.CoveringOption import CoveringOption
 from algorithms.PPO import PPO
 from algorithms.FeatureTrain import FeatureTrain
 
-from utils import *
 from utils.call_env import call_env
+from utils.utils import save_dim_to_args, setup_logger, seed_all, load_hyperparams
+from utils.get_args import get_args
 
 import wandb
 
@@ -93,14 +94,19 @@ def train(args, unique_id):
 # ENV LOOP
 #########################################################
 
-if __name__ == "__main__":
-    # initialize for whole training pipeline
+if __name__ == "__main__":    
     args = get_args(verbose=False)
-    seeds = args.seeds
+    file_path = "assets/env_params.json"
+    current_params = load_hyperparams(file_path=file_path, env_name=args.env_name)
+    
+    # use pre-defined params if no pram given as args
+    for k, v in current_params.items():
+        if getattr(args, k) is None:
+            setattr(args, k, v)
+
     # define unique id for the run
     unique_id = str(uuid.uuid4())[:4]
-    # iterate over seeds
-    for seed in seeds:
+    for seed in args.seeds:
         args = get_args()
         seed_all(seed)
         train(args, unique_id)

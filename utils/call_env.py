@@ -51,35 +51,13 @@ def call_env(args):
     elif args.env_name in ("CtF1v1", "CtF1v2", "CtF1v3", "CtF1v4"):
         map_path: str = "assets/ctf_avoid_obj.txt"
         observation_option: str = "tensor"
-        if args.env_name == "CtF1v1":
+        env_name = args.env_name
+        red_agents = int(env_name.split('v')[1])  # Extract the number of red agents from the env name
+        if env_name.startswith("CtF1v"):
             env = CtF(
                 map_path=map_path,
                 num_blue_agents=1,
-                num_red_agents=1,
-                observation_option=observation_option,
-                step_penalty_ratio=0.0,
-            )
-        elif args.env_name == "CtF1v2":
-            env = CtF(
-                map_path=map_path,
-                num_blue_agents=1,
-                num_red_agents=2,
-                observation_option=observation_option,
-                step_penalty_ratio=0.0,
-            )
-        elif args.env_name == "CtF1v3":
-            env = CtF(
-                map_path=map_path,
-                num_blue_agents=1,
-                num_red_agents=3,
-                observation_option=observation_option,
-                step_penalty_ratio=0.0,
-            )
-        elif args.env_name == "CtF1v4":
-            env = CtF(
-                map_path=map_path,
-                num_blue_agents=1,
-                num_red_agents=4,
+                num_red_agents=red_agents,
                 observation_option=observation_option,
                 step_penalty_ratio=0.0,
             )

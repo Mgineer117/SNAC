@@ -4,16 +4,26 @@ import uuid
 import math
 import random
 import torch
+import json
 import numpy as np
 import gymnasium as gym
 import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.cluster import KMeans
-from models.policy.base_policy import BasePolicy
 from torch.utils.tensorboard import SummaryWriter
 from log.wandb_logger import WandbLogger
 
 
+def load_hyperparams(file_path, env_name):
+    """Load hyperparameters for a specific environment from a JSON file."""
+    try:
+        with open(file_path, "r") as f:
+            hyperparams = json.load(f)
+            return hyperparams.get(env_name, {})
+    except FileNotFoundError:
+        print(f"No file found at {file_path}. Returning default empty dictionary for {env_name}.")
+        return {}
+    
 def separate_trajectories(features, terminals):
     terminal_indices = np.where(terminals == 1)[0]
     trajectories = []
@@ -298,6 +308,8 @@ def setup_logger(args, unique_id, seed):
         args.name = "-".join(
             (args.algo_name, args.env_name, unique_id, "seed:" + str(seed))
         )
+    if args.project is None:
+        args.project = args.env_name
     args.logdir = os.path.join(args.logdir, args.group)
 
     if args.env_name == "FourRooms":

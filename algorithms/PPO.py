@@ -67,6 +67,7 @@ class PPO:
             training_env=self.env,
             plotter=self.plotter,
             renderPlot=args.rendering,
+            render_fps=args.render_fps,
             dir=self.ppo_path,
             log_interval=args.ppo_log_interval,
             eval_ep_num=10,

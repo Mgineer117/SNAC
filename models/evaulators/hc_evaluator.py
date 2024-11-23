@@ -26,6 +26,7 @@ class HC_Evaluator(Evaluator):
         dir: str = None,
         gridPlot: bool = True,
         renderPlot: bool = False,
+        render_fps: int = 10,
         min_option_length: int = 3,
         eval_ep_num: int = 1,
         log_interval: int = 1,
@@ -39,7 +40,9 @@ class HC_Evaluator(Evaluator):
             log_interval=log_interval,
         )
         self.plotter = plotter
+        self.render_fps = render_fps
         self.min_option_length = min_option_length
+
         if dir is not None:
             if gridPlot:
                 self.gridPlot = True
@@ -183,6 +186,7 @@ class HC_Evaluator(Evaluator):
                             epoch=str(epoch),
                             width=width,
                             height=height,
+                            fps=self.render_fps
                         )
                         self.recorded_frames = []
 

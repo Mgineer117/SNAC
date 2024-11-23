@@ -79,6 +79,7 @@ class CoveringOption:
             "plotter": self.plotter,
             "gridPlot": True,
             "renderPlot": args.rendering,
+            "render_fps":args.render_fps,
             "eval_ep_num": args.eval_episodes,
         }
         if args.env_name in ("PointNavigation"):
