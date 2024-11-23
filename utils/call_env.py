@@ -91,7 +91,10 @@ def call_env(args):
         env = sgym.make(
             "SafetyPointButton1-v0",
             render_mode="rgb_array",
-            max_episode_steps=args.episode_length,
+            max_episode_steps=args.episode_len,
+            width=512,
+            height=512,
+            camera_name="fixedfar"
         )
         disc_or_cont(env, args)
         return NavigationWrapper(
