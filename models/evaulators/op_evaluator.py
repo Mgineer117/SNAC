@@ -184,6 +184,7 @@ class OP_Evaluator2(Evaluator):
         dir: str = None,
         gridPlot: bool = True,
         renderPlot: bool = False,
+        render_fps: int = 10,
         eval_ep_num: int = 1,
         log_interval: int = 1,
     ):
@@ -196,6 +197,7 @@ class OP_Evaluator2(Evaluator):
             log_interval=log_interval,
         )
         self.plotter = plotter
+        self.render_fps = render_fps
 
         if dir is not None:
             if gridPlot:
@@ -294,6 +296,7 @@ class OP_Evaluator2(Evaluator):
                             epoch=idx,
                             width=width,
                             height=height,
+                            fps=self.render_fps
                         )
                         self.recorded_frames = []
 
