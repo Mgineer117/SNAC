@@ -46,9 +46,6 @@ echo "export MUJOCO_GL=osmesa" >> ~/.bashrc
 source ~/.bashrc
 sudo apt-get install libosmesa6-dev
 sudo apt-get install python3-opengl
-```
-and 
-```
 conda install -c anaconda pyopengl
 conda install -c conda-forge libstdcxx-ng
 ```
