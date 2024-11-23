@@ -102,9 +102,10 @@ class CtFWrapper(gym.Wrapper):
 
 
 class NavigationWrapper(gym.Wrapper):
-    def __init__(self, env: gym.Env, tile_size: int = 1):
+    def __init__(self, env: gym.Env, tile_size: int = 1, cost_scaler: float = 1e-1):
         super(NavigationWrapper, self).__init__(env)
         self.tile_size = tile_size
+        self.cost_scaler = 1e-1
 
     def get_agent_pos(self):
         return np.array([0, 0])
@@ -124,6 +125,6 @@ class NavigationWrapper(gym.Wrapper):
         obs["observation"] = observation
         obs["agent_pos"] = self.get_agent_pos()
 
-        reward -= cost
+        reward -= self.cost_scaler * cost
 
         return obs, reward, termination, truncation, info

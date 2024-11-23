@@ -112,6 +112,7 @@ class SF_Split(BasePolicy):
         phi_loss_s_scaler: float = 0.1,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
+        is_discrete: bool = False,
         device: str = "cpu",
     ):
         super(SF_Split, self).__init__()
@@ -129,6 +130,8 @@ class SF_Split(BasePolicy):
         self._phi_loss_s_scaler = phi_loss_s_scaler
         self._psi_loss_scaler = psi_loss_scaler
         self._q_loss_scaler = q_loss_scaler
+
+        self.is_discrete = is_discrete
 
         # trainable networks
         self.feaNet = feaNet
@@ -202,19 +205,13 @@ class SF_Split(BasePolicy):
             )
             phi_r, phi_s = self.split(phi)
 
-        a = torch.rand((1, self._a_dim)).to(self.device)
-        a = torch.argmax(a, dim=-1)
-        a_oh = F.one_hot(a.long(), num_classes=self._a_dim).to(self._dtype)
+        if self.is_discrete:
+            a = torch.rand((1, self._a_dim)).to(self.device)
+            a = torch.argmax(a, dim=-1)
+        else:
+            a = torch.rand((1, self._a_dim)).to(self.device)
 
         return a, {
-            "a_oh": a_oh,
-            "phi": phi,  # for plotting
-            "phi_r": phi_r,  # for plotting
-            "phi_s": phi_s,  # for plotting
-            "conv_dict": conv_dict,
-            "z": 0,  # dummy
-            "termination": True,  # dummy
-            "is_option": False,  # dummy
             "probs": self.dummy,  # dummy
             "logprobs": self.dummy,  # dummy
         }

@@ -59,7 +59,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--env-name",
         type=str,
-        default="PointNavigation",
+        default="CtF1v2",
         help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
     )
     parser.add_argument(
@@ -69,7 +69,7 @@ def get_args(verbose=True):
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
-        "--sf-log-interval", type=int, default=250, help="logging interval; epoch-based"
+        "--sf-log-interval", type=int, default=1, help="logging interval; epoch-based"
     )
     parser.add_argument(
         "--op-log-interval", type=int, default=5, help="logging interval; epoch-based"
@@ -184,6 +184,12 @@ def get_args(verbose=True):
         type=int,
         default=32,
         help="32 is default. This is used for logging the images of training progresses. image tile size",
+    )
+    parser.add_argument(
+        "--cost-scaler",
+        type=float,
+        default=1e-1,
+        help="reward shaping parameter r = reawrd - scaler * cost",
     )
 
     # network params

@@ -88,8 +88,10 @@ def call_env(args):
         disc_or_cont(env, args)
         return CtFWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "PointNavigation":
-        env = sgym.make("SafetyPointButton1-v0", render_mode='rgb_array')
+        env = sgym.make("SafetyPointButton1-v0", render_mode="rgb_array")
         disc_or_cont(env, args)
-        return NavigationWrapper(env, tile_size=args.tile_size)
+        return NavigationWrapper(
+            env, tile_size=args.tile_size, cost_scaler=args.cost_scaler
+        )
     else:
         raise ValueError(f"Invalid environment key: {args.env_name}")
