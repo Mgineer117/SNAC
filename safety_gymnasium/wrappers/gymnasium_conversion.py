@@ -25,12 +25,12 @@ class SafetyGymnasium2Gymnasium(gymnasium.Wrapper):
 
     def step(self, action: ActType):
         obs, reward, cost, terminated, truncated, info = super().step(action)
-        if 'cost' in info:
+        if "cost" in info:
             logger.warn(
-                'The info dict already contains a cost. '
-                'Overwriting it may cause unexpected behavior.',
+                "The info dict already contains a cost. "
+                "Overwriting it may cause unexpected behavior.",
             )
-        info['cost'] = cost
+        info["cost"] = cost
         return obs, reward, terminated, truncated, info
 
 
@@ -40,10 +40,10 @@ class Gymnasium2SafetyGymnasium(gymnasium.Wrapper):
     def step(self, action: ActType):
         obs, reward, terminated, truncated, info = super().step(action)
         try:
-            cost = info['cost']
+            cost = info["cost"]
         except KeyError as ex:
             raise ValueError(
-                'The info dict does not contain a cost which is required by Safety-Gymnasium.',
+                "The info dict does not contain a cost which is required by Safety-Gymnasium.",
             ) from ex
         return obs, reward, cost, terminated, truncated, info
 
@@ -54,9 +54,9 @@ def make_gymnasium_environment(env_id, *args, **kwargs):
     # pylint: disable-next=import-outside-toplevel,cyclic-import
     from safety_gymnasium.utils.registration import make
 
-    env_name, _, version = env_id.partition('-')
-    if not env_name.endswith('Gymnasium'):
-        raise ValueError(f'Environment {env_id} is not a Gymnasium environment.')
-    env_name = env_name[: -len('Gymnasium')]
-    safe_env = make(f'{env_name}-{version}', *args, **kwargs)
+    env_name, _, version = env_id.partition("-")
+    if not env_name.endswith("Gymnasium"):
+        raise ValueError(f"Environment {env_id} is not a Gymnasium environment.")
+    env_name = env_name[: -len("Gymnasium")]
+    safe_env = make(f"{env_name}-{version}", *args, **kwargs)
     return SafetyGymnasium2Gymnasium(safe_env)

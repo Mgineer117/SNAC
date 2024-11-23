@@ -295,7 +295,7 @@ class Plotter:
         frames: List,
         dir: str,
         epoch: int,
-        fps: int = 10,
+        fps: int = 60,
         width: int = 608,
         height: int = 608,
     ):

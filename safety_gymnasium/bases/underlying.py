@@ -116,7 +116,7 @@ class FloorConf:
         size (tuple): Size of floor in environments.
     """
 
-    type: str = 'mat'  # choose from 'mat' and 'village'
+    type: str = "mat"  # choose from 'mat' and 'village'
     size: tuple = (3.5, 3.5, 0.1)
 
 
@@ -226,7 +226,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         self.action_noise: float = (
             0.0  # Magnitude of independent per-component gaussian action noise
         )
-        self.agent_name = config['agent_name']
+        self.agent_name = config["agent_name"]
         self._build_agent(self.agent_name)
         self._parse(config)
 
@@ -240,11 +240,13 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
             config (dict): Configuration dictionary.
         """
         for key, value in config.items():
-            if key in ['agent_name', 'task_name']:
+            if key in ["agent_name", "task_name"]:
                 continue
-            if '.' in key:
-                obj, key = key.split('.')
-                assert hasattr(self, obj) and hasattr(getattr(self, obj), key), f'Bad key {key}'
+            if "." in key:
+                obj, key = key.split(".")
+                assert hasattr(self, obj) and hasattr(
+                    getattr(self, obj), key
+                ), f"Bad key {key}"
                 setattr(getattr(self, obj), key, value)
             elif hasattr(geoms, key):
                 self._add_geoms(getattr(geoms, key)(**value))
@@ -253,12 +255,12 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
             elif hasattr(mocaps, key):
                 self._add_mocaps(getattr(mocaps, key)(**value))
             else:
-                assert hasattr(self, key), f'Bad key {key}'
+                assert hasattr(self, key), f"Bad key {key}"
                 setattr(self, key, value)
 
     def _build_agent(self, agent_name: str) -> None:
         """Build the agent in the world."""
-        assert hasattr(agents, agent_name), 'agent not found'
+        assert hasattr(agents, agent_name), "agent not found"
         agent_cls = getattr(agents, agent_name)
         self.agent = agent_cls(random_generator=self.random_generator)
 
@@ -267,7 +269,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         for geom in added_geoms:
             assert (
                 type(geom) in GEOMS_REGISTER
-            ), 'Please figure out the type of object before you add it into envs.'
+            ), "Please figure out the type of object before you add it into envs."
             self._geoms[geom.name] = geom
             setattr(self, geom.name, geom)
             geom.set_agent(self.agent)
@@ -277,7 +279,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         for obj in added_free_geoms:
             assert (
                 type(obj) in FREE_GEOMS_REGISTER
-            ), 'Please figure out the type of object before you add it into envs.'
+            ), "Please figure out the type of object before you add it into envs."
             self._free_geoms[obj.name] = obj
             setattr(self, obj.name, obj)
             obj.set_agent(self.agent)
@@ -287,7 +289,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         for mocap in added_mocaps:
             assert (
                 type(mocap) in MOCAPS_REGISTER
-            ), 'Please figure out the type of object before you add it into envs.'
+            ), "Please figure out the type of object before you add it into envs."
             self._mocaps[mocap.name] = mocap
             setattr(self, mocap.name, mocap)
             mocap.set_agent(self.agent)
@@ -311,10 +313,14 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         self.world_info.layout = self.random_generator.build_layout()
 
         # Build the underlying physics world
-        self.world_info.world_config_dict = self._build_world_config(self.world_info.layout)
+        self.world_info.world_config_dict = self._build_world_config(
+            self.world_info.layout
+        )
 
         if self.world is None:
-            self.world = World(self.agent, self._obstacles, self.world_info.world_config_dict)
+            self.world = World(
+                self.agent, self._obstacles, self.world_info.world_config_dict
+            )
             self.world.reset()
             self.world.build()
         else:
@@ -354,14 +360,16 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
                 # pylint: disable-next=no-member
                 mujoco.mj_step(self.model, self.data)  # Physics simulation step
             except MujocoException as me:  # pylint: disable=invalid-name
-                print('MujocoException', me)
+                print("MujocoException", me)
                 exception = True
                 break
         if exception:
             return exception
 
         # pylint: disable-next=no-member
-        mujoco.mj_forward(self.model, self.data)  # Needed to get sensor readings correct!
+        mujoco.mj_forward(
+            self.model, self.data
+        )  # Needed to get sensor readings correct!
         return exception
 
     def update_layout(self) -> None:
@@ -374,11 +382,11 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         mujoco.mj_forward(self.model, self.data)  # pylint: disable=no-member
         for k in list(self.world_info.layout.keys()):
             # Mocap objects have to be handled separately
-            if 'gremlin' in k:
+            if "gremlin" in k:
                 continue
             self.world_info.layout[k] = self.data.body(k).xpos[:2].copy()
 
-    def _set_goal(self, pos: np.ndarray, name='goal') -> None:
+    def _set_goal(self, pos: np.ndarray, name="goal") -> None:
         """Set position of goal object in Mujoco instance.
 
         Note:
@@ -405,9 +413,11 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         agent_mat = self.agent.mat
         lidar = self._obs_lidar(poses, group)
         for i, sensor in enumerate(lidar):
-            if self.lidar_conf.type == 'pseudo':  # pylint: disable=no-member
+            if self.lidar_conf.type == "pseudo":  # pylint: disable=no-member
                 i += 0.5  # Offset to center of bin
-            theta = 2 * np.pi * i / self.lidar_conf.num_bins  # pylint: disable=no-member
+            theta = (
+                2 * np.pi * i / self.lidar_conf.num_bins
+            )  # pylint: disable=no-member
             rad = self.render_conf.lidar_radius
             binpos = np.array([np.cos(theta) * rad, np.sin(theta) * rad, offset])
             pos = agent_pos + np.matmul(binpos, agent_mat.transpose())
@@ -417,10 +427,12 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
                 size=self.render_conf.lidar_size * np.ones(3),
                 type=mujoco.mjtGeom.mjGEOM_SPHERE,  # pylint: disable=no-member
                 rgba=np.array(color) * alpha,
-                label='',
+                label="",
             )
 
-    def _render_compass(self, pose: np.ndarray, color: np.ndarray, offset: float) -> None:
+    def _render_compass(
+        self, pose: np.ndarray, color: np.ndarray, offset: float
+    ) -> None:
         """Render a compass observation."""
         agent_pos = self.agent.pos
         agent_mat = self.agent.mat
@@ -432,7 +444,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
             size=0.05 * np.ones(3),
             type=mujoco.mjtGeom.mjGEOM_SPHERE,  # pylint: disable=no-member
             rgba=np.array(color) * 0.5,
-            label='',
+            label="",
         )
 
     # pylint: disable-next=too-many-arguments
@@ -441,7 +453,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         pos: np.ndarray,
         size: float,
         color: np.ndarray,
-        label: str = '',
+        label: str = "",
         alpha: float = 0.1,
     ) -> None:
         """Render a radial area in the environment."""
@@ -454,7 +466,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
             size=[size, size, z_size],
             type=mujoco.mjtGeom.mjGEOM_CYLINDER,  # pylint: disable=no-member
             rgba=np.array(color) * alpha,
-            label=label if self.render_conf.labels else '',
+            label=label if self.render_conf.labels else "",
         )
 
     # pylint: disable-next=too-many-arguments
@@ -463,7 +475,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         pos: np.ndarray,
         size: float,
         color: np.ndarray,
-        label: str = '',
+        label: str = "",
         alpha: float = 0.1,
     ) -> None:
         """Render a radial area in the environment."""
@@ -475,7 +487,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
             size=size * np.ones(3),
             type=mujoco.mjtGeom.mjGEOM_SPHERE,  # pylint: disable=no-member
             rgba=np.array(color) * alpha,
-            label=label if self.render_conf.labels else '',
+            label=label if self.render_conf.labels else "",
         )
 
     # pylint: disable-next=too-many-arguments,too-many-branches,too-many-statements
@@ -504,17 +516,17 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
         self.model.vis.global_.offheight = height
 
         if mode in {
-            'rgb_array',
-            'depth_array',
+            "rgb_array",
+            "depth_array",
         }:
             if camera_id is not None and camera_name is not None:
                 raise ValueError(
-                    'Both `camera_id` and `camera_name` cannot be specified at the same time.',
+                    "Both `camera_id` and `camera_name` cannot be specified at the same time.",
                 )
 
             no_camera_specified = camera_name is None and camera_id is None
             if no_camera_specified:
-                camera_name = 'vision'
+                camera_name = "fixedfar"  # "vision"
 
             if camera_id is None:
                 # pylint: disable-next=no-member
@@ -536,30 +548,32 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
             )  # Height offset for successive lidar indicators
             for obstacle in self._obstacles:
                 if obstacle.is_lidar_observed:
-                    self._render_lidar(obstacle.pos, obstacle.color, offset, obstacle.group)
-                if hasattr(obstacle, 'is_comp_observed') and obstacle.is_comp_observed:
+                    self._render_lidar(
+                        obstacle.pos, obstacle.color, offset, obstacle.group
+                    )
+                if hasattr(obstacle, "is_comp_observed") and obstacle.is_comp_observed:
                     self._render_compass(
-                        getattr(self, obstacle.name + '_pos'),
+                        getattr(self, obstacle.name + "_pos"),
                         obstacle.color,
                         offset,
                     )
                 offset += self.render_conf.lidar_offset_delta
 
         # Add indicator for nonzero cost
-        if cost.get('cost_sum', 0) > 0:
-            self._render_sphere(self.agent.pos, 0.25, COLOR['red'], alpha=0.5)
+        if cost.get("cost_sum", 0) > 0:
+            self._render_sphere(self.agent.pos, 0.25, COLOR["red"], alpha=0.5)
 
         # Draw vision pixels
-        if mode in {'rgb_array', 'depth_array'}:
+        if mode in {"rgb_array", "depth_array"}:
             # Extract depth part of the read_pixels() tuple
             data = self._get_viewer(mode).render(render_mode=mode, camera_id=camera_id)
             self.viewer._markers[:] = []  # pylint: disable=protected-access
             self.viewer._overlays.clear()  # pylint: disable=protected-access
             return data
-        if mode == 'human':
+        if mode == "human":
             self._get_viewer(mode).render()
             return None
-        raise NotImplementedError(f'Render mode {mode} is not implemented.')
+        raise NotImplementedError(f"Render mode {mode} is not implemented.")
 
     def _get_viewer(
         self,
@@ -570,16 +584,16 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
     ):
         self.viewer = self._viewers.get(mode)
         if self.viewer is None:
-            if mode == 'human':
+            if mode == "human":
                 self.viewer = KeyboardViewer(
                     self.model,
                     self.data,
                     self.agent.keyboard_control_callback,
                 )
-            elif mode in {'rgb_array', 'depth_array'}:
+            elif mode in {"rgb_array", "depth_array"}:
                 self.viewer = OffScreenViewer(self.model, self.data)
             else:
-                raise AttributeError(f'Unexpected mode: {mode}')
+                raise AttributeError(f"Unexpected mode: {mode}")
 
             # self.viewer_setup()
             self._viewers[mode] = self.viewer
@@ -588,7 +602,7 @@ class Underlying(abc.ABC):  # pylint: disable=too-many-instance-attributes
 
     def _update_viewer(self, model, data) -> None:
         """update the viewer with new model and data"""
-        assert self.viewer, 'Call before self.viewer existing.'
+        assert self.viewer, "Call before self.viewer existing."
         self.viewer.model = model
         self.viewer.data = data
 

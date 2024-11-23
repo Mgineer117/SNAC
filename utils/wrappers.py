@@ -105,7 +105,7 @@ class NavigationWrapper(gym.Wrapper):
     def __init__(self, env: gym.Env, tile_size: int = 1, cost_scaler: float = 1e-1):
         super(NavigationWrapper, self).__init__(env)
         self.tile_size = tile_size
-        self.cost_scaler = 1e-1
+        self.cost_scaler = cost_scaler
 
     def get_agent_pos(self):
         return np.array([0, 0])
