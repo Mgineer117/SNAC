@@ -72,7 +72,7 @@ def get_args(verbose=True):
         "--sf-log-interval", type=int, default=250, help="logging interval; epoch-based"
     )
     parser.add_argument(
-        "--op-log-interval", type=int, default=5, help="logging interval; epoch-based"
+        "--op-log-interval", type=int, default=10, help="logging interval; epoch-based"
     )
     parser.add_argument(
         "--hc-log-interval", type=int, default=50, help="logging interval; epoch-based"
