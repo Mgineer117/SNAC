@@ -497,7 +497,6 @@ class OnlineSampler(Base):
 
             is_first_iter = True
             for t in range(episode_len):
-                # for t in range(episode_len):
                 # sample action
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
@@ -538,7 +537,7 @@ class OnlineSampler(Base):
                 else:
                     ### Conventional Loop
                     # forcing random walk after option activation
-                    a = torch.randint(0, self.action_dim, (1,)).squeeze()
+                    a, _ = policy.random_walk(obs)
 
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc

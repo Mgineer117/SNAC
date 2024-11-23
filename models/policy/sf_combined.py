@@ -164,12 +164,21 @@ class SF_Combined(BasePolicy):
         self._forward_steps += 1
         obs = self.preprocess_obs(obs)
 
-        a = torch.rand((1, self._a_dim)).to(self.device)
+        if self.is_discrete:
+            a = torch.randint(0, self._a_dim, (1,))
+            a = F.one_hot(a, num_classes=self._a_dim)
+        else:
+            a = torch.rand((self._a_dim,))
 
         return a, {
+            # some dummy variables to keep the code consistent across algs
+            "z": self.dummy,  # dummy
             "probs": self.dummy,  # dummy
             "logprobs": self.dummy,  # dummy
         }
+
+    def random_walk(self, obs):
+        return self(obs)
 
     def decode(self, features, actions, conv_dict):
         # Does some dimensional and np <-> tensor work

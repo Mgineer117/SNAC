@@ -41,6 +41,7 @@ class OP_Controller(BasePolicy):
         gamma: float = 0.9,
         tau: float = 0.95,
         K: int = 5,
+        is_discrete: bool = False,
         device: str = "cpu",
     ):
         super(OP_Controller, self).__init__()
@@ -60,6 +61,7 @@ class OP_Controller(BasePolicy):
         self._l2_reg = 1e-5
         self._bfgs_iter = 5
         self._forward_steps = 0
+        self.is_discrete = is_discrete
 
         # trainable networks
         self.optionPolicy = optionPolicy
@@ -126,6 +128,14 @@ class OP_Controller(BasePolicy):
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
         }
+
+    def random_walk(self, obs):
+        if self.is_discrete:
+            a = torch.randint(0, self._a_dim, (1,))
+            a = F.one_hot(a, num_classes=self._a_dim)
+        else:
+            a = torch.rand((self._a_dim,))
+        return a, {}
 
     def _intricsicReward(self, phi, z):
         option = self._options[z, :]

@@ -173,6 +173,7 @@ def call_sfNetwork(args):
             psi_lr=args.psi_lr,
             trj_per_iter=args.trj_per_iter,
             a_dim=args.a_dim,
+            is_discrete=args.is_discrete,
             device=args.device,
         )
     else:
@@ -234,6 +235,7 @@ def call_sfNetwork(args):
             psi_lr=args.psi_lr,
             trj_per_iter=args.trj_per_iter,
             a_dim=args.a_dim,
+            is_discrete=args.is_discrete,
             device=args.device,
         )
 

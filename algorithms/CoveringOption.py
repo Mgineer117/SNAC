@@ -72,7 +72,7 @@ class CoveringOption:
 
         ### Define evaulators tailored for each process
         # each evaluator has slight deviations
-        evaluator_params = {
+        self.evaluator_params = {
             "logger": logger,
             "writer": writer,
             "training_env": self.env,
@@ -82,16 +82,16 @@ class CoveringOption:
             "eval_ep_num": args.eval_episodes,
         }
         if args.env_name in ("PointNavigation"):
-            evaluator_params.update({"gridPlot": False})
+            self.evaluator_params.update({"gridPlot": False})
 
         self.op_evaluator = OP_Evaluator2(
-            dir=self.op_path, log_interval=args.op_log_interval, **evaluator_params
+            dir=self.op_path, log_interval=args.op_log_interval, **self.evaluator_params
         )
         self.hc_evaluator = HC_Evaluator(
             dir=self.hc_path,
             log_interval=args.hc_log_interval,
             min_option_length=args.min_option_length,
-            **evaluator_params
+            **self.evaluator_params
         )
 
     def run(self):
@@ -146,7 +146,6 @@ class CoveringOption:
             self.train_op_network(vec_idx=0)
             for idx in range(1, int(self.args.num_vector / 2)):
                 vec_idx = idx * 2
-
                 new_batch1 = self.collect_batch(
                     self.op_network, app_trj_num=app_trj_num, idx=vec_idx
                 )
@@ -164,7 +163,7 @@ class CoveringOption:
                 )
                 self.train_op_network(vec_idx=vec_idx)
 
-            if self.args.draw_map:
+            if self.evaluator_params["gridPlot"]:
                 grid_tensor, coords, loc = get_grid_tensor(
                     self.env, self.args.grid_type
                 )
@@ -273,29 +272,23 @@ class CoveringOption:
 
     def cat_batch(self, batch, new_batch1, new_batch2):
         """
-        This is to concat the previously collected SF diffusive matrix with newly collected batch
-        to improve its diffusion of the given domain. This is a particular approach of CoveringOption
-        that is usually adopted for hardly-exploratory environments.
+        Concatenates the previously collected SF diffusive matrix with newly collected batches
+        to improve its diffusion of the given domain. This approach is part of CoveringOption
+        and is often used for hardly-exploratory environments.
+
+        This function dynamically iterates over all keys in the batch dictionary to generalize
+        its application.
         """
         if batch is None:
-            batch = {}
-            batch["features"] = np.concatenate(
-                (new_batch1["features"], new_batch2["features"]),
-                axis=0,
-            )
-            batch["terminals"] = np.concatenate(
-                (new_batch1["terminals"], new_batch2["terminals"]),
-                axis=0,
-            )
+            batch = {
+                key: np.concatenate((new_batch1[key], new_batch2[key]), axis=0)
+                for key in new_batch1.keys()
+            }
         else:
-            batch["features"] = np.concatenate(
-                (batch["features"], new_batch1["features"], new_batch2["features"]),
-                axis=0,
-            )
-            batch["terminals"] = np.concatenate(
-                (batch["terminals"], new_batch1["terminals"], new_batch2["terminals"]),
-                axis=0,
-            )
+            for key in new_batch1.keys():
+                batch[key] = np.concatenate(
+                    (batch[key], new_batch1[key], new_batch2[key]), axis=0
+                )
         return batch
 
     def train_op_network(self, vec_idx):
