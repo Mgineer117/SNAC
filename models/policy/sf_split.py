@@ -245,9 +245,13 @@ class SF_Split(BasePolicy):
 
         state_pred = self.decode(phi_s, actions, conv_dict)
         if isinstance(self.feaNet, VAE):
-            phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(next_states, state_pred)
+            phi_s_loss = (
+                5 * self._phi_loss_s_scaler * self.mse_loss(next_states, state_pred)
+            )
         else:
-            phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
+            phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(
+                next_states, state_pred
+            )
 
         option_loss_scaler = 1.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
@@ -258,13 +262,17 @@ class SF_Split(BasePolicy):
                 l2_norm += torch.norm(param, p=2)  # L
 
         phi_loss = (
-            conv_dict["loss"] + phi_r_loss + phi_s_loss + option_loss + 1e-6 * l2_norm
+            10 * conv_dict["loss"]
+            + phi_r_loss
+            + phi_s_loss
+            + option_loss
+            + 1e-6 * l2_norm
         )
 
         phi_norm = torch.norm(phi.detach())
         return phi_loss, {
             "phi": phi,
-            "loss": conv_dict["loss"],
+            "loss": 10 * conv_dict["loss"],
             "phi_r_loss": phi_r_loss,
             "phi_s_loss": phi_s_loss,
             "option_loss": option_loss,
