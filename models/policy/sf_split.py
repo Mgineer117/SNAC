@@ -256,28 +256,31 @@ class SF_Split(BasePolicy):
         option_loss_scaler = 1.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
 
+        kl_loss = 100 * conv_dict["loss"]
+
         l2_norm = 0
         for param in self.feaNet.parameters():
             if param.requires_grad:  # Only include parameters that require gradients
                 l2_norm += torch.norm(param, p=2)  # L
+        l2_loss = 1e-6 * l2_norm
 
         phi_loss = (
-            10 * conv_dict["loss"]
+            kl_loss
             + phi_r_loss
             + phi_s_loss
             + option_loss
-            + 1e-6 * l2_norm
+            + l2_loss
         )
 
         phi_norm = torch.norm(phi.detach())
         return phi_loss, {
             "phi": phi,
-            "loss": 10 * conv_dict["loss"],
+            "loss": kl_loss,
             "phi_r_loss": phi_r_loss,
             "phi_s_loss": phi_s_loss,
             "option_loss": option_loss,
             "phi_norm": phi_norm,
-            "phi_regul": 1e-6 * l2_norm,
+            "phi_regul": l2_loss,
         }
 
     def _psi_Loss(self, features, actions_oh, terminals):
