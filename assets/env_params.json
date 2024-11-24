@@ -3,6 +3,9 @@
         "episode_len": 100,
         "episode_num": 6,
         "eval_episodes": 6,
+        "feature_fc_dim": 512,
+        "fc_dim": 64,
+        "sf_dim": 128,
         "render_fps":10,
         "gamma": 0.999
     },
@@ -10,6 +13,9 @@
         "episode_len": 100,
         "episode_num": 6,
         "eval_episodes": 6,
+        "feature_fc_dim": 512,
+        "fc_dim": 64,
+        "sf_dim": 128,
         "render_fps":10,
         "gamma": 0.99
     },
@@ -17,6 +23,9 @@
         "episode_len": 500,
         "episode_num": 6,
         "eval_episodes": 6,
+        "feature_fc_dim": 256,
+        "fc_dim": 64,
+        "sf_dim": 32,
         "render_fps":60,
         "gamma": 0.99
     }

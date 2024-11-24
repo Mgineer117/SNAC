@@ -199,24 +199,22 @@ def get_args(verbose=True):
         default=None,
         help="One can arbitrarily set the max dimension of action when one wants to disregard other useless action components of Minigrid",
     )
-
     parser.add_argument(
         "--fc-dim",
         type=int,
-        default=128,
+        default=None,
         help="This is general fully connected dimension for most of network this code.",
     )
-
     parser.add_argument(
-        "--conv-fc-dim",
+        "--feature-fc-dim",
         type=int,
-        default=512,
-        help="This is a dimension of FCL that decodes the output of CNN",
+        default=None,
+        help="This is a dimension of FCL that decodes the output of CNN or VAE",
     )
     parser.add_argument(
         "--sf-dim",
         type=int,
-        default=128,
+        default=None,
         help="This is an feature dimension thus option dimension. 32 / 64",
     )
     parser.add_argument(
