@@ -87,18 +87,18 @@ def discover_options(
     #### Compute Psi from Phi
     with torch.no_grad():
         psi = estimate_psi(features, terminals, gamma)  # operate on cpu
-        if prev_batch is not None:
-            prev_features = (
-                torch.from_numpy(prev_batch["features"]).to(torch.float32).to(device)
-            )
-            prev_terminals = (
-                torch.from_numpy(prev_batch["terminals"]).to(torch.float32).to(device)
-            )
-            prev_psi = estimate_psi(
-                prev_features, prev_terminals, gamma
-            )  # operate on cpu
+        # if prev_batch is not None:
+        #     prev_features = (
+        #         torch.from_numpy(prev_batch["features"]).to(torch.float32).to(device)
+        #     )
+        #     prev_terminals = (
+        #         torch.from_numpy(prev_batch["terminals"]).to(torch.float32).to(device)
+        #     )
+        #     prev_psi = estimate_psi(
+        #         prev_features, prev_terminals, gamma
+        #     )  # operate on cpu
 
-            psi = torch.cat((prev_psi, psi), axis=0)
+        #     psi = torch.cat((prev_psi, psi), axis=0)
         psi_r, psi_s = policy.split(psi)
         # to save VRAM
         del features, terminals

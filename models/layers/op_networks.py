@@ -73,15 +73,11 @@ class OptionPolicy(nn.Module):
             probs = torch.exp(logprobs)
             dist = Categorical(probs)
 
-            if deterministic:
-                a = torch.argmax(probs, dim=-1)  # .to(self._dtype)
-            else:
-                a = dist.sample()
+            a_argmax = torch.argmax(probs, dim=-1) if deterministic else dist.sample()
+            a = F.one_hot(a_argmax.long(), num_classes=self._a_dim)
 
-            logprobs = dist.log_prob(a)
+            logprobs = dist.log_prob(a_argmax)
             probs = torch.exp(logprobs)
-
-            a = F.one_hot(a, num_classes=self._a_dim)
         else:
             ### Shape the output as desired
             mu = F.tanh(self.mus[z](logits))
@@ -95,11 +91,8 @@ class OptionPolicy(nn.Module):
             covariance_matrix = torch.diag_embed(std**2)  # Variance is std^2
             dist = MultivariateNormal(loc=mu, covariance_matrix=covariance_matrix)
 
-            if deterministic:
-                a = mu
-            else:
-                a = dist.rsample()
-
+            a = mu if deterministic else dist.rsample()
+            
             logprobs = dist.log_prob(a)
             probs = torch.exp(logprobs)
 

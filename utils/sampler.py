@@ -314,11 +314,6 @@ class OnlineSampler(Base):
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc
 
-                # Done must be True for the last trajectory
-                # This is used for the case gym.Env does not give
-                # termination tho set threshold was reached
-                done = True if t == (episode_len - 1) else False
-
                 # saving the data
                 data["states"][current_step + t] = obs["observation"]
                 data["next_states"][current_step + t] = next_obs["observation"]
@@ -420,11 +415,6 @@ class OnlineSampler(Base):
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc
-
-                # Done must be True for the last trajectory
-                # This is used for the case gym.Env does not give
-                # termination tho set threshold was reached
-                done = True if t == (episode_len - 1) else False
 
                 # saving the data
                 data["states"][current_step + t] = obs["observation"]
@@ -541,11 +531,6 @@ class OnlineSampler(Base):
 
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc
-
-                # Done must be True for the last trajectory
-                # This is used for the case gym.Env does not give
-                # termination tho set threshold was reached
-                done = True if t == (episode_len - 1) else False
 
                 # saving the data
                 data["states"][current_step + t] = obs["observation"]

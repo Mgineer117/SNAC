@@ -208,7 +208,7 @@ class SF_Combined(BasePolicy):
                 next_states, state_pred
             )
 
-        option_loss_scaler = 0.0
+        option_loss_scaler = 1.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
 
         kl_loss = 100 * conv_dict["loss"]

@@ -109,6 +109,42 @@ def check_all_devices(module):
     devices = {param.device for param in module.parameters()}  # Get all unique devices
     return devices
 
+def call_ppoNetwork(args):
+    from models.policy import PPO_Learner
+
+    if args.import_ppo_model:
+        print("Loading previous PPO parameters....")
+        policy, critic = pickle.load(
+            open("log/eval_log/model_for_eval/ppo_model.p", "rb")
+        )
+    else:
+        policy = PPO_Policy(
+            input_dim=args.s_flat_dim,
+            fc_dim=args.fc_dim,
+            a_dim=args.a_dim,
+            activation=nn.Tanh(),
+            is_discrete=args.is_discrete,
+        )
+        critic = PPO_Critic(
+            input_dim=args.s_flat_dim,
+            fc_dim=args.fc_dim,
+            activation=nn.Tanh(),
+        )
+
+    policy = PPO_Learner(
+        policy=policy,
+        critic=critic,
+        policy_lr=args.ppo_policy_lr,
+        critic_lr=args.ppo_critic_lr,
+        entropy_scaler=args.entropy_scaler,
+        eps=args.eps_clip,
+        tau=args.tau,
+        gamma=args.gamma,
+        K=args.K_epochs,
+        device=args.device,
+    )
+
+    return policy
 
 def call_sfNetwork(args):
     from models.policy import SF_Combined, SF_Split
@@ -117,7 +153,7 @@ def call_sfNetwork(args):
         if args.import_sf_model:
             print("Loading previous SF parameters....")
             feaNet, psiNet, options = pickle.load(
-                open("log/eval_log/model_for_eval/sf_model.p", "rb")
+                open(f"log/eval_log/model_for_eval/{args.env_name}/sf_SNAC.p", "rb")
             )
         else:
             if args.env_name in ("PointNavigation"):
@@ -180,7 +216,7 @@ def call_sfNetwork(args):
         if args.import_sf_model:
             print("Loading previous SF parameters....")
             feaNet, psiNet, options = pickle.load(
-                open("log/eval_log/model_for_eval/sf_model.p", "rb")
+                open(f"log/eval_log/model_for_eval/{args.env_name}/sf_Spatial.p", "rb")
             )
         else:
             if args.env_name in ("PointNavigation"):
@@ -241,45 +277,6 @@ def call_sfNetwork(args):
 
     return policy
 
-
-def call_ppoNetwork(args):
-    from models.policy import PPO_Learner
-
-    if args.import_ppo_model:
-        print("Loading previous PPO parameters....")
-        optionPolicy, optionCritic = pickle.load(
-            open("log/eval_log/model_for_eval/ppo_model.p", "rb")
-        )
-    else:
-        optionPolicy = PPO_Policy(
-            input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
-            a_dim=args.a_dim,
-            activation=nn.Tanh(),
-            is_discrete=args.is_discrete,
-        )
-        optionCritic = PPO_Critic(
-            input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
-            activation=nn.Tanh(),
-        )
-
-    policy = PPO_Learner(
-        policy=optionPolicy,
-        critic=optionCritic,
-        policy_lr=args.ppo_policy_lr,
-        critic_lr=args.ppo_critic_lr,
-        entropy_scaler=args.entropy_scaler,
-        eps=args.eps_clip,
-        tau=args.tau,
-        gamma=args.gamma,
-        K=args.K_epochs,
-        device=args.device,
-    )
-
-    return policy
-
-
 def call_opNetwork(
     sf_network: nn.Module,
     args,
@@ -300,6 +297,7 @@ def call_opNetwork(
             a_dim=args.a_dim,
             num_options=options.shape[0],
             activation=nn.Tanh(),
+            is_discrete=args.is_discrete,
         )
         optionCritic = OptionCritic(
             input_dim=args.s_flat_dim,
@@ -332,6 +330,7 @@ def call_opNetwork(
         tau=args.tau,
         gamma=args.gamma,
         K=args.K_epochs,
+        is_discrete=args.is_discrete,
         device=args.device,
     )
 
