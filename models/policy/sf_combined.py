@@ -105,18 +105,11 @@ class SF_Combined(BasePolicy):
             self._options = options
         else:
             self._options = nn.Parameter(
-                torch.normal(
-                    mean=0.0,
-                    std=1.0,
+                torch.zeros(
                     size=(1, int(self._sf_dim)),
                     dtype=self._dtype,
                     device=self.device,
                 )
-                # torch.zeros(
-                #     size=(1, int(self._sf_dim)),
-                #     dtype=self._dtype,
-                #     device=self.device,
-                # )
             ).to(self.device)
 
         self.feature_optims = torch.optim.Adam(
@@ -215,7 +208,7 @@ class SF_Combined(BasePolicy):
                 next_states, state_pred
             )
 
-        option_loss_scaler = 1.0
+        option_loss_scaler = 0.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
 
         kl_loss = 100 * conv_dict["loss"]
