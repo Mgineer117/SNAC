@@ -40,12 +40,15 @@ Then, install the required packages using pip:
 pip install -r requirements.txt
 ```
 
-If running ```PointNavigation``` makes Mujoco rendering error, run the following commands:
+If there is Mujoco rendering error (glGetError and etc.), run the following commands:
 ```
 echo "export MUJOCO_GL=osmesa" >> ~/.bashrc
 source ~/.bashrc
 sudo apt-get install libosmesa6-dev
 sudo apt-get install python3-opengl
+```
+and *(make sure you reactivate virtual env snac)*
+```
 conda install -c anaconda pyopengl
 conda install -c conda-forge libstdcxx-ng
 ```
@@ -62,6 +65,9 @@ conda install -c conda-forge libstdcxx-ng
 - Time steps: ??? (reasonable amount)
 - Successor Feature (SF) matrix is built using (100 trajectories x feature_dim) # I assume still 100 if so no change is required
 - The grid layout, agent's starting position, and enemy agents' positions are fixed, while the enemy agents move dynamically, altering the reward structure.
+
+**PointNavigation**
+TBD
 
 ## How to Import Pre-Trained Model
 
