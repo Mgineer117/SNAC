@@ -282,7 +282,7 @@ class SF_Combined(BasePolicy):
         ### Update the network
         self.feature_optims.zero_grad()
         phi_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=10.0)
+        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
         phi_grad_dict = self.compute_gradient_norm(
             [self.feaNet, self._options],
             ["feaNet", "options"],

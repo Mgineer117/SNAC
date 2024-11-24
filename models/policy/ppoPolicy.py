@@ -139,7 +139,7 @@ class PPO_Learner(BasePolicy):
                 for param in self.critic.parameters():
                     valueLoss += param.pow(2).sum() * self._l2_reg
                 valueLoss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
 
                 return (
                     valueLoss.item(),

@@ -8,7 +8,7 @@
         "episode_num": 6,
         "eval_episodes": 6,
         "feature_fc_dim": 512,
-        "fc_dim": 64,
+        "fc_dim": 128,
         "sf_dim": 128,
         "render_fps":10,
         "gamma": 0.999
@@ -22,7 +22,7 @@
         "episode_num": 6,
         "eval_episodes": 6,
         "feature_fc_dim": 512,
-        "fc_dim": 64,
+        "fc_dim": 128,
         "sf_dim": 128,
         "render_fps":10,
         "gamma": 0.99
