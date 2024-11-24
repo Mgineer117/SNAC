@@ -421,9 +421,9 @@ class VAE(nn.Module):
 
         feature = mu if deterministic else dist.rsample()
 
-        kl = std**2 + mu**2 - 1 - torch.log(std)
         # Sum over latent dimensions, then mean over batch
-        kl_loss = torch.mean(torch.sum(kl, dim=-1))
+        kl = -0.5 * torch.sum(1 + torch.log(std**2) - mu**2 - std**2, dim=-1)
+        kl_loss = torch.mean(kl)
 
         return feature, {"loss": kl_loss}
 
