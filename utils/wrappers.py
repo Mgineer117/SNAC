@@ -127,4 +127,7 @@ class NavigationWrapper(gym.Wrapper):
 
         reward -= self.cost_scaler * cost
 
+        if info['goal_met']:
+            truncation = True
+
         return obs, reward, termination, truncation, info

@@ -230,7 +230,7 @@ class SF_Combined(BasePolicy):
         return phi_loss, {
             "phi": phi,
             "loss": kl_loss,
-            "phi_r_loss": self.dummy(),
+            "phi_r_loss": self.dummy,
             "phi_s_loss": phi_s_loss,
             "option_loss": option_loss,
             "phi_norm": phi_norm,

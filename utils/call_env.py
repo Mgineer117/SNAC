@@ -1,13 +1,11 @@
-import numpy as np
-import torch
-import torch.nn as nn
-import random
+import safety_gymnasium as sgym
+import gymnasium as gym
 
+from safety_gymnasium import __register_helper
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.lavarooms import LavaRooms
 from gym_multigrid.envs.ctf import CtF
-import safety_gymnasium as sgym
-import gymnasium as gym
+
 
 from utils.wrappers import GridWrapper, CtFWrapper, NavigationWrapper
 
@@ -66,14 +64,21 @@ def call_env(args):
         disc_or_cont(env, args)
         return CtFWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "PointNavigation":
+        config = {"agent_name": "Point"}
+        env_id = "PointNavigation"
+        __register_helper(env_id=env_id,
+                entry_point='assets.env_builder:Builder',
+                spec_kwargs={'config': config, 'task_id': env_id},
+                max_episode_steps=args.episode_len)
+
         env = sgym.make(
-            "SafetyPointButton1-v0",
+            "PointNavigation",
             render_mode="rgb_array",
-            max_episode_steps=args.episode_len,
-            width=512,
-            height=512,
+            width=1024,
+            height=1024,
             camera_name="fixedfar"
         )
+        
         disc_or_cont(env, args)
         return NavigationWrapper(
             env, tile_size=args.tile_size, cost_scaler=args.cost_scaler
