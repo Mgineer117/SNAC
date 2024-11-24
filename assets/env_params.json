@@ -1,5 +1,9 @@
 {
     "FourRooms": {
+        "SF_epoch": 1000,
+        "OP_epoch": 50,
+        "HC_epoch": 500,
+        "PPO_epoch": 500,
         "episode_len": 100,
         "episode_num": 6,
         "eval_episodes": 6,
@@ -10,6 +14,10 @@
         "gamma": 0.999
     },
     "CtF1v2": {
+        "SF_epoch": 1000,
+        "OP_epoch": 50,
+        "HC_epoch": 500,
+        "PPO_epoch": 500,
         "episode_len": 100,
         "episode_num": 6,
         "eval_episodes": 6,
@@ -20,6 +28,10 @@
         "gamma": 0.99
     },
     "PointNavigation": {
+        "SF_epoch": 2000,
+        "OP_epoch": 100,
+        "HC_epoch": 1000,
+        "PPO_epoch": 1000,
         "episode_len": 500,
         "episode_num": 6,
         "eval_episodes": 6,

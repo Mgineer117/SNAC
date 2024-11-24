@@ -101,25 +101,25 @@ def get_args(verbose=True):
     parser.add_argument(
         "--SF-epoch",
         type=int,
-        default=1000,  # 1000
+        default=None,  # 1000
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--PPO-epoch",
         type=int,
-        default=500,  # 500
+        default=None,  # 500
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=50,  # 50
+        default=None,  # 50
         help="total number of epochs to train one each option policy; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
-        default=500,  # 500
+        default=None,  # 500
         help="total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(

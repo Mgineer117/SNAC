@@ -12,7 +12,7 @@ import matplotlib
 
 from copy import deepcopy
 from utils.utils import estimate_psi
-from models.layers import MLP, ConvNetwork, PsiCritic
+from models.layers import MLP, ConvNetwork, VAE, PsiCritic
 from models.policy.base_policy import BasePolicy
 
 matplotlib.use("Agg")
@@ -244,7 +244,10 @@ class SF_Split(BasePolicy):
         phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(rewards, reward_pred)
 
         state_pred = self.decode(phi_s, actions, conv_dict)
-        phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
+        if isinstance(self.feaNet, VAE):
+            phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(next_states, state_pred)
+        else:
+            phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
 
         option_loss_scaler = 1.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)

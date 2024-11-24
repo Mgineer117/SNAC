@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 from utils.utils import estimate_psi
-from models.layers import MLP, ConvNetwork, PsiCritic
+from models.layers import MLP, ConvNetwork, VAE, PsiCritic
 from models.policy.base_policy import BasePolicy
 
 matplotlib.use("Agg")
@@ -119,7 +119,7 @@ class SF_Combined(BasePolicy):
                 # )
             ).to(self.device)
 
-        self.feature_optims = torch.optim.AdamW(
+        self.feature_optims = torch.optim.Adam(
             [
                 {"params": self.feaNet.parameters(), "lr": feature_lr},
                 {"params": self._options, "lr": option_lr},
@@ -206,9 +206,12 @@ class SF_Combined(BasePolicy):
         phi, conv_dict = self.feaNet(states, agent_pos, deterministic=False)
 
         state_pred = self.feaNet.decode(phi, actions, conv_dict)
-        phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
+        if isinstance(self.feaNet, VAE):
+            phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(next_states, state_pred)
+        else:
+            phi_s_loss = self._phi_loss_s_scaler * self.mqe_loss(next_states, state_pred)
 
-        option_loss_scaler = 1.0
+        option_loss_scaler = 0.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
 
         l2_norm = 0
