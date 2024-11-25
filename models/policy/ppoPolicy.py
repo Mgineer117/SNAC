@@ -25,7 +25,7 @@ class PPO_Learner(BasePolicy):
         policy_lr: float = 3e-4,
         critic_lr: float = 5e-4,
         eps: float = 0.2,
-        entropy_scaler: float = 1e-2,
+        entropy_scaler: float = 1e-3,
         gamma: float = 0.99,
         tau: float = 0.9,
         K: int = 5,
@@ -43,7 +43,7 @@ class PPO_Learner(BasePolicy):
         self._tau = tau
         self._K = K
         self._l2_reg = 1e-5
-        self._bfgs_iter = 10
+        self._bfgs_iter = K
         self._forward_steps = 0
 
         # trainable networks
@@ -138,7 +138,7 @@ class PPO_Learner(BasePolicy):
                 for param in self.critic.parameters():
                     valueLoss += param.pow(2).sum() * self._l2_reg
                 valueLoss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
 
                 return (
                     valueLoss.item(),
@@ -160,7 +160,7 @@ class PPO_Learner(BasePolicy):
             # policy ingredients
             _, metaData = self.policy(states)
 
-            logprobs = self.policy.log_prob(actions.squeeze()).unsqueeze(-1)
+            logprobs = self.policy.log_prob(actions).unsqueeze(-1)
             entropy = metaData["entropy"].unsqueeze(-1)
 
             ratios = torch.exp(logprobs - old_logprobs)
@@ -181,6 +181,12 @@ class PPO_Learner(BasePolicy):
                 dir="PPO",
                 device=self.device,
             )
+            norm_dict = self.compute_weight_norm(
+                [self.policy, self.critic],
+                ["policy", "critic"],
+                dir="PPO",
+                device=self.device,
+            )
             self.optimizer.step()
 
         loss_dict = {
@@ -191,6 +197,7 @@ class PPO_Learner(BasePolicy):
             "PPO/trainAvgReward": (torch.sum(rewards) / rewards.shape[0]).item(),
         }
         loss_dict.update(grad_dict)
+        loss_dict.update(norm_dict)
 
         t1 = time.time()
         self.eval()

@@ -95,11 +95,11 @@ class Base:
             states=np.full(((batch_size,) + self.state_dim), np.nan, dtype=np.float32),
             next_states=np.full(((batch_size,) + self.state_dim), np.nan, dtype=np.float32),
             actions=np.full((batch_size, self.action_dim), np.nan, dtype=np.float32),
-            option_actions=np.full((batch_size, 1), np.nan, dtype=np.float32),
-            agent_pos=np.full((batch_size, 2), np.nan, dtype=np.float32),
-            next_agent_pos=np.full((batch_size, 2), np.nan, dtype=np.float32),
+            option_actions=np.full((batch_size, 1), np.nan, dtype=np.int8),
+            agent_pos=np.full((batch_size, 2), np.nan, dtype=np.int8),
+            next_agent_pos=np.full((batch_size, 2), np.nan, dtype=np.int8),
             rewards=np.full((batch_size, 1), np.nan, dtype=np.float32),
-            terminals=np.full((batch_size, 1), np.nan, dtype=np.float32),
+            terminals=np.full((batch_size, 1), np.nan, dtype=np.int8),
             logprobs=np.full((batch_size, 1), np.nan, dtype=np.float32),
         )
 
@@ -283,6 +283,8 @@ class OnlineSampler(Base):
             print(f"# Environments each Round : {self.num_env_per_round}")
             print(f"Total number of Worker    : {self.total_num_worker}")
             print(f"Episodes per Worker       : {self.episodes_per_worker}")
+            print(f"Max. batch size           : {self.thread_batch_size}")
+            
 
         # enforce one thread for each worker to avoid CPU overscription.
         torch.set_num_threads(1)
@@ -320,10 +322,11 @@ class OnlineSampler(Base):
             for t in range(episode_len):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
-                    a = a.cpu().numpy().squeeze()
+                    a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
 
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
+                    trunc = True if (t + 1) == episode_len else False
                     done = term or trunc
 
                 # saving the data
@@ -345,12 +348,8 @@ class OnlineSampler(Base):
 
                 obs = next_obs
 
-        end_idx = (
-            current_step if current_step < thread_batch_size else thread_batch_size
-        )
         for k in data:
-            data[k] = data[k][:end_idx]
-
+            data[k] = data[k][:current_step]
         if queue is not None:
             queue.put([pid, data])
         else:
@@ -386,16 +385,19 @@ class OnlineSampler(Base):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
 
+            external_t = 0
             for t in range(episode_len):
                 # sample action
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
-                    a = a.cpu().numpy().squeeze()
+                    a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
                     option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
                     next_obs, rew, term, trunc, infos = env.step(a)
+                    external_t +=1 
+                    trunc = True if (external_t + 1) == episode_len else False
                     done = term or trunc
 
                     op_rew = rew
@@ -411,6 +413,8 @@ class OnlineSampler(Base):
                             option_a = option_a.cpu().numpy().squeeze()
 
                         next_obs, rew, term, trunc, infos = env.step(option_a)
+                        external_t +=1 
+                        trunc = True if (external_t + 1) == episode_len else False
 
                         op_rew += self.gamma**step_count * rew
                         step_count += 1
@@ -423,9 +427,10 @@ class OnlineSampler(Base):
 
                 ### Conventional Loop
                 else:
-                    step_count = 1  # dummy
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
+                    external_t +=1 
+                    trunc = True if (external_t + 1) == episode_len else False
                     done = term or trunc
 
                 # saving the data
@@ -448,11 +453,8 @@ class OnlineSampler(Base):
 
                 obs = next_obs
 
-        end_idx = (
-            current_step if current_step < thread_batch_size else thread_batch_size
-        )
         for k in data:
-            data[k] = data[k][:end_idx]
+            data[k] = data[k][:current_step]
 
         if queue is not None:
             queue.put([pid, data])
@@ -498,16 +500,19 @@ class OnlineSampler(Base):
             obs, _ = env.reset(seed=grid_type)
 
             is_first_iter = True
+            external_t = 0
             for t in range(episode_len):
                 # sample action
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
-                    a = a.cpu().numpy().squeeze()
+                    a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
                     option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
                 if is_first_iter:
                     next_obs, rew, term, trunc, infos = env.step(a)
+                    external_t +=1 
+                    trunc = True if (external_t + 1) == episode_len else False
                     done = term or trunc
 
                     op_rew = rew
@@ -523,6 +528,8 @@ class OnlineSampler(Base):
                             option_a = option_a.cpu().numpy().squeeze()
 
                         next_obs, rew, term, trunc, infos = env.step(option_a)
+                        external_t +=1 
+                        trunc = True if (external_t + 1) == episode_len else False
 
                         op_rew += self.gamma**step_count * rew
                         step_count += 1
@@ -542,6 +549,8 @@ class OnlineSampler(Base):
                     a, _ = policy.random_walk(obs)
 
                     next_obs, rew, term, trunc, infos = env.step(a)
+                    external_t +=1 
+                    trunc = True if (external_t + 1) == episode_len else False
                     done = term or trunc
 
                 # saving the data

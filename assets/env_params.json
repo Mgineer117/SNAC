@@ -55,5 +55,43 @@
         "sf_dim": 32,
         "render_fps":60,
         "gamma": 0.99
+    },
+    "InvertedPendulum": {
+        "SF_epoch": 500,
+        "OP_epoch": 20,
+        "HC_epoch": 200,
+        "PPO_epoch": 200,
+        "step_per_epoch": 50,
+        "sf_log_interval":100,
+        "op_log_interval":5,
+        "hc_log_interval":50,
+        "ppo_log_interval": 50,
+        "episode_len": 500,
+        "episode_num": 6,
+        "eval_episodes": 6,
+        "feature_fc_dim": 256,
+        "fc_dim": 32,
+        "sf_dim": 32,
+        "render_fps":60,
+        "gamma": 0.99
+    },
+    "Hopper": {
+        "SF_epoch": 500,
+        "OP_epoch": 20,
+        "HC_epoch": 200,
+        "PPO_epoch": 200,
+        "step_per_epoch": 50,
+        "sf_log_interval":100,
+        "op_log_interval":5,
+        "hc_log_interval":50,
+        "ppo_log_interval": 50,
+        "episode_len": 500,
+        "episode_num": 6,
+        "eval_episodes": 6,
+        "feature_fc_dim": 256,
+        "fc_dim": 64,
+        "sf_dim": 32,
+        "render_fps":60,
+        "gamma": 0.99
     }
 }

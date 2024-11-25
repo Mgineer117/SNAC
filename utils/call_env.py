@@ -7,7 +7,7 @@ from gym_multigrid.envs.lavarooms import LavaRooms
 from gym_multigrid.envs.ctf import CtF
 
 
-from utils.wrappers import GridWrapper, CtFWrapper, NavigationWrapper
+from utils.wrappers import GridWrapper, CtFWrapper, NavigationWrapper, GymWrapper
 
 
 def disc_or_cont(env, args):
@@ -82,8 +82,20 @@ def call_env(args):
         )
         
         disc_or_cont(env, args)
-        return NavigationWrapper(
-            env, tile_size=args.tile_size, cost_scaler=args.cost_scaler
+        return NavigationWrapper(env)
+    elif args.env_name == "InvertedPendulum":
+        env = gym.make(
+            "InvertedPendulum-v4",
+            render_mode="rgb_array",
         )
+        disc_or_cont(env, args)
+        return GymWrapper(env)
+    elif args.env_name == "Hopper":
+        env = gym.make(
+            "Hopper-v4",
+            render_mode="rgb_array",
+        )
+        disc_or_cont(env, args)
+        return GymWrapper(env)
     else:
         raise ValueError(f"Invalid environment key: {args.env_name}")

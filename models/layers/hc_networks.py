@@ -68,6 +68,7 @@ class HC_Policy(nn.Module):
         }
 
     def log_prob(self, actions):
+        """Always (N, 1) shape"""
         return self.dist.log_prob(actions)
 
 

@@ -285,7 +285,7 @@ def get_args(verbose=True):
         "--K-epochs", type=int, default=5, help="PPO update per one iter"
     )
     parser.add_argument(
-        "--OP-K-epochs", type=int, default=15, help="PPO update per one iter"
+        "--OP-K-epochs", type=int, default=10, help="PPO update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"
@@ -293,7 +293,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-3,
+        default=1e-4,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(

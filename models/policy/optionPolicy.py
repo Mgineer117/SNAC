@@ -58,8 +58,8 @@ class OP_Controller(BasePolicy):
         self._gamma = gamma
         self._tau = tau
         self._K = K
-        self._l2_reg = 1e-4
-        self._bfgs_iter = 10
+        self._l2_reg = 1e-5
+        self._bfgs_iter = K
         self._forward_steps = 0
         self.is_discrete = is_discrete
 
@@ -137,18 +137,19 @@ class OP_Controller(BasePolicy):
             a = torch.rand((self._a_dim,))
         return a, {}
 
-    def _intricsicReward(self, phi, z):
+    def _intricsicReward(self, phi, next_phi, z):
         option = self._options[z, :]
 
         if self._algo_name in ("SNAC", "SNAC+", "SNAC++"):
             # divide phi in half
             phi_r, phi_s = self.split(phi)
+            next_phi_r, next_phi_s = self.split(next_phi)
             if z < int(self._num_options / 2):
-                deltaPhi = phi_r  # N x F/2
+                deltaPhi = next_phi_r - phi_r  # N x F/2
             else:
-                deltaPhi = phi_s  # N x F/2
+                deltaPhi = next_phi_s - phi_s  # N x F/2
         else:
-            deltaPhi = phi  # N x F
+            deltaPhi = next_phi - phi  # N x F
         rew = self.multiply_options(deltaPhi, option)
         return rew
 
@@ -159,6 +160,8 @@ class OP_Controller(BasePolicy):
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         agent_pos = torch.from_numpy(batch["agent_pos"]).to(self._dtype).to(self.device)
+        next_states = torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
+        next_agent_pos = torch.from_numpy(batch["next_agent_pos"]).to(self._dtype).to(self.device)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
         terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
         old_logprobs = (
@@ -166,8 +169,11 @@ class OP_Controller(BasePolicy):
         )
 
         phi = self.getPhi(states, agent_pos)
+        next_phi = self.getPhi(next_states, next_agent_pos)
+        rewards = self._intricsicReward(phi, next_phi, z)
+
         states = states.reshape(states.shape[0], -1)
-        rewards = self._intricsicReward(phi, z)
+        
 
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
@@ -195,7 +201,7 @@ class OP_Controller(BasePolicy):
                     valueLoss += param.pow(2).sum() * self._l2_reg
                 valueLoss.backward()
                 torch.nn.utils.clip_grad_norm_(
-                    self.optionCritic.parameters(), max_norm=1.0
+                    self.optionCritic.parameters(), max_norm=10.0
                 )
 
                 return (

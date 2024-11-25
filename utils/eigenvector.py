@@ -101,18 +101,19 @@ def discover_options(
     batch = option_buffer.sample_all()
     option_buffer.wipe()
 
-    ### Convert to the tensor
-    states = torch.from_numpy(batch["states"]).to(torch.float32).to(device)
-    agent_pos = torch.from_numpy(batch["agent_pos"]).to(torch.float32).to(device)
+    obs = {"observation":batch["states"], "agent_pos":batch["agent_pos"]}
+    batch["features"], _ = policy.get_features(obs, to_numpy=True)
 
-    features, _ = policy.feaNet(states, agent_pos, deterministic=True)
+    ### Convert to the tensor
+    features = torch.from_numpy(batch["features"]).to(torch.float32).to(device)
     terminals = torch.from_numpy(batch["terminals"]).to(torch.float32).to(device)
 
     #### Compute Psi from Phi
     with torch.no_grad():
         psi = estimate_psi(features, terminals, gamma)  # operate on cpu
-        # to save VRAM
-        del states, agent_pos, features, terminals
+    
+    # to save VRAM
+    del features, terminals
 
     ### Compute the vectors via SVD
     if algo_name in ("SNAC", "SNAC+", "SNAC++"):

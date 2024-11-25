@@ -94,9 +94,9 @@ class PPO_Evaluator(Evaluator):
             done = False
             while not done:
                 with torch.no_grad():
-                    a, phi_dict = policy(s, idx, deterministic=True)
-                    a = a.cpu().numpy().squeeze()
-
+                    a, _ = policy(s, idx, deterministic=True)
+                    a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
+                
                 # Update the grid
                 if self.gridCriteria:
                     self.get_agent_pos(env)

@@ -92,3 +92,6 @@ class BasePolicy(nn.Module):
     def split(self, x):
         x_r, x_s = torch.split(x, x.size(-1) // 2, dim=-1)
         return x_r, x_s
+
+    def get_features(self):
+        pass

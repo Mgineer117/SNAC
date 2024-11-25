@@ -107,10 +107,8 @@ class OptionPolicy(nn.Module):
         }
 
     def log_prob(self, actions):
-        if self.is_discrete:
-            return self.dist.log_prob(torch.argmax(actions))
-        else:
-            return self.dist.log_prob(actions)
+        actions = actions.squeeze() if actions.shape[-1] > 1 else actions
+        return self.dist.log_prob(torch.argmax(actions) if self.is_discrete else actions)
 
 
 class OptionCritic(nn.Module):

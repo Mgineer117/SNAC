@@ -85,11 +85,11 @@ class PPO_Policy(nn.Module):
         return a, {"entropy": entropy, "probs": probs, "logprobs": logprobs}
 
     def log_prob(self, actions):
-        if self.is_discrete:
-            return self.dist.log_prob(torch.argmax(actions))
-        else:
-            return self.dist.log_prob(actions)
-
+        '''
+        Actions must be tensor
+        '''
+        actions = actions.squeeze() if actions.shape[-1] > 1 else actions
+        return self.dist.log_prob(torch.argmax(actions) if self.is_discrete else actions)
 
 class PPO_Critic(nn.Module):
     """

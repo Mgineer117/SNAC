@@ -88,7 +88,9 @@ class CtFWrapper(gym.Wrapper):
         return obs, {}
 
     def step(self, action):
+        print(action)
         action = np.argmax(action)
+        print(action)
         # Call the original step method
         observation, reward, termination, truncation, info = self.env.step(action)
         observation = np.repeat(
@@ -102,9 +104,8 @@ class CtFWrapper(gym.Wrapper):
 
 
 class NavigationWrapper(gym.Wrapper):
-    def __init__(self, env: gym.Env, tile_size: int = 1, cost_scaler: float = 1e-1):
+    def __init__(self, env: gym.Env, cost_scaler: float = 1e-1):
         super(NavigationWrapper, self).__init__(env)
-        self.tile_size = tile_size
         self.cost_scaler = cost_scaler
 
     def get_agent_pos(self):
@@ -129,5 +130,29 @@ class NavigationWrapper(gym.Wrapper):
 
         if info["goal_met"]:
             truncation = True
+
+        return obs, reward, termination, truncation, info
+    
+class GymWrapper(gym.Wrapper):
+    def __init__(self, env: gym.Env):
+        super(GymWrapper, self).__init__(env)
+
+    def get_agent_pos(self):
+        return np.array([0, 0])
+
+    def reset(self, **kwargs):
+        observation, _ = self.env.reset(**kwargs)
+        obs = {}
+        obs["observation"] = observation
+        obs["agent_pos"] = self.get_agent_pos()
+        return obs, {}
+
+    def step(self, action):
+        # Call the original step method
+        observation, reward, termination, truncation, info = self.env.step(action)
+
+        obs = {}
+        obs["observation"] = observation
+        obs["agent_pos"] = self.get_agent_pos()
 
         return obs, reward, termination, truncation, info
