@@ -13,23 +13,54 @@
 # limitations under the License.
 # ==============================================================================
 """Button task 1."""
-
-from safety_gymnasium.assets.geoms import Hazards
+# from safety_gymnasium.assets.geoms.walls import Walls
+from assets.walls import Walls
+from safety_gymnasium.bases.base_task import BaseTask
+from safety_gymnasium.assets.geoms import Goal
 from safety_gymnasium.assets.mocaps import Gremlins
-from safety_gymnasium.tasks.safe_navigation.button.button_level0 import ButtonLevel0
 
-
-class PointNavigationEnv(ButtonLevel0):
+class PointNavigationEnv(BaseTask):
     """An agent must press a goal button while avoiding hazards and gremlins.
 
     And while not pressing any of the wrong buttons.
     """
-
     def __init__(self, config) -> None:
         super().__init__(config=config)
 
-        self.placements_conf.extents = [-1.5, -1.5, 1.5, 1.5]
+        self.placements_conf.extents = [-1, -1, 1, 1]
 
-        self._add_geoms(Hazards(num=2, keepout=0.18))
+        self._add_geoms(Goal(keepout=0.305))
+        self._add_geoms(Walls(num=4, locate_factor=1.0))
         self._add_mocaps(Gremlins(num=2, travel=0.35, keepout=0.4))
-        self.buttons.is_constrained = True  # pylint: disable=no-member
+
+        self.last_dist_goal = None
+
+    def calculate_reward(self):
+        """Determine reward depending on the agent and tasks."""
+        # pylint: disable=no-member
+        reward = 0.0
+        dist_goal = self.dist_goal()
+        reward += (self.last_dist_goal - dist_goal) * self.goal.reward_distance
+        self.last_dist_goal = dist_goal
+
+        if self.goal_achieved:
+            reward += self.goal.reward_goal
+
+        return reward
+
+    def specific_reset(self):
+        pass
+
+    def specific_step(self):
+        pass
+
+    def update_world(self):
+        """Build a new goal position, maybe with resampling due to hazards."""
+        self.build_goal_position()
+        self.last_dist_goal = self.dist_goal()
+
+    @property
+    def goal_achieved(self):
+        """Whether the goal of task is achieved."""
+        # pylint: disable-next=no-member
+        return self.dist_goal() <= self.goal.size
