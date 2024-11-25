@@ -13,12 +13,6 @@ import wandb
 
 wandb.require("core")
 
-
-def check_all_devices(module):
-    devices = {param.device for param in module.parameters()}  # Get all unique devices
-    return devices
-
-
 #########################################################
 # Parameter definitions
 #########################################################
