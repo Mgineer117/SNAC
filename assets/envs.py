@@ -29,9 +29,12 @@ class PointNavigationEnv(BaseTask):
 
         self.placements_conf.extents = [-1, -1, 1, 1]
 
-        self._add_geoms(Goal(keepout=0.305))
-        self._add_geoms(Walls(num=4, locate_factor=1.0))
-        self._add_mocaps(Gremlins(num=2, travel=0.35, keepout=0.4))
+        self.agent.placements = [(-0.7, -0.7, -0.5, -0.5)]
+        self.agent.keepout = 0
+
+        self._add_geoms(Goal(keepout=0.0, placements=[(0.6, 0.6, 0.65, 0.65)]))
+        self._add_geoms(Walls(num=4, locate_factor=1.2))
+        self._add_mocaps(Gremlins(num=3, travel=0.35, keepout=0.3))
 
         self.last_dist_goal = None
 

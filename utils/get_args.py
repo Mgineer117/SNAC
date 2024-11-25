@@ -188,7 +188,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--cost-scaler",
         type=float,
-        default=1e-2,
+        default=1e-1,
         help="reward shaping parameter r = reawrd - scaler * cost",
     )
 
