@@ -206,9 +206,9 @@ class ConvNetwork(nn.Module):
                 )
             self.de_conv.append(element)
 
-        self.de_last_act = nn.ReLU()
+        # self.de_last_act = nn.ReLU()
         # self.de_last_act = nn.Tanh()
-        # self.de_last_act = nn.Sigmoid()
+        self.de_last_act = nn.Sigmoid()
         # self.de_last_act = nn.Identity()
         # self.de_last_act = EncoderLastAct(alpha=1.0)
 
