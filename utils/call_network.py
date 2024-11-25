@@ -329,7 +329,7 @@ def call_opNetwork(
         eps=args.eps_clip,
         tau=args.tau,
         gamma=args.gamma,
-        K=args.K_epochs,
+        K=args.OP_K_epochs,
         is_discrete=args.is_discrete,
         device=args.device,
     )
