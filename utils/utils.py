@@ -304,10 +304,12 @@ def setup_logger(args, unique_id, seed):
 
     if args.group is None:
         args.group = "-".join((formatted_date, unique_id))
+        
     if args.name is None:
         args.name = "-".join(
             (args.algo_name, args.env_name, unique_id, "seed:" + str(seed))
         )
+    
     if args.project is None:
         args.project = args.env_name
     args.logdir = os.path.join(args.logdir, args.group)

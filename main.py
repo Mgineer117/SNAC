@@ -28,7 +28,7 @@ def train(args, seed, unique_id):
                     - ++: clustering in value space
         unique_id (int): This is an unique running id for the experiment
     """
-    # call logger
+    # # call logger
     env = call_env(args)
     save_dim_to_args(env, args)  # given env, save its state and action dim
     logger, writer = setup_logger(args, unique_id, seed)
@@ -89,7 +89,7 @@ def train(args, seed, unique_id):
 # ENV LOOP
 #########################################################
 
-if __name__ == "__main__":
+def override_args():
     args = get_args(verbose=False)
     file_path = "assets/env_params.json"
     current_params = load_hyperparams(file_path=file_path, env_name=args.env_name)
@@ -99,8 +99,13 @@ if __name__ == "__main__":
         if getattr(args, k) is None:
             setattr(args, k, v)
 
-    # define unique id for the run
+    return args
+
+if __name__ == "__main__":
+    temp_args = get_args(verbose=False)
     unique_id = str(uuid.uuid4())[:4]
-    for seed in args.seeds:
+
+    for seed in temp_args.seeds:
+        args = override_args()
         seed_all(seed)
         train(args, seed, unique_id)
