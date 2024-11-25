@@ -109,6 +109,7 @@ def check_all_devices(module):
     devices = {param.device for param in module.parameters()}  # Get all unique devices
     return devices
 
+
 def call_ppoNetwork(args):
     from models.policy import PPO_Learner
 
@@ -145,6 +146,7 @@ def call_ppoNetwork(args):
     )
 
     return policy
+
 
 def call_sfNetwork(args):
     from models.policy import SF_Combined, SF_Split
@@ -276,6 +278,7 @@ def call_sfNetwork(args):
         )
 
     return policy
+
 
 def call_opNetwork(
     sf_network: nn.Module,

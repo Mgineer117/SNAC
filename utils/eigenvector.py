@@ -37,6 +37,31 @@ def print_option_info(option_vals, options, algo_name, desired_num):
         print(msg)
 
 
+def vector(S, V, option_dim: int, num: int, classification: str):
+    divide_num = (option_dim - 2 * num) // num
+
+    first_indices = list(range(0, num))
+    middle_indices = list(range(num, option_dim - num, divide_num))
+    final_indices = list(range(option_dim - num, option_dim))
+    indices = first_indices + middle_indices + final_indices
+
+    if classification == "top":
+        S = S[first_indices]
+        V = V[first_indices, :]
+    elif classification == "mid":
+        S = S[middle_indices]
+        V = V[middle_indices, :]
+    elif classification == "bot":
+        S = S[final_indices]
+        V = V[final_indices, :]
+    elif classification == "mix":
+        S = S[indices]
+        V = V[indices, :]
+    else:
+        NotImplementedError(f"Given classification is not implemented {classification}")
+    return S, V
+
+
 def discover_options(
     policy: BasePolicy,
     sampler: OnlineSampler,
@@ -46,7 +71,6 @@ def discover_options(
     num: int = 10,
     gamma: int = 0.9,
     num_trj: int = 100,
-    prev_batch: dict | None = None,
     idx: int | None = None,
     draw_map: bool = False,
     device=torch.device("cpu"),
@@ -87,52 +111,15 @@ def discover_options(
     #### Compute Psi from Phi
     with torch.no_grad():
         psi = estimate_psi(features, terminals, gamma)  # operate on cpu
-        # if prev_batch is not None:
-        #     prev_features = (
-        #         torch.from_numpy(prev_batch["features"]).to(torch.float32).to(device)
-        #     )
-        #     prev_terminals = (
-        #         torch.from_numpy(prev_batch["terminals"]).to(torch.float32).to(device)
-        #     )
-        #     prev_psi = estimate_psi(
-        #         prev_features, prev_terminals, gamma
-        #     )  # operate on cpu
-
-        #     psi = torch.cat((prev_psi, psi), axis=0)
-        psi_r, psi_s = policy.split(psi)
         # to save VRAM
         del features, terminals
         torch.cuda.empty_cache()
 
-    def vector(S, V, classification):
-        divide_num = (option_dim - 2 * num) // num
-
-        first_indices = list(range(0, num))
-        middle_indices = list(range(num, option_dim - num, divide_num))
-        final_indices = list(range(option_dim - num, option_dim))
-        indices = first_indices + middle_indices + final_indices
-
-        if classification == "top":
-            S = S[first_indices]
-            V = V[first_indices, :]
-        elif classification == "mid":
-            S = S[middle_indices]
-            V = V[middle_indices, :]
-        elif classification == "bot":
-            S = S[final_indices]
-            V = V[final_indices, :]
-        elif classification == "mix":
-            S = S[indices]
-            V = V[indices, :]
-        else:
-            NotImplementedError(
-                f"Given classification is not implemented {classification}"
-            )
-        return S, V
-
     ### Compute the vectors via SVD
     if algo_name in ("SNAC", "SNAC+", "SNAC++"):
+        psi_r, psi_s = policy.split(psi)
         option_dim = psi_r.shape[-1]
+
         if option_dim < 3 * num:
             raise ValueError(
                 f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
@@ -142,8 +129,12 @@ def discover_options(
         _, S_s, V_s = torch.svd(psi_s)  # F/2, F/2 x F/2
 
         if algo_name == "SNAC":
-            S_r, V_r = vector(S_r, V_r, classification="top")
-            S_s, V_s = vector(S_s, V_s, classification="top")
+            S_r, V_r = vector(
+                S_r, V_r, option_dim=option_dim, num=num, classification="top"
+            )
+            S_s, V_s = vector(
+                S_s, V_s, option_dim=option_dim, num=num, classification="top"
+            )
 
             S_r = torch.cat((S_r, -S_r), axis=0)
             V_r = torch.cat((V_r, -V_r), axis=0)
@@ -227,7 +218,7 @@ def discover_options(
 
         if algo_name == "EigenOption":
             ##### top n vectors #####
-            S, V = vector(S, V, classification="top")
+            S, V = vector(S, V, option_dim=option_dim, num=num, classification="top")
 
             option_vals = torch.cat((S, -S), axis=0)
             options = torch.cat((V, -V), axis=0)

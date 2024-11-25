@@ -269,47 +269,47 @@ class OP_Controller(BasePolicy):
             t1 - t0,
         )
 
-    def learnPsi(self, batch, z):
-        self.train()
-        t0 = time.time()
+    # def learnPsi(self, batch, z):
+    #     self.train()
+    #     t0 = time.time()
 
-        # Ingredients
-        _, features, actions_oh, _, _, terminals, _ = self.preprocess_batch(
-            batch, self.device
-        )
+    #     # Ingredients
+    #     _, features, actions_oh, _, _, terminals, _ = self.preprocess_batch(
+    #         batch, self.device
+    #     )
 
-        ### LEARN OPTION PSI ###
-        phi = features
-        psi, _ = self.psiNet(phi, z)
-        filteredPsi = torch.sum(
-            psi * actions_oh.unsqueeze(-1), axis=1
-        )  # -> filteredPsi ~ [N, F] since no keepdim=True
+    #     ### LEARN OPTION PSI ###
+    #     phi = features
+    #     psi, _ = self.psiNet(phi, z)
+    #     filteredPsi = torch.sum(
+    #         psi * actions_oh.unsqueeze(-1), axis=1
+    #     )  # -> filteredPsi ~ [N, F] since no keepdim=True
 
-        psi_est = estimate_psi(phi, terminals, self._gamma, self.device)
-        psi_loss = self.huber_loss(psi_est, filteredPsi)
+    #     psi_est = estimate_psi(phi, terminals, self._gamma, self.device)
+    #     psi_loss = self.huber_loss(psi_est, filteredPsi)
 
-        self.optimizers["psiNet"].zero_grad()
-        psi_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
-        grad_dict = self.compute_gradient_norm(
-            [self.psiNet],
-            ["psiNet"],
-            dir="OP",
-            device=self.device,
-        )
-        self.optimizers["psiNet"].step()
+    #     self.optimizers["psiNet"].zero_grad()
+    #     psi_loss.backward()
+    #     torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+    #     grad_dict = self.compute_gradient_norm(
+    #         [self.psiNet],
+    #         ["psiNet"],
+    #         dir="OP",
+    #         device=self.device,
+    #     )
+    #     self.optimizers["psiNet"].step()
 
-        loss_dict = {
-            "OP/psiLoss": psi_loss.item(),
-        }
-        loss_dict.update(grad_dict)
+    #     loss_dict = {
+    #         "OP/psiLoss": psi_loss.item(),
+    #     }
+    #     loss_dict.update(grad_dict)
 
-        t1 = time.time()
-        self.eval()
-        return (
-            loss_dict,
-            t1 - t0,
-        )
+    #     t1 = time.time()
+    #     self.eval()
+    #     return (
+    #         loss_dict,
+    #         t1 - t0,
+    #     )
 
     def save_model(self, logdir, epoch=None, is_best=False):
         self.optionPolicy = self.optionPolicy.cpu()
