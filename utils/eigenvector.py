@@ -145,7 +145,7 @@ def discover_options(
             options = torch.cat((V_r, V_s), dim=0)
         elif algo_name == "SNAC+":
             # replacing original V with cluster centroids
-            _, _, metaData = cluster_vecvtors([evals_r, evecs_r], [evals_r, evecs_s], k=num)
+            _, _, metaData = cluster_vecvtors([evals_r, evals_s], [evecs_r, evecs_s], k=num)
 
             # Pull out the cluster result
             S_r, S_s = metaData["evals_list"]
