@@ -13,6 +13,7 @@ import wandb
 
 wandb.require("core")
 
+
 #########################################################
 # Parameter definitions
 #########################################################
@@ -88,11 +89,11 @@ def train(args, unique_id):
 # ENV LOOP
 #########################################################
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     args = get_args(verbose=False)
     file_path = "assets/env_params.json"
     current_params = load_hyperparams(file_path=file_path, env_name=args.env_name)
-    
+
     # use pre-defined params if no pram given as args
     for k, v in current_params.items():
         if getattr(args, k) is None:

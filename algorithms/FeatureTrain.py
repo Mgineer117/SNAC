@@ -103,8 +103,9 @@ class FeatureTrain:
         """
         ### Call network param and run
         sf_network = call_sfNetwork(self.args)
+        lr_step_size = self.args.SF_epochs // 10
         scheduler = torch.optim.lr_scheduler.StepLR(
-            sf_network.feature_optims, step_size=100, gamma=0.9
+            sf_network.feature_optims, step_size=lr_step_size, gamma=0.9
         )
         print_model_summary(sf_network, model_name="SF model")
         if not self.args.import_sf_model:
