@@ -22,8 +22,8 @@ from typing import Any, ClassVar
 import gymnasium
 import numpy as np
 
-from assets.envs import *
-from safety_gymnasium.bases.base_task import BaseTask
+from gym_continuous.envs import *
+from gym_continuous.bases.base_task import BaseTask
 from safety_gymnasium.utils.common_utils import ResamplingError, quat2zalign
 from safety_gymnasium.utils.task_utils import get_task_class_name
 

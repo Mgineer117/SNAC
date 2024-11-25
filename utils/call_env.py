@@ -67,7 +67,7 @@ def call_env(args):
         config = {"agent_name": "Point"}
         env_id = "PointNavigation"
         __register_helper(env_id=env_id,
-                entry_point='assets.env_builder:Builder',
+                entry_point='gym_continuous.env_builder:Builder',
                 spec_kwargs={'config': config, 'task_id': env_id},
                 max_episode_steps=args.episode_len)
 
