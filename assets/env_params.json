@@ -1,6 +1,6 @@
 {
     "FourRooms": {
-        "SF_epoch": 200,
+        "SF_epoch": 300,
         "OP_epoch": 10,
         "HC_epoch": 100,
         "PPO_epoch": 100,
@@ -19,7 +19,7 @@
         "gamma": 0.999
     },
     "CtF1v2": {
-        "SF_epoch": 200,
+        "SF_epoch": 300,
         "OP_epoch": 10,
         "HC_epoch": 100,
         "PPO_epoch": 100,
