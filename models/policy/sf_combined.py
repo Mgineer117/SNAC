@@ -71,6 +71,7 @@ class SF_Combined(BasePolicy):
         anneal: float = 1e-5,
         phi_loss_r_scaler: float = 1.0,
         phi_loss_s_scaler: float = 0.1,
+        phi_loss_kl_scaler: float = 25.0,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
         is_discrete: bool = False,
@@ -92,6 +93,7 @@ class SF_Combined(BasePolicy):
         self._forward_steps = 0
         self._phi_loss_r_scaler = phi_loss_r_scaler
         self._phi_loss_s_scaler = phi_loss_s_scaler
+        self._phi_loss_kl_scaler = phi_loss_kl_scaler
         self._psi_loss_scaler = psi_loss_scaler
         self._q_loss_scaler = q_loss_scaler
 
@@ -211,7 +213,7 @@ class SF_Combined(BasePolicy):
         option_loss_scaler = 1e-10
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
 
-        kl_loss = 100 * conv_dict["loss"]
+        kl_loss = self._phi_loss_kl_scaler * conv_dict["loss"]
 
         l2_norm = 0
         for param in self.feaNet.parameters():
