@@ -174,7 +174,6 @@ class OP_Controller(BasePolicy):
 
         states = states.reshape(states.shape[0], -1)
         
-
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
             values, _ = self.optionCritic(states, z)

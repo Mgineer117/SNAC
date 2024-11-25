@@ -88,9 +88,7 @@ class CtFWrapper(gym.Wrapper):
         return obs, {}
 
     def step(self, action):
-        print(action)
         action = np.argmax(action)
-        print(action)
         # Call the original step method
         observation, reward, termination, truncation, info = self.env.step(action)
         observation = np.repeat(
