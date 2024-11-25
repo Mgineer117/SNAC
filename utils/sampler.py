@@ -80,17 +80,29 @@ class Base:
         We create a initialization batch to avoid the daedlocking.
         The remainder of zero arrays will be cut in the end.
         """
+        # data = dict(
+        #     states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
+        #     next_states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
+        #     actions=np.empty((batch_size, self.action_dim), dtype=np.float32),
+        #     option_actions=np.empty((batch_size, 1), dtype=np.float32),
+        #     agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
+        #     next_agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
+        #     rewards=np.empty((batch_size, 1), dtype=np.float32),
+        #     terminals=np.empty((batch_size, 1), dtype=np.float32),
+        #     logprobs=np.empty((batch_size, 1), dtype=np.float32),
+        # )
         data = dict(
-            states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
-            next_states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
-            actions=np.empty((batch_size, self.action_dim), dtype=np.float32),
-            option_actions=np.empty((batch_size, 1), dtype=np.float32),
-            agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
-            next_agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
-            rewards=np.empty((batch_size, 1), dtype=np.float32),
-            terminals=np.empty((batch_size, 1), dtype=np.float32),
-            logprobs=np.empty((batch_size, 1), dtype=np.float32),
+            states=np.full(((batch_size,) + self.state_dim), np.nan, dtype=np.float32),
+            next_states=np.full(((batch_size,) + self.state_dim), np.nan, dtype=np.float32),
+            actions=np.full((batch_size, self.action_dim), np.nan, dtype=np.float32),
+            option_actions=np.full((batch_size, 1), np.nan, dtype=np.float32),
+            agent_pos=np.full((batch_size, 2), np.nan, dtype=np.float32),
+            next_agent_pos=np.full((batch_size, 2), np.nan, dtype=np.float32),
+            rewards=np.full((batch_size, 1), np.nan, dtype=np.float32),
+            terminals=np.full((batch_size, 1), np.nan, dtype=np.float32),
+            logprobs=np.full((batch_size, 1), np.nan, dtype=np.float32),
         )
+
         return data
 
     def set_any_seed(self, seed, pid):

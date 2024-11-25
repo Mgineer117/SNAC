@@ -104,7 +104,6 @@ class PPO_Learner(BasePolicy):
         t0 = time.time()
 
         # Ingredients
-        # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         states = states.reshape(states.shape[0], -1)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)

@@ -371,7 +371,7 @@ def get_args(verbose=True):
     )
 
     parser.add_argument("--gpu-idx", type=int, default=0, help="gpu idx to train")
-    parser.add_argument("--verbose", type=bool, default=True, help="WandB logging")
+    parser.add_argument("--verbose", type=bool, default=False, help="WandB logging")
 
     args = parser.parse_args()
 

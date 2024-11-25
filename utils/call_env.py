@@ -13,8 +13,10 @@ from utils.wrappers import GridWrapper, CtFWrapper, NavigationWrapper
 def disc_or_cont(env, args):
     if isinstance(env.action_space, gym.spaces.Discrete):
         args.is_discrete = True
+        print(f"Discrete Action Space")
     elif isinstance(env.action_space, gym.spaces.Box):
         args.is_discrete = False
+        print(f"Continuous Action Space")
     else:
         raise ValueError(f"Unknown action space type {env.action_space}.")
 

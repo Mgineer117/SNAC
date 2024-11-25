@@ -37,7 +37,7 @@ def print_option_info(option_vals, options, algo_name, desired_num):
         print(msg)
 
 
-def vector(S, V, option_dim: int, num: int, classification: str):
+def vector(evals, evecs, option_dim: int, num: int, classification: str):
     divide_num = (option_dim - 2 * num) // num
 
     first_indices = list(range(0, num))
@@ -46,20 +46,20 @@ def vector(S, V, option_dim: int, num: int, classification: str):
     indices = first_indices + middle_indices + final_indices
 
     if classification == "top":
-        S = S[first_indices]
-        V = V[first_indices, :]
+        evals = evals[first_indices]
+        evecs = evecs[first_indices, :]
     elif classification == "mid":
-        S = S[middle_indices]
-        V = V[middle_indices, :]
+        evals = evals[middle_indices]
+        evecs = evecs[middle_indices, :]
     elif classification == "bot":
-        S = S[final_indices]
-        V = V[final_indices, :]
+        evals = evals[final_indices]
+        evecs = evecs[final_indices, :]
     elif classification == "mix":
-        S = S[indices]
-        V = V[indices, :]
+        evals = evals[indices]
+        evecs = evecs[indices, :]
     else:
         NotImplementedError(f"Given classification is not implemented {classification}")
-    return S, V
+    return evals, evecs
 
 
 def discover_options(
@@ -112,8 +112,7 @@ def discover_options(
     with torch.no_grad():
         psi = estimate_psi(features, terminals, gamma)  # operate on cpu
         # to save VRAM
-        del features, terminals
-        torch.cuda.empty_cache()
+        del states, agent_pos, features, terminals
 
     ### Compute the vectors via SVD
     if algo_name in ("SNAC", "SNAC+", "SNAC++"):
@@ -125,15 +124,15 @@ def discover_options(
                 f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
             )
 
-        _, S_r, V_r = torch.svd(psi_r)  # F/2, F/2 x F/2
-        _, S_s, V_s = torch.svd(psi_s)  # F/2, F/2 x F/2
+        _, evals_r, evecs_r = torch.svd(psi_r)  # F/2, F/2 x F/2
+        _, evals_s, evecs_s = torch.svd(psi_s)  # F/2, F/2 x F/2
 
         if algo_name == "SNAC":
             S_r, V_r = vector(
-                S_r, V_r, option_dim=option_dim, num=num, classification="top"
+                evals_r, evecs_r, option_dim=option_dim, num=num, classification="top"
             )
             S_s, V_s = vector(
-                S_s, V_s, option_dim=option_dim, num=num, classification="top"
+                evals_s, evecs_s, option_dim=option_dim, num=num, classification="top"
             )
 
             S_r = torch.cat((S_r, -S_r), axis=0)
@@ -144,16 +143,12 @@ def discover_options(
             option_vals = torch.cat((S_r, S_s), dim=0)
             options = torch.cat((V_r, V_s), dim=0)
         elif algo_name == "SNAC+":
-            V_list = [V_r, V_s]
-
             # replacing original V with cluster centroids
-            _, _, metaData = cluster_vecvtors([S_r, S_s], [V_r, V_s], k=num)
+            _, _, metaData = cluster_vecvtors([evals_r, evecs_r], [evals_r, evecs_s], k=num)
 
             # Pull out the cluster result
-            S_r = metaData["evals_list"][0]
-            S_s = metaData["evals_list"][1]
-            V_r = metaData["centroids_list"][0]
-            V_s = metaData["centroids_list"][1]
+            S_r, S_s = metaData["evals_list"]
+            V_r, V_s = metaData["centroids_list"]
 
             # Obtain (+/-) of vectors
             S_r = torch.cat((S_r, -S_r), axis=0)
@@ -167,40 +162,40 @@ def discover_options(
             vec_list = [V_r, V_s]
         elif algo_name == "SNAC++":
             # V_list = [torch.cat((V_r, -V_r), axis=0), torch.cat((V_s, -V_s), axis=0)]
-            S_list = [S_r, S_s]
-            V_list = [V_r, V_s]
+            S_list = [evals_r, evals_s]
+            V_list = [evecs_r, evecs_s]
 
-            r_rewards = V_r @ psi_r.T  # F x T (Num options (row) and rewards (column))
-            s_rewards = V_s @ psi_s.T  # F x T
+            r_rewards = evecs_r @ psi_r.T  # F x T (Num options (row) and rewards (column))
+            s_rewards = evecs_s @ psi_s.T  # F x T
 
             # S_r, S_s are the dummy input since we just want clustered indicies
-            _, _, metaData = cluster_vecvtors([S_r, S_s], [r_rewards, s_rewards], k=num)
+            _, _, metaData = cluster_vecvtors([evals_r, evals_s], [r_rewards, s_rewards], k=num)
 
             val_list = []
             vec_list = []
             for i, label in enumerate(metaData["labels_list"]):
-                vals = torch.empty(num)
-                vecs = torch.empty(num, option_dim)
+                values = torch.empty(num)
+                vectors = torch.empty(num, option_dim)
                 for k in range(num):
                     idx = label == k
-                    vals[k] = torch.mean(S_list[i][idx])
-                    vecs[k, :] = torch.mean(V_list[i][idx, :], axis=0)
+                    values[k] = torch.mean(S_list[i][idx])
+                    vectors[k, :] = torch.mean(V_list[i][idx, :], axis=0)
 
-                sorted_vals, indices = torch.sort(vals, descending=True)
-                sorted_vecs = vecs[indices]
+                S, indices = torch.sort(values, descending=True)
+                V = vectors[indices]
 
-                sorted_vals = torch.cat((sorted_vals, -sorted_vals), axis=0)
-                sorted_vecs = torch.cat((sorted_vecs, -sorted_vecs), axis=0)
+                S = torch.cat((S, -S), axis=0)
+                V = torch.cat((V, -V), axis=0)
 
-                val_list.append(sorted_vals)
-                vec_list.append(sorted_vecs)
+                val_list.append(S)
+                vec_list.append(V)
 
             option_vals = torch.cat(val_list, dim=0)
             options = torch.cat(vec_list, dim=0)
 
         if algo_name in ("SNAC+", "SNAC++") and draw_map:
             plotter.plotClusteredVectors(
-                V_list=V_list,
+                V_list=[evecs_r, evecs_s],
                 centroids=vec_list,
                 labels=metaData["labels_list"],
                 names=["R-feature", "S-feature"],
@@ -214,49 +209,44 @@ def discover_options(
                 f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
             )
 
-        _, S, V = torch.svd(psi)  # S: max - min
+        _, evals, evecs = torch.svd(psi)  # S: max - min
 
         if algo_name == "EigenOption":
             ##### top n vectors #####
-            S, V = vector(S, V, option_dim=option_dim, num=num, classification="top")
+            S, V = vector(evals, evecs, option_dim=option_dim, num=num, classification="top")
 
             option_vals = torch.cat((S, -S), axis=0)
             options = torch.cat((V, -V), axis=0)
         elif algo_name == "EigenOption+":
-            V_list = [V]
-
             ##### cluster in eigen space #####
-            S, V, metaData = cluster_vecvtors([S], [V], k=num)
+            S, V, metaData = cluster_vecvtors([evals], [evecs], k=num)
 
             # Obtain (+/-) of vectors
             option_vals = torch.cat((S, -S), axis=0)
             options = torch.cat((V, -V), axis=0)
         elif algo_name == "EigenOption++":
-            V_list = [V]
-
             ##### cluster in action-value space #####
-            rewards = V @ psi.T  # (num options) x T
+            rewards = evecs @ psi.T  # (num options) x T
 
-            _, _, metaData = cluster_vecvtors([S], [rewards], k=num)  # S is dummy
+            _, _, metaData = cluster_vecvtors([evals], [rewards], k=num)  # S is dummy
 
-            vals = torch.empty(num)
-            vecs = torch.empty(num, option_dim)
-
+            values = torch.empty(num)
+            vectors = torch.empty(num, option_dim)
             for k in range(num):
                 idx = metaData["labels_list"][0] == k
 
-                vals[k] = torch.mean(S[idx])
-                vecs[k, :] = torch.mean(V[idx, :], axis=0)
+                values[k] = torch.mean(evals[idx])
+                vectors[k, :] = torch.mean(evecs[idx, :], axis=0)
 
-            sorted_vals, indices = torch.sort(vals, descending=True)
-            sorted_vecs = vecs[indices]
+            S, indices = torch.sort(values, descending=True)
+            V = vectors[indices]
 
-            option_vals = torch.cat((sorted_vals, -sorted_vals), axis=0)
-            options = torch.cat((sorted_vecs, -sorted_vecs), axis=0)
+            option_vals = torch.cat((S, -S), axis=0)
+            options = torch.cat((V, -V), axis=0)
 
         if algo_name in ("EigenOption+", "EigenOption++") and draw_map:
             plotter.plotClusteredVectors(
-                V_list=V_list,
+                V_list=[evecs],
                 centroids=[options],
                 labels=metaData["labels_list"],
                 names=["S-feature"],
