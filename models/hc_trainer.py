@@ -84,7 +84,7 @@ class HCTrainer:
             self.last_reward_mean.append(avg_rew_mean)
             self.last_reward_std.append(avg_rew_std)
 
-            self.save_model(e+1)
+            self.save_model(e + 1)
 
             self.policy.train()
             ### training loop

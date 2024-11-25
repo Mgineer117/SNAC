@@ -69,18 +69,27 @@ def get_args(verbose=True):
         help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
-        "--sf-log-interval", type=int, default=250, help="logging interval; epoch-based"
+        "--sf-log-interval",
+        type=int,
+        default=None,
+        help="logging interval; epoch-based",
     )
     parser.add_argument(
-        "--op-log-interval", type=int, default=10, help="logging interval; epoch-based"
+        "--op-log-interval",
+        type=int,
+        default=None,
+        help="logging interval; epoch-based",
     )
     parser.add_argument(
-        "--hc-log-interval", type=int, default=50, help="logging interval; epoch-based"
+        "--hc-log-interval",
+        type=int,
+        default=None,
+        help="logging interval; epoch-based",
     )
     parser.add_argument(
         "--ppo-log-interval",
         type=int,
-        default=50,
+        default=None,
         help="logging interval; epoch-based",
     )
 
@@ -131,7 +140,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--step-per-epoch",
         type=int,
-        default=10,  # 10
+        default=None,  # 10
         help="number of iterations within one epoch",
     )
     parser.add_argument(
