@@ -17,7 +17,7 @@ wandb.require("core")
 #########################################################
 # Parameter definitions
 #########################################################
-def train(args, unique_id):
+def train(args, seed, unique_id):
     """Initiate the training process upon given args
 
     Args:
@@ -102,6 +102,5 @@ if __name__ == "__main__":
     # define unique id for the run
     unique_id = str(uuid.uuid4())[:4]
     for seed in args.seeds:
-        args.running_seed = seed
         seed_all(seed)
-        train(args, unique_id)
+        train(args, seed, unique_id)
