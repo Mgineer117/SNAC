@@ -14,7 +14,7 @@
 # ==============================================================================
 """Button task 1."""
 # from safety_gymnasium.assets.geoms.walls import Walls
-from assets.walls import Walls
+from assets.walls import CustomWalls
 from safety_gymnasium.bases.base_task import BaseTask
 from safety_gymnasium.assets.geoms import Goal
 from safety_gymnasium.assets.mocaps import Gremlins
@@ -33,7 +33,7 @@ class PointNavigationEnv(BaseTask):
         self.agent.keepout = 0
 
         self._add_geoms(Goal(keepout=0.0, placements=[(0.6, 0.6, 0.65, 0.65)]))
-        self._add_geoms(Walls(num=4, locate_factor=1.2))
+        self._add_geoms(CustomWalls(num=4, locate_factor=1.2))
         self._add_mocaps(Gremlins(num=3, travel=0.35, keepout=0.3))
 
         self.last_dist_goal = None
