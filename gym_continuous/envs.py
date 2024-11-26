@@ -16,25 +16,54 @@
 # from safety_gymnasium.assets.geoms.walls import Walls
 from gym_continuous.bases.base_task import BaseTask
 from gym_continuous.assets.geoms import Walls
-from safety_gymnasium.assets.geoms import Goal
+from safety_gymnasium.assets.geoms import Goal, Pillars
 from safety_gymnasium.assets.mocaps import Gremlins
+
 
 class PointNavigationEnv(BaseTask):
     """An agent must press a goal button while avoiding hazards and gremlins.
 
     And while not pressing any of the wrong buttons.
     """
+
     def __init__(self, config) -> None:
         super().__init__(config=config)
 
         self.placements_conf.extents = [-1.0, -1.0, 1.0, 1.0]
 
-        self.agent.placements = [(-0.7, -0.7, -0.5, -0.5)]
+        self.agent.locations = [(-0.85, -0.85)]
         self.agent.keepout = 0.1
 
-        self._add_geoms(Goal(keepout=0.1, placements=[(0.8, 0.8, 1.0, 1.0)]))
-        self._add_mocaps(Gremlins(num=4, travel=0.25, keepout=0.3))
-        self._add_geoms(Walls(num=4, locate_factor=1.3))
+        self._add_geoms(Goal(keepout=0.1, locations=[(-0.85, 0.85)]))
+        self._add_geoms(Walls(num=4, locate_factor=1.25))
+        self._add_geoms(
+            Pillars(
+                num=9,
+                size=0.1,
+                height=0.1,
+                keepout=0.1,
+                locations=[
+                    (-1.0, -0.5),
+                    (-0.8, -0.5),
+                    (-0.6, -0.5),
+                    (-0.4, -0.5),
+                    (-0.2, -0.5),
+                    (0.0, -0.5),
+                    (0.2, -0.5),
+                    (0.8, -0.5),
+                    (1.0, -0.5),
+                ],
+                is_constrained=False,
+            ),
+        )
+        self._add_mocaps(
+            Gremlins(
+                num=2,
+                placements=[(-0.7, -0.2, 0.7, 0.7)],
+                travel=0.45,
+                keepout=0.3,
+            )
+        )
 
         self.last_dist_goal = None
 
