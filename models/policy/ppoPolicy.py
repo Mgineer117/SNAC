@@ -96,7 +96,7 @@ class PPO_Learner(BasePolicy):
         return a, {
             # "z": self.dummy.item(),
             "probs": metaData["probs"],
-            "logprobs": metaData["logprobs"]
+            "logprobs": metaData["logprobs"],
         }
 
     def learn(self, batch, z=0):
@@ -170,7 +170,7 @@ class PPO_Learner(BasePolicy):
             surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * advantages
             actorLoss = -torch.min(surr1, surr2)
             entropyLoss = self._entropy_scaler * entropy
-            
+
             loss = torch.mean(actorLoss - entropyLoss)
 
             self.optimizer.zero_grad()

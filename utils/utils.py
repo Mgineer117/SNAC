@@ -21,9 +21,12 @@ def load_hyperparams(file_path, env_name):
             hyperparams = json.load(f)
             return hyperparams.get(env_name, {})
     except FileNotFoundError:
-        print(f"No file found at {file_path}. Returning default empty dictionary for {env_name}.")
+        print(
+            f"No file found at {file_path}. Returning default empty dictionary for {env_name}."
+        )
         return {}
-    
+
+
 def separate_trajectories(features, terminals):
     terminal_indices = np.where(terminals == 1)[0]
     trajectories = []
@@ -304,12 +307,12 @@ def setup_logger(args, unique_id, seed):
 
     if args.group is None:
         args.group = "-".join((formatted_date, unique_id))
-        
+
     if args.name is None:
         args.name = "-".join(
             (args.algo_name, args.env_name, unique_id, "seed:" + str(seed))
         )
-    
+
     if args.project is None:
         args.project = args.env_name
     args.logdir = os.path.join(args.logdir, args.group)

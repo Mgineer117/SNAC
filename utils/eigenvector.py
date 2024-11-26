@@ -101,7 +101,7 @@ def discover_options(
     batch = option_buffer.sample_all()
     option_buffer.wipe()
 
-    obs = {"observation":batch["states"], "agent_pos":batch["agent_pos"]}
+    obs = {"observation": batch["states"], "agent_pos": batch["agent_pos"]}
     batch["features"], _ = policy.get_features(obs, to_numpy=True)
 
     ### Convert to the tensor
@@ -111,7 +111,7 @@ def discover_options(
     #### Compute Psi from Phi
     with torch.no_grad():
         psi = estimate_psi(features, terminals, gamma)  # operate on cpu
-    
+
     # to save VRAM
     del features, terminals
 
@@ -145,7 +145,9 @@ def discover_options(
             options = torch.cat((V_r, V_s), dim=0)
         elif algo_name == "SNAC+":
             # replacing original V with cluster centroids
-            _, _, metaData = cluster_vecvtors([evals_r, evals_s], [evecs_r, evecs_s], k=num)
+            _, _, metaData = cluster_vecvtors(
+                [evals_r, evals_s], [evecs_r, evecs_s], k=num
+            )
 
             # Pull out the cluster result
             S_r, S_s = metaData["evals_list"]
@@ -166,11 +168,15 @@ def discover_options(
             S_list = [evals_r, evals_s]
             V_list = [evecs_r, evecs_s]
 
-            r_rewards = evecs_r @ psi_r.T  # F x T (Num options (row) and rewards (column))
+            r_rewards = (
+                evecs_r @ psi_r.T
+            )  # F x T (Num options (row) and rewards (column))
             s_rewards = evecs_s @ psi_s.T  # F x T
 
             # S_r, S_s are the dummy input since we just want clustered indicies
-            _, _, metaData = cluster_vecvtors([evals_r, evals_s], [r_rewards, s_rewards], k=num)
+            _, _, metaData = cluster_vecvtors(
+                [evals_r, evals_s], [r_rewards, s_rewards], k=num
+            )
 
             val_list = []
             vec_list = []
@@ -214,7 +220,9 @@ def discover_options(
 
         if algo_name == "EigenOption":
             ##### top n vectors #####
-            S, V = vector(evals, evecs, option_dim=option_dim, num=num, classification="top")
+            S, V = vector(
+                evals, evecs, option_dim=option_dim, num=num, classification="top"
+            )
 
             option_vals = torch.cat((S, -S), axis=0)
             options = torch.cat((V, -V), axis=0)

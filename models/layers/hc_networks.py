@@ -57,23 +57,23 @@ class HC_Policy(nn.Module):
         probs = torch.argmax(probs, dim=-1)
 
         return z, {
-            "dist":dist,
+            "dist": dist,
             "probs": probs,
             "logprobs": logprobs,
         }
 
-    def log_prob(self, dist:torch.distributions, actions:torch.Tensor):
-        '''
+    def log_prob(self, dist: torch.distributions, actions: torch.Tensor):
+        """
         Actions must be tensor
-        '''
+        """
         actions = actions.squeeze() if actions.shape[-1] > 1 else actions
         logprobs = dist.log_prob(torch.argmax(actions, dim=-1)).unsqueeze(-1)
         return logprobs
-    
-    def entropy(self, dist:torch.distributions):
-        '''
+
+    def entropy(self, dist: torch.distributions):
+        """
         For code consistency
-        '''
+        """
         return dist.entropy().unsqueeze(-1)
 
 
@@ -108,13 +108,13 @@ class HC_PrimitivePolicy(nn.Module):
 
         if deterministic:
             # convert to long for indexing purpose
-            z = torch.argmax(probs, dim=-1).long()  
+            z = torch.argmax(probs, dim=-1).long()
         else:
             z = dist.sample().long()
 
         logprobs = dist.log_prob(z)
         probs = torch.argmax(probs, dim=-1)
-        
+
         return z, {"logits": logits, "probs": probs, "logprobs": logprobs}
 
 

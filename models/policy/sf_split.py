@@ -212,21 +212,23 @@ class SF_Split(BasePolicy):
             "probs": self.dummy,  # dummy
             "logprobs": self.dummy,  # dummy
         }
-    
+
     def random_walk(self, obs):
         return self(obs)
 
-    def get_features(self, obs, to_numpy:bool = False):
+    def get_features(self, obs, to_numpy: bool = False):
         obs = self.preprocess_obs(obs)
         with torch.no_grad():
-            phi, _ = self.feaNet(obs["observation"], obs["agent_pos"], deterministic=True)
+            phi, _ = self.feaNet(
+                obs["observation"], obs["agent_pos"], deterministic=True
+            )
         phi_r, phi_s = self.split(phi)
 
         if to_numpy:
             phi = phi.cpu().numpy()
             phi_r = phi_r.cpu().numpy()
             phi_s = phi_s.cpu().numpy()
-        return phi, {"phi_r":phi_r, "phi_s":phi_s}
+        return phi, {"phi_r": phi_r, "phi_s": phi_s}
 
     def decode(self, features, actions, conv_dict):
         # Does some dimensional and np <-> tensor work

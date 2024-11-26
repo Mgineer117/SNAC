@@ -91,7 +91,7 @@ class OptionPolicy(nn.Module):
             dist = MultivariateNormal(loc=mu, covariance_matrix=covariance_matrix)
 
             a = mu if deterministic else dist.rsample()
-            
+
             logprobs = dist.log_prob(a)
             probs = torch.exp(logprobs)
 
@@ -102,10 +102,10 @@ class OptionPolicy(nn.Module):
             "logprobs": logprobs,
         }
 
-    def log_prob(self, dist:torch.distributions, actions:torch.Tensor):
-        '''
+    def log_prob(self, dist: torch.distributions, actions: torch.Tensor):
+        """
         Actions must be tensor
-        '''
+        """
         actions = actions.squeeze() if actions.shape[-1] > 1 else actions
 
         if self.is_discrete:
@@ -113,11 +113,11 @@ class OptionPolicy(nn.Module):
         else:
             logprobs = dist.log_prob(actions).unsqueeze(-1)
         return logprobs
-    
-    def entropy(self, dist:torch.distributions):
-        '''
+
+    def entropy(self, dist: torch.distributions):
+        """
         For code consistency
-        '''
+        """
         return dist.entropy().unsqueeze(-1)
 
 

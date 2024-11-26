@@ -52,7 +52,9 @@ def call_env(args):
         map_path: str = "assets/ctf_avoid_obj.txt"
         observation_option: str = "tensor"
         env_name = args.env_name
-        red_agents = int(env_name.split('v')[1])  # Extract the number of red agents from the env name
+        red_agents = int(
+            env_name.split("v")[1]
+        )  # Extract the number of red agents from the env name
         if env_name.startswith("CtF1v"):
             env = CtF(
                 map_path=map_path,
@@ -68,19 +70,21 @@ def call_env(args):
     elif args.env_name == "PointNavigation":
         config = {"agent_name": "Point"}
         env_id = "PointNavigation"
-        __register_helper(env_id=env_id,
-                entry_point='gym_continuous.env_builder:Builder',
-                spec_kwargs={'config': config, 'task_id': env_id},
-                max_episode_steps=args.episode_len)
+        __register_helper(
+            env_id=env_id,
+            entry_point="gym_continuous.env_builder:Builder",
+            spec_kwargs={"config": config, "task_id": env_id},
+            max_episode_steps=args.episode_len,
+        )
 
         env = sgym.make(
             "PointNavigation",
             render_mode="rgb_array",
             width=1024,
             height=1024,
-            camera_name="fixedfar"
+            camera_name="fixedfar",
         )
-        
+
         disc_or_cont(env, args)
         return NavigationWrapper(env)
     elif args.env_name == "InvertedPendulum":

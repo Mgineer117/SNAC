@@ -175,14 +175,16 @@ class SF_Combined(BasePolicy):
     def random_walk(self, obs):
         return self(obs)
 
-    def get_features(self, obs, to_numpy:bool = False):
+    def get_features(self, obs, to_numpy: bool = False):
         obs = self.preprocess_obs(obs)
         with torch.no_grad():
-            phi, _ = self.feaNet(obs["observation"], obs["agent_pos"], deterministic=True)
+            phi, _ = self.feaNet(
+                obs["observation"], obs["agent_pos"], deterministic=True
+            )
         if to_numpy:
             phi = phi.cpu().numpy()
         return phi, {}
-    
+
     def decode(self, features, actions, conv_dict):
         # Does some dimensional and np <-> tensor work
         # and pass it to feature decoder actions should be one-hot
