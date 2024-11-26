@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from torch.nn import MaxPool2d, MaxUnpool2d
 from torch.distributions import MultivariateNormal
@@ -345,6 +346,8 @@ class VAE(nn.Module):
         self._fc_dim = fc_dim
         self._sf_dim = sf_dim
 
+        self.logstd_range = (-10, 2)
+
         # Activation functions
         self.act = activation
 
@@ -411,10 +414,14 @@ class VAE(nn.Module):
         out = self.flatter(state)
         out = self.encoder(out)
 
-        mu = self.mu(out)
-        logstd = self.logstd(out)
+        mu = F.tanh(self.mu(out))
+        logstd = torch.clamp(
+            self.logstds(out),
+            min=self.logstd_range[0],
+            max=self.logstd_range[1],
+        )
 
-        std = torch.exp(logstd + 1e-7)
+        std = torch.exp(logstd)
         cov = torch.diag_embed(std**2)
 
         dist = MultivariateNormal(loc=mu, covariance_matrix=cov)
