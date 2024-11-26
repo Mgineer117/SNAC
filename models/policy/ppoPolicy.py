@@ -42,7 +42,7 @@ class PPO_Learner(BasePolicy):
         self._gamma = gamma
         self._tau = tau
         self._K = K
-        self._l2_reg = 1e-5
+        self._l2_reg = 1e-6
         self._bfgs_iter = K
         self._forward_steps = 0
 

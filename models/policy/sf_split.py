@@ -111,6 +111,7 @@ class SF_Split(BasePolicy):
         phi_loss_r_scaler: float = 1.0,
         phi_loss_s_scaler: float = 0.1,
         phi_loss_kl_scaler: float = 25.0,
+        phi_loss_l2_scaler: float = 1e-6,
         psi_loss_scaler: float = 1.0,
         q_loss_scaler: float = 0.0,
         is_discrete: bool = False,
@@ -130,6 +131,7 @@ class SF_Split(BasePolicy):
         self._phi_loss_r_scaler = phi_loss_r_scaler
         self._phi_loss_s_scaler = phi_loss_s_scaler
         self._phi_loss_kl_scaler = phi_loss_kl_scaler
+        self._phi_loss_l2_scaler = phi_loss_l2_scaler
         self._psi_loss_scaler = psi_loss_scaler
         self._q_loss_scaler = q_loss_scaler
 
@@ -278,7 +280,7 @@ class SF_Split(BasePolicy):
         for param in self.feaNet.parameters():
             if param.requires_grad:  # Only include parameters that require gradients
                 l2_norm += torch.norm(param, p=2)  # L
-        l2_loss = 1e-6 * l2_norm
+        l2_loss = self._phi_loss_l2_scaler * l2_norm
 
         phi_loss = kl_loss + phi_r_loss + phi_s_loss + option_loss + l2_loss
 

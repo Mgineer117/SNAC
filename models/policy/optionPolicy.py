@@ -58,7 +58,7 @@ class OP_Controller(BasePolicy):
         self._gamma = gamma
         self._tau = tau
         self._K = K
-        self._l2_reg = 1e-5
+        self._l2_reg = 1e-6
         self._bfgs_iter = K
         self._forward_steps = 0
         self.is_discrete = is_discrete
@@ -160,8 +160,12 @@ class OP_Controller(BasePolicy):
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         agent_pos = torch.from_numpy(batch["agent_pos"]).to(self._dtype).to(self.device)
-        next_states = torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
-        next_agent_pos = torch.from_numpy(batch["next_agent_pos"]).to(self._dtype).to(self.device)
+        next_states = (
+            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
+        )
+        next_agent_pos = (
+            torch.from_numpy(batch["next_agent_pos"]).to(self._dtype).to(self.device)
+        )
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
         terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
         old_logprobs = (
@@ -173,7 +177,7 @@ class OP_Controller(BasePolicy):
         rewards = self._intricsicReward(phi, next_phi, z)
 
         states = states.reshape(states.shape[0], -1)
-        
+
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
             values, _ = self.optionCritic(states, z)
