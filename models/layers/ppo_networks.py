@@ -77,7 +77,7 @@ class PPO_Policy(nn.Module):
                 a = dist.rsample()
 
             logprobs = dist.log_prob(a)
-            probs = torch.argmax(probs, dim=-1)
+            probs = torch.exp(logprobs)
 
         return a, {"dist":dist, "probs": probs, "logprobs": logprobs}
 
