@@ -92,7 +92,7 @@ class OptionPolicy(nn.Module):
 
             a = mu if deterministic else dist.rsample()
             
-            logprobs = dist.log_prob(z)
+            logprobs = dist.log_prob(a)
             probs = torch.exp(logprobs)
 
         return a, {
