@@ -133,5 +133,6 @@ class FeatureTrain:
 
         # clear the memory
         self.buffer.wipe()
+        torch.cuda.empty_cache()
 
         return sf_network, self.curr_epoch

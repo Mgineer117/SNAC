@@ -75,6 +75,7 @@ class PPO:
 
     def run(self):
         self.train_ppo()
+        torch.cuda.empty_cache()
 
     def train_ppo(self):
         ### Call network param and run

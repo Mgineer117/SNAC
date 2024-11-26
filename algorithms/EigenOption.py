@@ -97,7 +97,9 @@ class EigenOption:
 
     def run(self):
         self.train_op()
+        torch.cuda.empty_cache()
         self.train_hc()
+        torch.cuda.empty_cache()
 
     def train_op(self):
         if not self.args.import_op_model:

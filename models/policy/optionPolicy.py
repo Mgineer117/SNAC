@@ -223,8 +223,8 @@ class OP_Controller(BasePolicy):
 
             _, metaData = self.optionPolicy(states, z)
 
-            logprobs = self.optionPolicy.log_prob(actions.squeeze()).unsqueeze(-1)
-            entropy = metaData["entropy"].unsqueeze(-1)
+            logprobs = self.optionPolicy.log_prob(metaData["dist"], actions)
+            entropy = self.optionPolicy.entropy(metaData["dist"])
 
             ratios = torch.exp(logprobs - old_logprobs)
 

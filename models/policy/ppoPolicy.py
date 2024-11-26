@@ -86,6 +86,7 @@ class PPO_Learner(BasePolicy):
         """
         Image-based state dimension ~ [Batch, width, height, channel] or [width, height, channel]
         Flat tensor-based state dimension ~ [Batch, tensor] or [tensor]
+        z is dummy input for code consistency
         """
         self._forward_steps += 1
         obs = self.preprocess_obs(obs)
@@ -95,8 +96,7 @@ class PPO_Learner(BasePolicy):
         return a, {
             # "z": self.dummy.item(),
             "probs": metaData["probs"],
-            "logprobs": metaData["logprobs"],
-            "entropy": metaData["entropy"],
+            "logprobs": metaData["logprobs"]
         }
 
     def learn(self, batch, z=0):
@@ -160,8 +160,8 @@ class PPO_Learner(BasePolicy):
             # policy ingredients
             _, metaData = self.policy(states)
 
-            logprobs = self.policy.log_prob(actions).unsqueeze(-1)
-            entropy = metaData["entropy"].unsqueeze(-1)
+            logprobs = self.policy.log_prob(metaData["dist"], actions)
+            entropy = self.policy.entropy(metaData["dist"])
 
             ratios = torch.exp(logprobs - old_logprobs)
 

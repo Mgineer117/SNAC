@@ -69,15 +69,14 @@ class OptionPolicy(nn.Module):
         logits = self.models[z](state)
 
         if self.is_discrete:
-            logprobs = F.log_softmax(logits, dim=-1)
-            probs = torch.exp(logprobs)
+            probs = F.softmax(logits, dim=-1)
             dist = Categorical(probs)
 
             a_argmax = torch.argmax(probs, dim=-1) if deterministic else dist.sample()
             a = F.one_hot(a_argmax.long(), num_classes=self._a_dim)
 
             logprobs = dist.log_prob(a_argmax)
-            probs = torch.exp(logprobs)
+            probs = torch.argmax(probs, dim=-1)
         else:
             ### Shape the output as desired
             mu = F.tanh(self.mus[z](logits))
@@ -93,22 +92,33 @@ class OptionPolicy(nn.Module):
 
             a = mu if deterministic else dist.rsample()
             
-            logprobs = dist.log_prob(a)
+            logprobs = dist.log_prob(z)
             probs = torch.exp(logprobs)
-
-        self.dist = dist
-        entropy = dist.entropy()
 
         return a, {
             "z": z,
-            "entropy": entropy,
+            "dist": dist,
             "probs": probs,
             "logprobs": logprobs,
         }
 
-    def log_prob(self, actions):
+    def log_prob(self, dist:torch.distributions, actions:torch.Tensor):
+        '''
+        Actions must be tensor
+        '''
         actions = actions.squeeze() if actions.shape[-1] > 1 else actions
-        return self.dist.log_prob(torch.argmax(actions) if self.is_discrete else actions)
+
+        if self.is_discrete:
+            logprobs = dist.log_prob(torch.argmax(actions, dim=-1)).unsqueeze(-1)
+        else:
+            logprobs = dist.log_prob(actions).unsqueeze(-1)
+        return logprobs
+    
+    def entropy(self, dist:torch.distributions):
+        '''
+        For code consistency
+        '''
+        return dist.entropy().unsqueeze(-1)
 
 
 class OptionCritic(nn.Module):

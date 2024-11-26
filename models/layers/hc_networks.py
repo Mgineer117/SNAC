@@ -45,8 +45,7 @@ class HC_Policy(nn.Module):
 
         logits = self.model(state)
 
-        logprobs = F.log_softmax(logits, dim=-1)
-        probs = torch.exp(logprobs)
+        probs = F.softmax(logits, dim=-1)
         dist = Categorical(probs)
 
         if deterministic:
@@ -55,21 +54,27 @@ class HC_Policy(nn.Module):
             z = dist.sample().long()
 
         logprobs = dist.log_prob(z)
-        probs = torch.exp(logprobs)
-
-        self.dist = dist
-        entropy = dist.entropy()
+        probs = torch.argmax(probs, dim=-1)
 
         return z, {
-            "logits": logits,
-            "entropy": entropy,
+            "dist":dist,
             "probs": probs,
             "logprobs": logprobs,
         }
 
-    def log_prob(self, actions):
-        """Always (N, 1) shape"""
-        return self.dist.log_prob(actions)
+    def log_prob(self, dist:torch.distributions, actions:torch.Tensor):
+        '''
+        Actions must be tensor
+        '''
+        actions = actions.squeeze() if actions.shape[-1] > 1 else actions
+        logprobs = dist.log_prob(torch.argmax(actions, dim=-1)).unsqueeze(-1)
+        return logprobs
+    
+    def entropy(self, dist:torch.distributions):
+        '''
+        For code consistency
+        '''
+        return dist.entropy().unsqueeze(-1)
 
 
 class HC_PrimitivePolicy(nn.Module):
@@ -98,24 +103,18 @@ class HC_PrimitivePolicy(nn.Module):
     def forward(self, x: torch.Tensor, deterministic: bool = False):
         logits = self.model(x)
         probs = F.softmax(logits, dim=-1) + 1e-7
-        logprobs = F.log_softmax(logits, dim=-1) + 1e-7
 
-        dist = torch.distributions.categorical.Categorical(probs)
+        dist = Categorical(probs)
 
         if deterministic:
-            z = torch.argmax(
-                probs, dim=-1
-            ).long()  # convert to long for indexing purpose
+            # convert to long for indexing purpose
+            z = torch.argmax(probs, dim=-1).long()  
         else:
             z = dist.sample().long()
 
-        z_oh = F.one_hot(z.long(), num_classes=self._a_dim)
-
-        probs = torch.sum(probs * z_oh, axis=-1, keepdim=True)
-        logprobs = torch.sum(
-            logprobs * z_oh, axis=-1, keepdim=True
-        )  # for numeric stability
-
+        logprobs = dist.log_prob(z)
+        probs = torch.argmax(probs, dim=-1)
+        
         return z, {"logits": logits, "probs": probs, "logprobs": logprobs}
 
 

@@ -143,7 +143,7 @@ class HC_Controller(BasePolicy):
         obs = self.preprocess_obs(obs)
 
         if idx is None:
-            z, metaData = self.policy(obs["observation"], deterministic)
+            z, metaData = self.policy(obs["observation"], deterministic=deterministic)
         else:
             z = idx
             metaData = {"probs": None, "logprobs": None}  # dummy
@@ -228,8 +228,8 @@ class HC_Controller(BasePolicy):
             # _, metaData = self.policy(features)
             _, metaData = self.policy(states)
 
-            logprobs = self.policy.log_prob(actions.squeeze()).unsqueeze(-1)
-            entropy = metaData["entropy"].unsqueeze(-1)
+            logprobs = self.policy.log_prob(metaData["dist"], actions)
+            entropy = self.policy.entropy(metaData["dist"])
 
             ratios = torch.exp(logprobs - old_logprobs)
 
