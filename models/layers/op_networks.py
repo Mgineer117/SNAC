@@ -58,7 +58,7 @@ class OptionPolicy(nn.Module):
         return MLP(fc_dim, (output_dim,), activation=nn.Identity())
 
     def create_logstd_model(self, input_dim, fc_dim, output_dim):
-        return MLP(fc_dim, (output_dim,), activation=nn.Softplus())
+        return MLP(fc_dim, (output_dim,), activation=nn.Identity())
 
     def forward(self, state: torch.Tensor, z: int, deterministic=False):
         # when the input is raw by forawrd() not learn()

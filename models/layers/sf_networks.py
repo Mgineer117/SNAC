@@ -370,7 +370,7 @@ class VAE(nn.Module):
             input_dim=int(fc_dim / 2),
             hidden_dims=(fc_dim,),
             output_dim=sf_dim,
-            activation=nn.Softplus(),
+            activation=nn.Identity(),
         )
 
         ### Decoding module

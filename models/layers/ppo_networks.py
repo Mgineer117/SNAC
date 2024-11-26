@@ -38,7 +38,7 @@ class PPO_Policy(nn.Module):
         else:
             self.model = MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
             self.mu = MLP(fc_dim, (a_dim,), activation=nn.Identity())
-            self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Softplus())
+            self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Identity())
 
     def forward(self, state: torch.Tensor, deterministic: bool = False):
         if len(state.shape) == 3 or len(state.shape) == 1:
