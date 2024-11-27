@@ -416,7 +416,7 @@ class VAE(nn.Module):
 
         mu = F.tanh(self.mu(out))
         logstd = torch.clamp(
-            self.logstds(out),
+            self.logstd(out),
             min=self.logstd_range[0],
             max=self.logstd_range[1],
         )
