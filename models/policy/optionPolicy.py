@@ -145,14 +145,11 @@ class OP_Controller(BasePolicy):
             phi_r, phi_s = self.split(phi)
             next_phi_r, next_phi_s = self.split(next_phi)
             if z < int(self._num_options / 2):
-                # deltaPhi = next_phi_r - phi_r  # N x F/2
-                deltaPhi = phi_r
+                deltaPhi = next_phi_r - phi_r  # N x F/2
             else:
-                # deltaPhi = next_phi_s - phi_s  # N x F/2
-                deltaPhi = phi_s
+                deltaPhi = next_phi_s - phi_s  # N x F/2
         else:
-            # deltaPhi = next_phi - phi  # N x F
-            deltaPhi = phi
+            deltaPhi = next_phi - phi  # N x F
         rew = self.multiply_options(deltaPhi, option)
         return rew
 
