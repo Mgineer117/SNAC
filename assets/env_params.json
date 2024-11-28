@@ -1,12 +1,12 @@
 {
     "FourRooms": {
         "SF_epoch": 300,
-        "OP_epoch": 10,
+        "OP_epoch": 5,
         "HC_epoch": 100,
         "PPO_epoch": 100,
         "step_per_epoch": 50,
         "sf_log_interval": 50,
-        "op_log_interval": 2,
+        "op_log_interval": 1,
         "hc_log_interval": 25,
         "ppo_log_interval": 25,
         "episode_len": 100,
