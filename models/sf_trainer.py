@@ -78,16 +78,6 @@ class SFTrainer:
         first_final_epoch = self._epoch
 
         for e in trange(first_init_epoch, first_final_epoch, desc=f"SF Phi Epoch"):
-            self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.
-            self.evaluator(
-                self.policy,
-                epoch=e,
-                iter_idx=int(e * self._step_per_epoch),
-                dir_name="SF",
-                grid_type=self.grid_type,
-            )
-            self.save_model(e + 1)
-
             ### training loop
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
@@ -108,6 +98,17 @@ class SFTrainer:
                 self.policy, grid_type=self.grid_type
             )
             self.buffer.push(batch)
+
+            ### Eval
+            self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.
+            self.evaluator(
+                self.policy,
+                epoch=e,
+                iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                dir_name="SF",
+                grid_type=self.grid_type,
+            )
+            self.save_model(e + 1)
 
         second_init_epoch = self._epoch
         second_final_epoch = self._epoch + self._psi_epoch

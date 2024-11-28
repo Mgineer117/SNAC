@@ -72,7 +72,8 @@ class PointNavigationEnv(BaseTask):
         # pylint: disable=no-member
         reward = 0.0
         dist_goal = self.dist_goal()
-        reward += (self.last_dist_goal - dist_goal) * self.goal.reward_distance
+        # for sparse reward settings, there is no distance-wise rewards
+        # reward += (self.last_dist_goal - dist_goal) * self.goal.reward_distance
         self.last_dist_goal = dist_goal
 
         if self.goal_achieved:

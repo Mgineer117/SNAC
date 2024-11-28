@@ -69,21 +69,6 @@ class PPOTrainer:
 
         # train loop
         for e in trange(self._init_epoch, self._epoch, desc=f"PPO Epoch"):
-            self.policy.eval()
-            # Eval Loop
-            rew_mean, rew_std, _, _ = self.evaluator(
-                self.policy,
-                epoch=e,
-                iter_idx=int(e * self._step_per_epoch),
-                dir_name="PPO",
-                grid_type=self.grid_type,
-            )
-
-            self.last_reward_mean.append(rew_mean)
-            self.last_reward_std.append(rew_std)
-
-            self.save_model(e + 1)
-
             ### training loop
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
@@ -106,7 +91,21 @@ class PPOTrainer:
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
-        self.policy.eval()
+        ### Eval Loop
+            self.policy.eval()
+            rew_mean, rew_std, _, _ = self.evaluator(
+                self.policy,
+                epoch=e,
+                iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                dir_name="PPO",
+                grid_type=self.grid_type,
+            )
+
+            self.last_reward_mean.append(rew_mean)
+            self.last_reward_std.append(rew_std)
+
+            self.save_model(e + 1)
+
         self.logger.print(
             "total PPO training time: {:.2f} hours".format(
                 (time.time() - start_time) / 3600

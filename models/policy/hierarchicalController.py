@@ -79,7 +79,7 @@ class HC_Controller(BasePolicy):
         # constants
         self.device = device
 
-        self._num_options = policy._num_options - 1
+        self._num_options = policy._num_options
         self._entropy_scaler = entropy_scaler
         self._a_dim = a_dim
         self._eps = eps
@@ -143,23 +143,26 @@ class HC_Controller(BasePolicy):
         obs = self.preprocess_obs(obs)
 
         if idx is None:
-            z, metaData = self.policy(obs["observation"], deterministic=deterministic)
+            # sample a from the Hierarchical Policy
+            z, z_argmax, metaData = self.policy(obs["observation"], deterministic=deterministic)
         else:
-            z = idx
-            metaData = {"probs": None, "logprobs": None}  # dummy
+            # keep using the given z
+            z = F.one_hot(idx, num_classes=self.policy._a_dim)
+            z_argmax = idx
+            metaData = {"probs": None, "logprobs": None} # dummy
 
-        is_option = True if z < self._num_options else False
+        is_option = True if z_argmax < self._num_options else False
 
         if is_option:
             # option selection
-            a, _ = self.optionPolicy(obs, z, deterministic=deterministic)
+            a, _ = self.optionPolicy(obs, z_argmax, deterministic=deterministic)
         else:
             # primitive action selection
             a = torch.rand((1, self._a_dim)).to(self.device)
 
         return a, {
             "z": z,
-            # "phi": phi,
+            "z_argmax": z_argmax,
             "is_option": is_option,
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
@@ -226,7 +229,7 @@ class HC_Controller(BasePolicy):
                 valueLoss = self.mse_loss(returns, values)
 
             # _, metaData = self.policy(features)
-            _, metaData = self.policy(states)
+            _, _, metaData = self.policy(states)
 
             logprobs = self.policy.log_prob(metaData["dist"], actions)
             entropy = self.policy.entropy(metaData["dist"])

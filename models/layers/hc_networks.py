@@ -23,19 +23,14 @@ class HC_Policy(nn.Module):
         """
         a_dim must be num_options + 1
         """
-        num_options += 1  # for primitive actions
         # |A| duplicate networks
         self.act = activation
 
+        self._a_dim = num_options + 1
         self._dtype = torch.float32
         self._num_options = num_options
 
-        self.dist = None
-
-        self.model = MLP(input_dim, (fc_dim, fc_dim), num_options, activation=self.act)
-
-        # parameters
-        self._num_options = num_options
+        self.model = MLP(input_dim, (fc_dim, fc_dim), self._a_dim, activation=self.act)
 
     def forward(self, state: torch.Tensor, deterministic=False):
         # when the input is raw by forawrd() not learn()
@@ -48,15 +43,13 @@ class HC_Policy(nn.Module):
         probs = F.softmax(logits, dim=-1)
         dist = Categorical(probs)
 
-        if deterministic:
-            z = torch.argmax(probs, dim=-1).long()
-        else:
-            z = dist.sample().long()
+        z_argmax = torch.argmax(probs, dim=-1).long() if deterministic else dist.sample().long()
+        z = F.one_hot(z_argmax.long(), num_classes=self._a_dim)
 
-        logprobs = dist.log_prob(z)
-        probs = torch.argmax(probs, dim=-1)
+        logprobs = dist.log_prob(z_argmax)
+        probs = torch.sum(probs * z, dim=-1)
 
-        return z, {
+        return z, z_argmax, {
             "dist": dist,
             "probs": probs,
             "logprobs": logprobs,
@@ -76,7 +69,22 @@ class HC_Policy(nn.Module):
         """
         return dist.entropy().unsqueeze(-1)
 
+class HC_Critic(nn.Module):
+    """
+    Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
+    """
 
+    def __init__(self, input_dim: int, fc_dim: int, activation: nn.Module = nn.ReLU()):
+        super(HC_Critic, self).__init__()
+
+        # |A| duplicate networks
+        self.act = activation
+        self.model = MLP(input_dim, (fc_dim, fc_dim), 1, activation=self.act)
+
+    def forward(self, x: torch.Tensor):
+        value = self.model(x)
+        return value, {}
+    
 class HC_PrimitivePolicy(nn.Module):
     """
     Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
@@ -118,18 +126,4 @@ class HC_PrimitivePolicy(nn.Module):
         return z, {"logits": logits, "probs": probs, "logprobs": logprobs}
 
 
-class HC_Critic(nn.Module):
-    """
-    Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
-    """
 
-    def __init__(self, input_dim: int, fc_dim: int, activation: nn.Module = nn.ReLU()):
-        super(HC_Critic, self).__init__()
-
-        # |A| duplicate networks
-        self.act = activation
-        self.model = MLP(input_dim, (fc_dim, fc_dim), 1, activation=self.act)
-
-    def forward(self, x: torch.Tensor):
-        value = self.model(x)
-        return value, {}

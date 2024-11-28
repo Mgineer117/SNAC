@@ -71,23 +71,8 @@ class HCTrainer:
 
         # train loop
         for e in trange(self._init_epoch, self._epoch, desc=f"HC Epoch"):
-            self.policy.eval()
-            # Eval Loop
-            avg_rew_mean, avg_rew_std, _, _ = self.evaluator(
-                self.policy,
-                epoch=e,
-                iter_idx=int(e * self._step_per_epoch),
-                dir_name=self._prefix,
-                grid_type=self.grid_type,
-            )
-
-            self.last_reward_mean.append(avg_rew_mean)
-            self.last_reward_std.append(avg_rew_std)
-
-            self.save_model(e + 1)
-
-            self.policy.train()
             ### training loop
+            self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
                     self.policy, grid_type=self.grid_type, is_option=True
@@ -106,7 +91,21 @@ class HCTrainer:
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
-        self.policy.eval()
+            ### Eval Loop
+            self.policy.eval()
+            avg_rew_mean, avg_rew_std, _, _ = self.evaluator(
+                self.policy,
+                epoch=e,
+                iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                dir_name=self._prefix,
+                grid_type=self.grid_type,
+            )
+
+            self.last_reward_mean.append(avg_rew_mean)
+            self.last_reward_std.append(avg_rew_std)
+
+            self.save_model(e + 1)
+
         self.logger.print(
             f"total {self._prefix} training time: {((time.time() - start_time) / 3600):.2f} hours"
         )

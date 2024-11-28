@@ -33,7 +33,6 @@ class OptionPolicy(nn.Module):
         self.logstd_range = (-10, 2)
 
         self.is_discrete = is_discrete
-        self.dist = None
 
         if self.is_discrete:
             self.models = nn.ModuleList()
@@ -76,7 +75,7 @@ class OptionPolicy(nn.Module):
             a = F.one_hot(a_argmax.long(), num_classes=self._a_dim)
 
             logprobs = dist.log_prob(a_argmax)
-            probs = torch.argmax(probs, dim=-1)
+            probs = torch.sum(probs * a, dim=-1)
         else:
             ### Shape the output as desired
             mu = F.tanh(self.mus[z](logits))

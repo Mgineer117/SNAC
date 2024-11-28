@@ -124,7 +124,6 @@ class OP_Controller(BasePolicy):
         )
 
         return a, {
-            "z": z,
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
         }

@@ -98,7 +98,6 @@ class HC_Evaluator(Evaluator):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze()
-                    option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
@@ -109,15 +108,13 @@ class HC_Evaluator(Evaluator):
                     next_obs, rew, term, trunc, infos = env.step(a)
                     done = term or trunc
 
-                    op_rew = rew
-                    step_count = 1
-
                     option_termination = False
+                    step_count = 1
                     while not (done or option_termination):
                         # env stepping
                         with torch.no_grad():
                             option_a, _ = policy(
-                                next_obs, option_idx, deterministic=True
+                                next_obs, metaData["z_argmax"], deterministic=True
                             )
                             option_a = option_a.cpu().numpy().squeeze()
 
@@ -125,17 +122,15 @@ class HC_Evaluator(Evaluator):
                         if self.gridCriteria:
                             self.get_agent_pos(env)
 
-                        next_obs, rew, term, trunc, infos = env.step(option_a)
+                        next_obs, op_rew, term, trunc, infos = env.step(option_a)
 
-                        op_rew += 0.99**step_count * rew
+                        rew += 0.99**step_count * op_rew
                         step_count += 1
 
                         option_termination = (
                             True if step_count >= self.min_option_length else False
                         )
                         done = term or trunc
-
-                    rew = op_rew
 
                 ### Conventional Loop
                 else:
@@ -161,7 +156,7 @@ class HC_Evaluator(Evaluator):
                 if self.renderCriteria:
                     img = env.render()
                     self.recorded_frames.append(img)
-                    option_indices.append(option_idx.numpy())
+                    option_indices.append(metaData["z_argmax"].numpy())
 
                 if done:
                     if self.gridCriteria:

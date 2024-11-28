@@ -290,9 +290,14 @@ def call_opNetwork(
 
     if args.import_op_model:
         print("Loading previous OP parameters....")
-        optionPolicy, optionCritic, psiNet, option_vals, options = pickle.load(
-            open("log/eval_log/model_for_eval/op_model.p", "rb")
-        )
+        if args.algo_name in ("SNAC", "SNAC+", "SNAC++"):
+            optionPolicy, optionCritic, psiNet, option_vals, options = pickle.load(
+                open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
+            )
+        else:
+            optionPolicy, optionCritic, psiNet, option_vals, options = pickle.load(
+                open(f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p", "rb")
+            )
     else:
         optionPolicy = OptionPolicy(
             input_dim=args.s_flat_dim,
@@ -339,21 +344,6 @@ def call_opNetwork(
 
     return policy
 
-
-def call_rpNetwork(convNet, qNet, options, args):
-    from models.policy import RandomWalk
-
-    policy = RandomWalk(
-        convNet=convNet,
-        qNet=qNet,
-        options=options,
-        a_dim=args.a_dim,
-        device=args.device,
-    )
-
-    return policy
-
-
 def call_hcNetwork(convNet, optionPolicy, args):
     from models.policy import HC_Controller
 
@@ -398,6 +388,20 @@ def call_hcNetwork(convNet, optionPolicy, args):
         tau=args.tau,
         gamma=args.gamma,
         K=args.K_epochs,
+        device=args.device,
+    )
+
+    return policy
+
+
+def call_rpNetwork(convNet, qNet, options, args):
+    from models.policy import RandomWalk
+
+    policy = RandomWalk(
+        convNet=convNet,
+        qNet=qNet,
+        options=options,
+        a_dim=args.a_dim,
         device=args.device,
     )
 

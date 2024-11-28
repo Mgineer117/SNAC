@@ -79,25 +79,15 @@ class Base:
         """
         We create a initialization batch to avoid the daedlocking.
         The remainder of zero arrays will be cut in the end.
+        np.nan makes it easy to debug
         """
-        # data = dict(
-        #     states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
-        #     next_states=np.empty(((batch_size,) + self.state_dim), dtype=np.float32),
-        #     actions=np.empty((batch_size, self.action_dim), dtype=np.float32),
-        #     option_actions=np.empty((batch_size, 1), dtype=np.float32),
-        #     agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
-        #     next_agent_pos=np.empty(((batch_size, 2)), dtype=np.float32),
-        #     rewards=np.empty((batch_size, 1), dtype=np.float32),
-        #     terminals=np.empty((batch_size, 1), dtype=np.float32),
-        #     logprobs=np.empty((batch_size, 1), dtype=np.float32),
-        # )
         data = dict(
             states=np.full(((batch_size,) + self.state_dim), np.nan, dtype=np.float32),
             next_states=np.full(
                 ((batch_size,) + self.state_dim), np.nan, dtype=np.float32
             ),
             actions=np.full((batch_size, self.action_dim), np.nan, dtype=np.float32),
-            option_actions=np.full((batch_size, 1), np.nan, dtype=np.int8),
+            option_actions=np.full((batch_size, self.hc_action_dim), np.nan, dtype=np.int8),
             agent_pos=np.full((batch_size, 2), np.nan, dtype=np.int8),
             next_agent_pos=np.full((batch_size, 2), np.nan, dtype=np.int8),
             rewards=np.full((batch_size, 1), np.nan, dtype=np.float32),
@@ -226,6 +216,7 @@ class OnlineSampler(Base):
         state_dim: tuple,
         feature_dim: tuple,
         action_dim: int,
+        hc_action_dim: int,
         min_option_length: int,
         min_cover_option_length: int,
         episode_len: int,
@@ -248,6 +239,7 @@ class OnlineSampler(Base):
         self.state_dim = state_dim
         self.feature_dim = feature_dim
         self.action_dim = action_dim
+        self.hc_action_dim = hc_action_dim
         self.min_option_length = min_option_length
         self.min_cover_option_length = min_cover_option_length
         self.episode_len = episode_len
@@ -380,65 +372,54 @@ class OnlineSampler(Base):
         if queue is not None:
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
+        
+        def env_step(a):
+            next_obs, rew, term, trunc1, infos = env.step(a)
 
+            self.external_t += 1
+            trunc2 = True if (self.external_t + 1) == episode_len else False
+            done = term or trunc1 or trunc2
+
+            return next_obs, rew, done, infos
+        
         current_step = 0
         for iter in range(episode_num):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
 
-            external_t = 0
+            self.external_t = 0
             for t in range(episode_len):
-                # sample action
+
                 with torch.no_grad():
+                    # sample action
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
-                    option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
-                    next_obs, rew, term, trunc, infos = env.step(a)
-                    external_t += 1
-                    trunc = True if (external_t + 1) == episode_len else False
-                    done = term or trunc
+                    next_obs, rew, done, infos = env_step(a)
+                    if not done:
+                        for o_t in range(self.min_option_length - 1):
+                            # env stepping
+                            with torch.no_grad():
+                                option_a, _ = policy(
+                                    next_obs, metaData["z_argmax"], deterministic=deterministic
+                                )
+                                option_a = option_a.cpu().numpy().squeeze()
 
-                    op_rew = rew
-                    step_count = 1
-
-                    option_termination = False
-                    while not (done or option_termination):
-                        # env stepping
-                        with torch.no_grad():
-                            option_a, _ = policy(
-                                next_obs, option_idx, deterministic=deterministic
-                            )
-                            option_a = option_a.cpu().numpy().squeeze()
-
-                        next_obs, rew, term, trunc, infos = env.step(option_a)
-                        external_t += 1
-                        trunc = True if (external_t + 1) == episode_len else False
-
-                        op_rew += self.gamma**step_count * rew
-                        step_count += 1
-
-                        option_termination = (
-                            True if step_count >= self.min_option_length else False
-                        )
-                        done = term or trunc
-                    rew = op_rew
-
-                ### Conventional Loop
+                            next_obs, op_rew, done, infos = env_step(option_a)
+                            rew += self.gamma**(o_t + 1) * op_rew
+                            if done:
+                                break
                 else:
-                    # env stepping
-                    next_obs, rew, term, trunc, infos = env.step(a)
-                    external_t += 1
-                    trunc = True if (external_t + 1) == episode_len else False
-                    done = term or trunc
+                    ### Conventional Loop
+                    next_obs, rew, done, infos = env_step(a)
 
                 # saving the data
                 data["states"][current_step + t] = obs["observation"]
                 data["next_states"][current_step + t] = next_obs["observation"]
                 data["actions"][current_step + t] = a
-                data["option_actions"][current_step + t] = option_idx
+                data["option_actions"][current_step + t] = metaData["z"]
                 data["agent_pos"][current_step + t, :] = obs["agent_pos"]
                 data["next_agent_pos"][current_step + t] = next_obs["agent_pos"]
                 data["rewards"][current_step + t] = rew
@@ -495,70 +476,57 @@ class OnlineSampler(Base):
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
 
+        def env_step(a):
+            next_obs, rew, term, trunc1, infos = env.step(a)
+
+            self.external_t += 1
+            trunc2 = True if (self.external_t + 1) == episode_len else False
+            done = term or trunc1 or trunc2
+
+            return next_obs, rew, done, infos
+        
         current_step = 0
         for iter in range(episode_num):
             # env initialization
             obs, _ = env.reset(seed=grid_type)
 
             is_first_iter = True
-            external_t = 0
+            self.external_t = 0
             for t in range(episode_len):
-                # sample action
+                
                 with torch.no_grad():
+                    # sample action
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
-                    option_idx = metaData["z"]  # start feeding option_index
 
                 ### Create an Option Loop
                 if is_first_iter:
-                    next_obs, rew, term, trunc, infos = env.step(a)
-                    external_t += 1
-                    trunc = True if (external_t + 1) == episode_len else False
-                    done = term or trunc
-
-                    op_rew = rew
-                    step_count = 1
-
-                    option_termination = False
-                    while not (done or option_termination):
-                        with torch.no_grad():
+                    next_obs, rew, done, infos = env_step(a)
+                    if not done:
+                        for o_t in range(self.min_cover_option_length - 1):
                             # env stepping
-                            option_a, _ = policy(
-                                next_obs, option_idx, deterministic=deterministic
-                            )
-                            option_a = option_a.cpu().numpy().squeeze()
+                            with torch.no_grad():
+                                option_a, _ = policy(
+                                    next_obs, idx, deterministic=deterministic
+                                )
+                                option_a = option_a.cpu().numpy().squeeze()
 
-                        next_obs, rew, term, trunc, infos = env.step(option_a)
-                        external_t += 1
-                        trunc = True if (external_t + 1) == episode_len else False
-
-                        op_rew += self.gamma**step_count * rew
-                        step_count += 1
-
-                        option_termination = (
-                            True
-                            if step_count >= self.min_cover_option_length
-                            else False
-                        )
-                        done = term or trunc
-
-                    rew = op_rew
+                            next_obs, op_rew, done, infos = env_step(option_a)
+                            rew += self.gamma**(o_t + 1) * op_rew
+                            if done:
+                                break
                     is_first_iter = False
                 else:
                     ### Conventional Loop
                     # forcing random walk after option activation
                     a, _ = policy.random_walk(obs)
-
-                    next_obs, rew, term, trunc, infos = env.step(a)
-                    external_t += 1
-                    trunc = True if (external_t + 1) == episode_len else False
-                    done = term or trunc
+                    next_obs, rew, done, infos = env_step(a)
 
                 # saving the data
                 data["states"][current_step + t] = obs["observation"]
                 data["next_states"][current_step + t] = next_obs["observation"]
                 data["actions"][current_step + t] = a
-                data["option_actions"][current_step + t] = option_idx
+                data["option_actions"][current_step + t] = metaData["z"]
                 data["agent_pos"][current_step + t] = obs["agent_pos"]
                 data["next_agent_pos"][current_step + t] = next_obs["agent_pos"]
                 data["rewards"][current_step + t] = rew
