@@ -93,7 +93,9 @@ class Base:
         # )
         data = dict(
             states=np.full(((batch_size,) + self.state_dim), np.nan, dtype=np.float32),
-            next_states=np.full(((batch_size,) + self.state_dim), np.nan, dtype=np.float32),
+            next_states=np.full(
+                ((batch_size,) + self.state_dim), np.nan, dtype=np.float32
+            ),
             actions=np.full((batch_size, self.action_dim), np.nan, dtype=np.float32),
             option_actions=np.full((batch_size, 1), np.nan, dtype=np.int8),
             agent_pos=np.full((batch_size, 2), np.nan, dtype=np.int8),
@@ -284,7 +286,6 @@ class OnlineSampler(Base):
             print(f"Total number of Worker    : {self.total_num_worker}")
             print(f"Episodes per Worker       : {self.episodes_per_worker}")
             print(f"Max. batch size           : {self.thread_batch_size}")
-            
 
         # enforce one thread for each worker to avoid CPU overscription.
         torch.set_num_threads(1)
@@ -396,7 +397,7 @@ class OnlineSampler(Base):
                 ### Create an Option Loop
                 if metaData["is_option"]:
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    external_t +=1 
+                    external_t += 1
                     trunc = True if (external_t + 1) == episode_len else False
                     done = term or trunc
 
@@ -413,7 +414,7 @@ class OnlineSampler(Base):
                             option_a = option_a.cpu().numpy().squeeze()
 
                         next_obs, rew, term, trunc, infos = env.step(option_a)
-                        external_t +=1 
+                        external_t += 1
                         trunc = True if (external_t + 1) == episode_len else False
 
                         op_rew += self.gamma**step_count * rew
@@ -429,7 +430,7 @@ class OnlineSampler(Base):
                 else:
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    external_t +=1 
+                    external_t += 1
                     trunc = True if (external_t + 1) == episode_len else False
                     done = term or trunc
 
@@ -511,7 +512,7 @@ class OnlineSampler(Base):
                 ### Create an Option Loop
                 if is_first_iter:
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    external_t +=1 
+                    external_t += 1
                     trunc = True if (external_t + 1) == episode_len else False
                     done = term or trunc
 
@@ -528,7 +529,7 @@ class OnlineSampler(Base):
                             option_a = option_a.cpu().numpy().squeeze()
 
                         next_obs, rew, term, trunc, infos = env.step(option_a)
-                        external_t +=1 
+                        external_t += 1
                         trunc = True if (external_t + 1) == episode_len else False
 
                         op_rew += self.gamma**step_count * rew
@@ -549,7 +550,7 @@ class OnlineSampler(Base):
                     a, _ = policy.random_walk(obs)
 
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    external_t +=1 
+                    external_t += 1
                     trunc = True if (external_t + 1) == episode_len else False
                     done = term or trunc
 

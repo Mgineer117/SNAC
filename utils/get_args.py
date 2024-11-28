@@ -92,7 +92,6 @@ def get_args(verbose=True):
         default=None,
         help="logging interval; epoch-based",
     )
-
     parser.add_argument(
         "--grid-type",
         type=int,
@@ -159,13 +158,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-option-length",
         type=int,
-        default=5,
+        default=3,
         help="Minimum time step requirement for option",
     )
     parser.add_argument(
         "--min-cover-option-length",
         type=int,
-        default=25,
+        default=20,
         help="Minimum time step requirement for covering option",
     )
     parser.add_argument(
@@ -197,7 +196,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--cost-scaler",
         type=float,
-        default=1e-1,
+        default=1e-0,
         help="reward shaping parameter r = reawrd - scaler * cost",
     )
 
@@ -311,14 +310,12 @@ def get_args(verbose=True):
         default=100,
         help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
-
     parser.add_argument(
         "--min-num-traj",
         type=int,
         default=50,
         help="For buffer learing, this sets the sub-iterations",
     )
-
     parser.add_argument(
         "--trj-per-iter",
         type=int,
