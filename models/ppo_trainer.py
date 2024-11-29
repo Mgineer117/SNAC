@@ -87,7 +87,6 @@ class PPOTrainer:
 
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
 
-            torch.cuda.empty_cache()
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 

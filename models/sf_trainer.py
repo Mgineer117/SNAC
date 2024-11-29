@@ -89,7 +89,6 @@ class SFTrainer:
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
                 sample_time = 0
-                torch.cuda.empty_cache()
 
             if self.scheduler is not None:
                 self.scheduler.step()
@@ -133,7 +132,6 @@ class SFTrainer:
                 )
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
-                torch.cuda.empty_cache()
 
         self.policy.eval()
 

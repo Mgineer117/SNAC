@@ -115,8 +115,6 @@ class OPTrainer:
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 
-            torch.cuda.empty_cache()
-
         ### Eval Loop
         self.policy.eval()
         rew_mean = np.zeros((self.policy._num_options,))
@@ -192,8 +190,6 @@ class OPTrainer:
                 loss["OP/update_time"] = update_time
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
-
-            torch.cuda.empty_cache()
 
         self.policy.eval()
         self.logger.print(
@@ -303,6 +299,27 @@ class OPTrainer2:
         for e in trange(
             first_init_epoch, first_final_epoch, desc=f"OP PPO Epoch", leave=False
         ):
+            ### training loop
+            for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
+                sample_time = 0
+                update_time = 0
+
+                # sample batch
+                batch, sampleT = self.sampler.collect_samples(
+                    self.policy, idx=z, grid_type=self.grid_type
+                )
+                sample_time += sampleT
+
+                # update params
+                loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
+                update_time += updateT
+
+                # Logging further info
+                loss_dict[self.prefix + "/sample_time"] = sample_time
+                loss_dict[self.prefix + "/update_time"] = update_time
+
+                self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
+            
             # Eval Loop
             avg_rew_mean, avg_rew_std, avg_ln_mean, avg_ln_std = self.evaluator(
                 self.policy,
@@ -328,29 +345,6 @@ class OPTrainer2:
             self.last_reward_std.append(avg_rew_std)
 
             self.save_model(e)
-
-            ### training loop
-            for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
-                sample_time = 0
-                update_time = 0
-
-                # sample batch
-                batch, sampleT = self.sampler.collect_samples(
-                    self.policy, idx=z, grid_type=self.grid_type
-                )
-                sample_time += sampleT
-
-                # update params
-                loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
-                update_time += updateT
-
-                # Logging further info
-                loss_dict[self.prefix + "/sample_time"] = sample_time
-                loss_dict[self.prefix + "/update_time"] = update_time
-
-                self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
-
-            torch.cuda.empty_cache()
 
         return first_final_epoch
 

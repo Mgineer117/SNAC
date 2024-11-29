@@ -69,7 +69,7 @@ def discover_options(
     grid_type: int = 0,
     algo_name: str = "SNAC",
     num: int = 10,
-    gamma: int = 0.9,
+    gamma: int = 0.99,
     num_trj: int = 100,
     idx: int | None = None,
     draw_map: bool = False,
@@ -334,6 +334,7 @@ def get_eigenvectors(
             num=int(args.num_vector / 2),
             num_trj=app_trj_num,
             draw_map=draw_map,
+            gamma=args.gamma,
             device=args.device,
         )
         print_option_info(option_vals, options, args.algo_name, args.num_vector)
@@ -347,6 +348,7 @@ def get_eigenvectors(
             num=args.num_vector,
             num_trj=app_trj_num,
             draw_map=draw_map,
+            gamma=args.gamma,
             device=args.device,
         )
         print_option_info(option_vals, options, args.algo_name, args.num_vector)
