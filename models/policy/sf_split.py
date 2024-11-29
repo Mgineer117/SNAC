@@ -145,11 +145,18 @@ class SF_Split(BasePolicy):
             self._options = options
         else:
             self._options = nn.Parameter(
-                torch.zeros(
+                torch.normal(
+                    mean=0.0,
+                    std=1.0,
                     size=(1, int(self._sf_dim / 2)),
                     dtype=self._dtype,
                     device=self.device,
-                )
+                ),
+                # torch.zeros(
+                #     size=(1, int(self._sf_dim / 2)),
+                #     dtype=self._dtype,
+                #     device=self.device,
+                # )
             ).to(self.device)
 
         self.feature_optims = torch.optim.Adam(
@@ -162,7 +169,7 @@ class SF_Split(BasePolicy):
         self.psi_optim = torch.optim.Adam(params=self.psiNet.parameters(), lr=psi_lr)
 
         #
-        self.dummy = torch.tensor(0.0)
+        self.dummy = torch.tensor(1e-5)
         self.to(self.device).to(self._dtype)
 
     def to_device(self, device):
@@ -252,7 +259,7 @@ class SF_Split(BasePolicy):
         phi_r, phi_s = self.split(phi)
 
         reward_pred = torch.sum(phi_r * self._options, axis=-1, keepdim=True)
-        phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(rewards, reward_pred)
+        phi_r_loss = self._phi_loss_r_scaler * self.huber_loss(rewards, reward_pred)
 
         state_pred = self.decode(phi_s, actions, conv_dict)
         if isinstance(self.feaNet, VAE):
