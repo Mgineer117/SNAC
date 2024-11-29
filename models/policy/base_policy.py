@@ -25,13 +25,7 @@ class BasePolicy(nn.Module):
         self.mse_loss = F.mse_loss
         self.huber_loss = F.smooth_l1_loss
         self.mqe_loss = lambda x, y: torch.mean(
-            torch.mean(
-                torch.mean(torch.mean(torch.pow(x - y, 4), -1), axis=-1), axis=-1
-            ),
-            axis=0,
-        )
-        self.mqe_loss2 = lambda x, y: torch.mean(
-            torch.sum(torch.pow(x - y, 4), -1), axis=-1
+            torch.pow(x - y, 4), dim=tuple(range(1, x.ndimension()))
         )
 
         # self.multiply_options = lambda x, y: torch.einsum(
