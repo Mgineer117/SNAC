@@ -181,11 +181,12 @@ def run_loop(env_name, grid, pos, target="s"):
 
 if __name__ == "__main__":
     # call json
-    model_dir = "log/eval_log/model_for_eval/"
-    with open(model_dir + "config.json", "r") as json_file:
+    json_dir = f"log/eval_log/model_for_eval/"
+    with open(json_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.grid_size = 13
+    args.env_name = "CtF1v2"
+    args.algo_name = "SNAC"
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")
@@ -195,7 +196,7 @@ if __name__ == "__main__":
     args.import_sf_model = True
     sf_network = call_sfNetwork(args)
     gradCam = GradCam(sf_network=sf_network, algo_name=args.algo_name)
-    target = "s"
+    target = "r"
     print(f"target Algorithm: {args.algo_name} | target: {target}")
 
     # call env

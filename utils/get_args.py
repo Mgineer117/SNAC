@@ -278,6 +278,30 @@ def get_args(verbose=True):
         default=None,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
+    parser.add_argument(
+        "--phi-loss-r-scaler",
+        type=float,
+        default=None,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
+    parser.add_argument(
+        "--phi-loss-s-scaler",
+        type=float,
+        default=None,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
+    parser.add_argument(
+        "--phi-loss-kl-scaler",
+        type=float,
+        default=None,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
+    parser.add_argument(
+        "--phi-loss-l2-scaler",
+        type=float,
+        default=None,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
 
     # PPO parameters
     parser.add_argument(
@@ -292,7 +316,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--entropy-scaler",
         type=float,
-        default=1e-4,
+        default=1e-2,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
@@ -307,13 +331,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--max-num-traj",
         type=int,
-        default=100,
+        default=200,
         help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
     parser.add_argument(
         "--min-num-traj",
         type=int,
-        default=50,
+        default=100,
         help="For buffer learing, this sets the sub-iterations",
     )
     parser.add_argument(

@@ -209,6 +209,10 @@ def call_sfNetwork(args):
             feature_lr=args.feature_lr,
             option_lr=args.option_lr,
             psi_lr=args.psi_lr,
+            phi_loss_r_scaler=args.phi_loss_r_scaler,
+            phi_loss_s_scaler=args.phi_loss_s_scaler,
+            phi_loss_kl_scaler=args.phi_loss_kl_scaler,
+            phi_loss_l2_scaler=args.phi_loss_l2_scaler,
             trj_per_iter=args.trj_per_iter,
             a_dim=args.a_dim,
             is_discrete=args.is_discrete,
@@ -271,6 +275,10 @@ def call_sfNetwork(args):
             feature_lr=args.feature_lr,
             option_lr=args.option_lr,
             psi_lr=args.psi_lr,
+            phi_loss_r_scaler=args.phi_loss_r_scaler,
+            phi_loss_s_scaler=args.phi_loss_s_scaler,
+            phi_loss_kl_scaler=args.phi_loss_kl_scaler,
+            phi_loss_l2_scaler=args.phi_loss_l2_scaler,
             trj_per_iter=args.trj_per_iter,
             a_dim=args.a_dim,
             is_discrete=args.is_discrete,
@@ -343,6 +351,7 @@ def call_opNetwork(
     )
 
     return policy
+
 
 def call_hcNetwork(convNet, optionPolicy, args):
     from models.policy import HC_Controller

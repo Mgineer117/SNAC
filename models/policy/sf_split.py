@@ -145,18 +145,11 @@ class SF_Split(BasePolicy):
             self._options = options
         else:
             self._options = nn.Parameter(
-                torch.normal(
-                    mean=0.0,
-                    std=0.1,
+                torch.zeros(
                     size=(1, int(self._sf_dim / 2)),
                     dtype=self._dtype,
                     device=self.device,
                 )
-                # torch.zeros(
-                #     size=(1, int(self._sf_dim / 2)),
-                #     dtype=self._dtype,
-                #     device=self.device,
-                # )
             ).to(self.device)
 
         self.feature_optims = torch.optim.Adam(
