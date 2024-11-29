@@ -32,7 +32,7 @@
         "op_log_interval": 1,
         "hc_log_interval": 25,
         "ppo_log_interval": 25,
-        "phi_loss_r_scaler": 50.0,
+        "phi_loss_r_scaler": 1.0,
         "phi_loss_s_scaler": 0.1,
         "phi_loss_kl_scaler": 10.0,
         "phi_loss_l2_scaler": 1e-6,
