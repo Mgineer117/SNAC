@@ -149,7 +149,9 @@ class OPTrainer:
             "OP/eval_ln_mean": ln_mean,
             "OP/eval_ln_std": ln_std,
         }
-        self.evaluator.write_log(eval_dict, iter_idx=int(e * self._step_per_epoch))
+        self.evaluator.write_log(
+            eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
+        )
 
         self.last_reward_mean.append(rew_mean)
         self.last_reward_std.append(rew_std)
@@ -339,7 +341,9 @@ class OPTrainer2:
                 self.prefix + "/eval_ln_mean": avg_ln_mean,
                 self.prefix + "/eval_ln_std": avg_ln_std,
             }
-            self.evaluator.write_log(eval_dict, iter_idx=int(e * self._step_per_epoch))
+            self.evaluator.write_log(
+                eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
+            )
 
             self.last_reward_mean.append(avg_rew_mean)
             self.last_reward_std.append(avg_rew_std)
