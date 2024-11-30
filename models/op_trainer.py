@@ -124,7 +124,7 @@ class OPTrainer:
         for z in trange(self.policy._num_options, desc=f"Evaluation", leave=False):
             avg_rew_mean, avg_rew_std, avg_ln_mean, avg_ln_std = self.evaluator(
                 self.policy,
-                epoch=e,
+                epoch=e + 1,
                 iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 idx=z,
                 name1=self._val_options[z],
@@ -319,7 +319,7 @@ class OPTrainer2:
                 loss_dict[self.prefix + "/update_time"] = update_time
 
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
-            
+
             # Eval Loop
             avg_rew_mean, avg_rew_std, avg_ln_mean, avg_ln_std = self.evaluator(
                 self.policy,

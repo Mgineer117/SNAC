@@ -139,7 +139,7 @@ class OP_Evaluator(Evaluator):
                             epoch=idx,
                             width=width,
                             height=height,
-                            fps=self.render_fps
+                            fps=self.render_fps,
                         )
                         self.recorded_frames = []
 
@@ -296,7 +296,7 @@ class OP_Evaluator2(Evaluator):
                             epoch=idx,
                             width=width,
                             height=height,
-                            fps=self.render_fps
+                            fps=self.render_fps,
                         )
                         self.recorded_frames = []
 
