@@ -94,7 +94,7 @@ class HCTrainer:
             self.policy.eval()
             avg_rew_mean, avg_rew_std, _, _ = self.evaluator(
                 self.policy,
-                epoch=e,
+                epoch=e + 1,
                 iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 dir_name=self._prefix,
                 grid_type=self.grid_type,

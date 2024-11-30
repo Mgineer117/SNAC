@@ -43,17 +43,25 @@ class HC_Policy(nn.Module):
         probs = F.softmax(logits, dim=-1)
         dist = Categorical(probs)
 
-        z_argmax = torch.argmax(probs, dim=-1).long() if deterministic else dist.sample().long()
+        z_argmax = (
+            torch.argmax(probs, dim=-1).long()
+            if deterministic
+            else dist.sample().long()
+        )
         z = F.one_hot(z_argmax.long(), num_classes=self._a_dim)
 
         logprobs = dist.log_prob(z_argmax)
         probs = torch.sum(probs * z, dim=-1)
 
-        return z, z_argmax, {
-            "dist": dist,
-            "probs": probs,
-            "logprobs": logprobs,
-        }
+        return (
+            z,
+            z_argmax,
+            {
+                "dist": dist,
+                "probs": probs,
+                "logprobs": logprobs,
+            },
+        )
 
     def log_prob(self, dist: torch.distributions, actions: torch.Tensor):
         """
@@ -68,6 +76,7 @@ class HC_Policy(nn.Module):
         For code consistency
         """
         return dist.entropy().unsqueeze(-1)
+
 
 class HC_Critic(nn.Module):
     """
@@ -84,7 +93,8 @@ class HC_Critic(nn.Module):
     def forward(self, x: torch.Tensor):
         value = self.model(x)
         return value, {}
-    
+
+
 class HC_PrimitivePolicy(nn.Module):
     """
     Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
@@ -124,6 +134,3 @@ class HC_PrimitivePolicy(nn.Module):
         probs = torch.argmax(probs, dim=-1)
 
         return z, {"logits": logits, "probs": probs, "logprobs": logprobs}
-
-
-

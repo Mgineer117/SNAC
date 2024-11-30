@@ -124,7 +124,7 @@ class OPTrainer:
         for z in trange(self.policy._num_options, desc=f"Evaluation", leave=False):
             avg_rew_mean, avg_rew_std, avg_ln_mean, avg_ln_std = self.evaluator(
                 self.policy,
-                epoch=e,
+                epoch=e + 1,
                 iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 idx=z,
                 name1=self._val_options[z],
@@ -149,7 +149,9 @@ class OPTrainer:
             "OP/eval_ln_mean": ln_mean,
             "OP/eval_ln_std": ln_std,
         }
-        self.evaluator.write_log(eval_dict, iter_idx=int(e * self._step_per_epoch))
+        self.evaluator.write_log(
+            eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
+        )
 
         self.last_reward_mean.append(rew_mean)
         self.last_reward_std.append(rew_std)
@@ -319,12 +321,12 @@ class OPTrainer2:
                 loss_dict[self.prefix + "/update_time"] = update_time
 
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
-            
+
             # Eval Loop
             avg_rew_mean, avg_rew_std, avg_ln_mean, avg_ln_std = self.evaluator(
                 self.policy,
-                epoch=e,
-                iter_idx=int(e * self._step_per_epoch),
+                epoch=e + 1,
+                iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 idx=z,
                 name1=self.policy._option_vals[z],
                 dir_name=self.prefix,
@@ -339,7 +341,9 @@ class OPTrainer2:
                 self.prefix + "/eval_ln_mean": avg_ln_mean,
                 self.prefix + "/eval_ln_std": avg_ln_std,
             }
-            self.evaluator.write_log(eval_dict, iter_idx=int(e * self._step_per_epoch))
+            self.evaluator.write_log(
+                eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
+            )
 
             self.last_reward_mean.append(avg_rew_mean)
             self.last_reward_std.append(avg_rew_std)

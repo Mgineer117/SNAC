@@ -144,12 +144,15 @@ class HC_Controller(BasePolicy):
 
         if idx is None:
             # sample a from the Hierarchical Policy
-            z, z_argmax, metaData = self.policy(obs["observation"], deterministic=deterministic)
+            z, z_argmax, metaData = self.policy(
+                obs["observation"], deterministic=deterministic
+            )
         else:
             # keep using the given z
             z = F.one_hot(idx, num_classes=self.policy._a_dim)
             z_argmax = idx
-            metaData = {"probs": None, "logprobs": None} # dummy
+            probs = torch.tensor(1.0)
+            metaData = {"probs": probs, "logprobs": torch.log(probs)}  # dummy
 
         is_option = True if z_argmax < self._num_options else False
 
@@ -208,7 +211,7 @@ class HC_Controller(BasePolicy):
                 for param in self.critic.parameters():
                     valueLoss += param.pow(2).sum() * self._l2_reg
                 valueLoss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
 
                 return (
                     valueLoss.item(),
@@ -228,7 +231,6 @@ class HC_Controller(BasePolicy):
                 values, _ = self.critic(states)
                 valueLoss = self.mse_loss(returns, values)
 
-            # _, metaData = self.policy(features)
             _, _, metaData = self.policy(states)
 
             logprobs = self.policy.log_prob(metaData["dist"], actions)

@@ -90,11 +90,11 @@ class PPOTrainer:
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
-        ### Eval Loop
+            ### Eval Loop
             self.policy.eval()
             rew_mean, rew_std, _, _ = self.evaluator(
                 self.policy,
-                epoch=e,
+                epoch=e + 1,
                 iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 dir_name="PPO",
                 grid_type=self.grid_type,
