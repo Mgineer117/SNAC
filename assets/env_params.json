@@ -30,7 +30,7 @@
         "step_per_epoch": 50,
         "sf_log_interval": 100,
         "op_log_interval": 2,
-        "hc_log_interval": 10,
+        "hc_log_interval": 5,
         "ppo_log_interval": 25,
         "phi_loss_r_scaler": 1.0,
         "phi_loss_s_scaler": 0.1,
