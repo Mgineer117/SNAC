@@ -96,7 +96,7 @@ class SFTrainer:
             batch, sample_time = self.sampler.collect_samples(
                 self.policy, grid_type=self.grid_type
             )
-            self.buffer.push(batch)
+            self.buffer.push(batch, sort='reward')
 
             ### Eval
             self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.

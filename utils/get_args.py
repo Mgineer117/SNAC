@@ -242,7 +242,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--option-lr",
         type=float,
-        default=1e-4,
+        default=5e-5,
         help="Intermediate-level model learning rate",
     )
     parser.add_argument(
@@ -369,7 +369,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=True,
+        default=False,
         help="it imports previously trained model",
     )
     parser.add_argument(
