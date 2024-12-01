@@ -40,9 +40,13 @@ class GridWrapper(gym.Wrapper):
     def __init__(self, env: gym.Env, tile_size: int = 1):
         super(GridWrapper, self).__init__(env)
         self.tile_size = tile_size
+        self.agent_num = len(self.env.agents)
 
     def get_agent_pos(self):
-        return np.array(self.env.agents[0].pos)
+        agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
+        for i in range(self.agent_num):
+            agent_pos[2 * i : 2 * i + 2] = self.env.agents[i].pos
+        return agent_pos
 
     def reset(self, **kwargs):
         observation, info = self.env.reset(**kwargs)
@@ -73,9 +77,13 @@ class CtFWrapper(gym.Wrapper):
     def __init__(self, env: gym.Env, tile_size: int = 1):
         super(CtFWrapper, self).__init__(env)
         self.tile_size = tile_size
+        self.agent_num = len(self.env.agents)
 
     def get_agent_pos(self):
-        return np.array(self.env.agents[0].pos)
+        agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
+        for i in range(self.agent_num):
+            agent_pos[2 * i : 2 * i + 2] = self.env.agents[i].pos
+        return agent_pos
 
     def reset(self, **kwargs):
         observation, _ = self.env.reset(**kwargs)
@@ -130,7 +138,8 @@ class NavigationWrapper(gym.Wrapper):
             truncation = True
 
         return obs, reward, termination, truncation, info
-    
+
+
 class GymWrapper(gym.Wrapper):
     def __init__(self, env: gym.Env):
         super(GymWrapper, self).__init__(env)

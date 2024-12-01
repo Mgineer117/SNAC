@@ -47,6 +47,7 @@ class FeatureTrain:
             feature_dim=args.sf_dim,
             action_dim=args.a_dim,
             hc_action_dim=args.num_vector + 1,
+            agent_num=args.agent_num,
             min_option_length=args.min_option_length,
             min_cover_option_length=args.min_cover_option_length,
             episode_len=args.episode_len,

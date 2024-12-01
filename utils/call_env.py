@@ -34,6 +34,7 @@ def call_env(args):
             render_mode="rgb_array",
         )
         disc_or_cont(env, args)
+        args.agent_num = len(env.agents)
         return GridWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "LavaRooms":
         # first call dummy env to find possible location for agent
@@ -46,6 +47,7 @@ def call_env(args):
             render_mode="rgb_array",
         )
         disc_or_cont(env, args)
+        args.agent_num = len(env.agents)
         return GridWrapper(env, tile_size=args.tile_size)
 
     elif args.env_name in ("CtF1v1", "CtF1v2", "CtF1v3", "CtF1v4"):
@@ -66,6 +68,7 @@ def call_env(args):
         else:
             raise NotImplementedError(f"{args.env_name} not implemented")
         disc_or_cont(env, args)
+        args.agent_num = len(env.agents)
         return CtFWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "PointNavigation":
         config = {"agent_name": "Point"}
@@ -86,6 +89,7 @@ def call_env(args):
         )
 
         disc_or_cont(env, args)
+        args.agent_num = None
         return NavigationWrapper(env)
     elif args.env_name == "InvertedPendulum":
         env = gym.make(
@@ -93,6 +97,7 @@ def call_env(args):
             render_mode="rgb_array",
         )
         disc_or_cont(env, args)
+        args.agent_num = None
         return GymWrapper(env)
     elif args.env_name == "Hopper":
         env = gym.make(
@@ -100,6 +105,7 @@ def call_env(args):
             render_mode="rgb_array",
         )
         disc_or_cont(env, args)
+        args.agent_num = None
         return GymWrapper(env)
     else:
         raise ValueError(f"Invalid environment key: {args.env_name}")

@@ -251,6 +251,7 @@ def call_sfNetwork(args):
                 feaNet = ConvNetwork(
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
+                    agent_num=args.agent_num,
                     encoder_conv_layers=encoder_conv_layers,
                     decoder_conv_layers=decoder_conv_layers,
                     fc_dim=args.feature_fc_dim,

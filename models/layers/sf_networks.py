@@ -74,6 +74,7 @@ class ConvNetwork(nn.Module):
         self,
         state_dim: tuple,
         action_dim: int,
+        agent_num: int,
         encoder_conv_layers: list,
         decoder_conv_layers: list,
         fc_dim: int = 256,
@@ -88,6 +89,7 @@ class ConvNetwork(nn.Module):
         # Parameters
         self._fc_dim = fc_dim
         self._sf_dim = sf_dim
+        self._agent_num = agent_num
 
         # Activation functions
         self.act = activation
@@ -131,7 +133,7 @@ class ConvNetwork(nn.Module):
         self.en_flatter = torch.nn.Flatten()
 
         self.en_feature = MLP(
-            input_dim=flat_dim + 2,  # agent pos concat
+            input_dim=flat_dim + 2 * self._agent_num,  # agent pos concat
             hidden_dims=(fc_dim, fc_dim),
             activation=self.act,
         )

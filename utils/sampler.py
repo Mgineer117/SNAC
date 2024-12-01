@@ -87,9 +87,13 @@ class Base:
                 ((batch_size,) + self.state_dim), np.nan, dtype=np.float32
             ),
             actions=np.full((batch_size, self.action_dim), np.nan, dtype=np.float32),
-            option_actions=np.full((batch_size, self.hc_action_dim), np.nan, dtype=np.int8),
-            agent_pos=np.full((batch_size, 2), np.nan, dtype=np.int8),
-            next_agent_pos=np.full((batch_size, 2), np.nan, dtype=np.int8),
+            option_actions=np.full(
+                (batch_size, self.hc_action_dim), np.nan, dtype=np.int8
+            ),
+            agent_pos=np.full((batch_size, 2 * self.agent_num), np.nan, dtype=np.int8),
+            next_agent_pos=np.full(
+                (batch_size, 2 * self.agent_num), np.nan, dtype=np.int8
+            ),
             rewards=np.full((batch_size, 1), np.nan, dtype=np.float32),
             terminals=np.full((batch_size, 1), np.nan, dtype=np.int8),
             logprobs=np.full((batch_size, 1), np.nan, dtype=np.float32),
@@ -217,6 +221,7 @@ class OnlineSampler(Base):
         feature_dim: tuple,
         action_dim: int,
         hc_action_dim: int,
+        agent_num: int,
         min_option_length: int,
         min_cover_option_length: int,
         episode_len: int,
@@ -240,6 +245,7 @@ class OnlineSampler(Base):
         self.feature_dim = feature_dim
         self.action_dim = action_dim
         self.hc_action_dim = hc_action_dim
+        self.agent_num = agent_num
         self.min_option_length = min_option_length
         self.min_cover_option_length = min_cover_option_length
         self.episode_len = episode_len
@@ -372,7 +378,7 @@ class OnlineSampler(Base):
         if queue is not None:
             # Apply different seeds for multiprocessor's action stochacity
             self.set_any_seed(seed, pid)
-        
+
         def env_step(a):
             next_obs, rew, term, trunc1, infos = env.step(a)
 
@@ -381,7 +387,7 @@ class OnlineSampler(Base):
             done = term or trunc1 or trunc2
 
             return next_obs, rew, done, infos
-        
+
         current_step = 0
         for iter in range(episode_num):
             # env initialization
@@ -403,12 +409,14 @@ class OnlineSampler(Base):
                             # env stepping
                             with torch.no_grad():
                                 option_a, _ = policy(
-                                    next_obs, metaData["z_argmax"], deterministic=deterministic
+                                    next_obs,
+                                    metaData["z_argmax"],
+                                    deterministic=deterministic,
                                 )
                                 option_a = option_a.cpu().numpy().squeeze()
 
                             next_obs, op_rew, done, infos = env_step(option_a)
-                            rew += self.gamma**(o_t + 1) * op_rew
+                            rew += self.gamma ** (o_t + 1) * op_rew
                             if done:
                                 break
                 else:
@@ -484,7 +492,7 @@ class OnlineSampler(Base):
             done = term or trunc1 or trunc2
 
             return next_obs, rew, done, infos
-        
+
         current_step = 0
         for iter in range(episode_num):
             # env initialization
@@ -493,7 +501,7 @@ class OnlineSampler(Base):
             is_first_iter = True
             self.external_t = 0
             for t in range(episode_len):
-                
+
                 with torch.no_grad():
                     # sample action
                     a, metaData = policy(obs, idx, deterministic=deterministic)
@@ -512,7 +520,7 @@ class OnlineSampler(Base):
                                 option_a = option_a.cpu().numpy().squeeze()
 
                             next_obs, op_rew, done, infos = env_step(option_a)
-                            rew += self.gamma**(o_t + 1) * op_rew
+                            rew += self.gamma ** (o_t + 1) * op_rew
                             if done:
                                 break
                     is_first_iter = False

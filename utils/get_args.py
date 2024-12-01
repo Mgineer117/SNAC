@@ -59,7 +59,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--env-name",
         type=str,
-        default="PointNavigation",
+        default="CtF1v2",
         help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
     )
     parser.add_argument(
