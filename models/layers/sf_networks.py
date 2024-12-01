@@ -151,10 +151,10 @@ class ConvNetwork(nn.Module):
         )
 
         # self.en_last_act = nn.ReLU()
-        self.en_last_act = nn.ELU()
+        # self.en_last_act = nn.ELU()
         # self.en_last_act = nn.Tanh()
         # self.en_last_act = nn.Sigmoid()
-        # self.en_last_act = nn.Identity()
+        self.en_last_act = nn.Identity()
         # self.en_last_act = EncoderLastAct(alpha=1.0)
 
         ### Decoding module
