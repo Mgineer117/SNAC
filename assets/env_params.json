@@ -23,7 +23,7 @@
         "gamma": 0.999
     },
     "CtF1v2": {
-        "SF_epoch": 200,
+        "SF_epoch": 300,
         "OP_epoch": 5,
         "HC_epoch": 200,
         "PPO_epoch": 200,
@@ -41,7 +41,7 @@
         "eval_episodes": 6,
         "feature_fc_dim": 512,
         "fc_dim": 256,
-        "sf_dim": 128,
+        "sf_dim": 256,
         "render_fps": 10,
         "gamma": 0.99
     },

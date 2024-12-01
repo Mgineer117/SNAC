@@ -142,7 +142,7 @@ if __name__ == "__main__":
         config = json.load(json_file)
     args = DotDict(config)
     args.env_name = "CtF1v2"
-    args.algo_name = "SNAC++"
+    args.algo_name = "SNAC"
     args.num_vector = 16
     if args.env_name == "FourRooms":
         args.grid_size = 13

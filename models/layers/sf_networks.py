@@ -167,15 +167,12 @@ class ConvNetwork(nn.Module):
             hidden_dims=(fc_dim,),
             activation=self.act,
         )
-        # self.de_state_feature = MLP(
-        #     input_dim=sf_dim, hidden_dims=(fc_dim,), activation=self.act
-        # )
 
         # main decoding module
         self.de_concat = MLP(
             input_dim=2 * fc_dim,
             hidden_dims=(
-                fc_dim,
+                2 * fc_dim,
                 flat_dim,
             ),
             activation=self.act,
