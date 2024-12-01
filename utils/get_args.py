@@ -242,7 +242,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--option-lr",
         type=float,
-        default=5e-5,
+        default=1e-4,
         help="Intermediate-level model learning rate",
     )
     parser.add_argument(
