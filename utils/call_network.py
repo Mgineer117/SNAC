@@ -41,15 +41,6 @@ def get_conv_layer(args):
             "padding": 0,
             "activation": nn.ELU(),
             "in_filters": 16,
-            "out_filters": 16,
-        },  # Halve spatial dimensions again
-        {
-            "type": "conv",
-            "kernel_size": 3,
-            "stride": 1,
-            "padding": 0,
-            "activation": nn.ELU(),
-            "in_filters": 16,
             "out_filters": 32,
         },  # Halve spatial dimensions again
         {
@@ -60,6 +51,15 @@ def get_conv_layer(args):
             "activation": nn.ELU(),
             "in_filters": 32,
             "out_filters": 64,
+        },  # Halve spatial dimensions again
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 0,
+            "activation": nn.ELU(),
+            "in_filters": 64,
+            "out_filters": 128,
         },  # Halve spatial dimensions again
     ]
 
@@ -80,15 +80,6 @@ def get_conv_layer(args):
             "padding": 0,
             "activation": nn.ELU(),
             "in_filters": 16,
-            "out_filters": 16,
-        },  # Halve spatial dimensions again
-        {
-            "type": "conv",
-            "kernel_size": 3,
-            "stride": 1,
-            "padding": 0,
-            "activation": nn.ELU(),
-            "in_filters": 16,
             "out_filters": 32,
         },  # Halve spatial dimensions again
         {
@@ -99,6 +90,15 @@ def get_conv_layer(args):
             "activation": nn.ELU(),
             "in_filters": 32,
             "out_filters": 64,
+        },  # Halve spatial dimensions again
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 0,
+            "activation": nn.ELU(),
+            "in_filters": 64,
+            "out_filters": 128,
         },  # Halve spatial dimensions again
     ]
 
@@ -190,7 +190,7 @@ def call_sfNetwork(args):
                     fc_dim=args.feature_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=int(args.sf_dim / 2),
-                    activation=nn.Tanh(),
+                    activation=nn.ELU(),
                 )
 
             psiNet = PsiCritic(
@@ -256,7 +256,7 @@ def call_sfNetwork(args):
                     fc_dim=args.feature_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=args.sf_dim,
-                    activation=nn.Tanh(),
+                    activation=nn.ELU(),
                 )
 
             psiNet = PsiCritic(

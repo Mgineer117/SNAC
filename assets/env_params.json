@@ -23,7 +23,7 @@
         "gamma": 0.999
     },
     "CtF1v2": {
-        "SF_epoch": 300,
+        "SF_epoch": 500,
         "OP_epoch": 5,
         "HC_epoch": 200,
         "PPO_epoch": 200,
@@ -35,7 +35,7 @@
         "phi_loss_r_scaler": 1.0,
         "phi_loss_s_scaler": 0.1,
         "phi_loss_kl_scaler": 10.0,
-        "phi_loss_l2_scaler": 1e-5,
+        "phi_loss_l2_scaler": 1e-4,
         "episode_len": 100,
         "episode_num": 6,
         "eval_episodes": 6,
