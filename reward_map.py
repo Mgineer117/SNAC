@@ -141,7 +141,13 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
+    args.env_name = "CtF1v2"
+    args.algo_name = "SNAC++"
     args.num_vector = 16
+    if args.env_name == "FourRooms":
+        args.grid_size = 13
+    else:
+        args.grid_size = 12
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")
@@ -165,6 +171,7 @@ if __name__ == "__main__":
         state_dim=args.s_dim,
         feature_dim=args.sf_dim,
         action_dim=args.a_dim,
+        hc_action_dim=args.num_vector + 1,
         min_option_length=args.min_option_length,
         min_cover_option_length=args.min_cover_option_length,
         episode_len=args.episode_len,
