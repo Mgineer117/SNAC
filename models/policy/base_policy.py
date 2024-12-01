@@ -24,22 +24,26 @@ class BasePolicy(nn.Module):
         self.l1_loss = F.l1_loss
         self.mse_loss = F.mse_loss
         self.huber_loss = F.smooth_l1_loss
+        self.mqe2D_loss = lambda x, y: torch.mean(
+            torch.sum(torch.pow(x - y, 4), -1), axis=-1
+        )
         self.mqe4D_loss = lambda x, y: torch.mean(
             torch.mean(
                 torch.mean(torch.mean(torch.pow(x - y, 4), -1), axis=-1), axis=-1
             ),
             axis=0,
         )
-        self.mqe2D_loss = lambda x, y: torch.mean(
-            torch.sum(torch.pow(x - y, 4), -1), axis=-1
-        )
-
+        
         # self.multiply_options = lambda x, y: torch.einsum(
         #     "naf,nf->na", x, y
         # )  # ~ [N, |A|]
         self.multiply_options = lambda x, y: torch.sum(
             torch.mul(x, y), axis=-1, keepdim=True
         )
+
+    def weighted_mse_loss(self, x, y):
+        weights = torch.where(y != 0.0, 20.0, 1.0)
+        return torch.mean(weights * torch.pow(y - x, 2))
 
     def compute_gradient_norm(self, models, names, device, dir="None", norm_type=2):
         grad_dict = {}
