@@ -1,19 +1,14 @@
 import torch
 import numpy as np
-import gymnasium as gym
-import matplotlib.pyplot as plt
-from datetime import datetime
 from sklearn.cluster import KMeans
 
 from log.logger_util import colorize
-from utils.get_all_states import get_grid_tensor, get_grid_tensor2
+from utils.get_all_states import get_grid_tensor
 from utils.utils import estimate_psi
 from utils.plotter import Plotter
 from utils.sampler import OnlineSampler
 from utils.buffer import TrajectoryBuffer
 from models.policy.base_policy import BasePolicy
-from torch.utils.tensorboard import SummaryWriter
-from log.wandb_logger import WandbLogger
 
 
 def print_option_info(option_vals, options, algo_name, desired_num):
@@ -376,7 +371,7 @@ def get_eigenvectors(
                 device=args.device,
             )
         elif args.env_name == "LavaRooms":
-            grid_tensor, coords, loc = get_grid_tensor(env, args.grid_type)
+            grid_tensor, coords, agent_pos = get_grid_tensor(env, args.grid_type)
             plotter.plotRewardMap(
                 feaNet=sf_network.feaNet,
                 S=option_vals,
@@ -385,12 +380,12 @@ def get_eigenvectors(
                 algo_name=args.algo_name,
                 grid_tensor=grid_tensor,
                 coords=coords,
-                loc=loc,
+                agent_pos=agent_pos,
                 dir=plotter.log_dir,
                 device=args.device,
             )
         elif args.env_name == "CtF1v1" or args.env_name == "CtF1v2":
-            grid_tensor, coords, loc = get_grid_tensor2(env, args.grid_type)
+            grid_tensor, coords, agent_pos = get_grid_tensor(env, args.grid_type)
             plotter.plotRewardMap2(
                 feaNet=sf_network.feaNet,
                 S=option_vals,
@@ -399,7 +394,7 @@ def get_eigenvectors(
                 algo_name=args.algo_name,
                 grid_tensor=grid_tensor,
                 coords=coords,
-                loc=loc,
+                agent_pos=agent_pos,
                 dir=plotter.log_dir,
                 device=args.device,
             )

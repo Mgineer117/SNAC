@@ -1,8 +1,9 @@
 import os
 import numpy as np
-import gymnasium as gym
 from tqdm import trange
 import matplotlib.pyplot as plt
+
+from utils.wrappers import GridWrapper, CtFWrapper
 
 
 def get_grid_tensor(env, grid_type):
@@ -12,50 +13,41 @@ def get_grid_tensor(env, grid_type):
     """
     obs, _ = env.reset(seed=grid_type)
     grid_tensor = obs["observation"]
-
-    loc = np.where(grid_tensor[:, :, 0] == 10)
-    grid_tensor[loc[0], loc[1], 0] = 1
     env.close()
 
-    x_coords, y_coords = np.where(
-        (grid_tensor[:, :, 0] != 2)
-        & (grid_tensor[:, :, 0] != 8)
-        & (grid_tensor[:, :, 0] != 9)
-    )  # find idx where not wall
+    if isinstance(env, GridWrapper):
+        agent_loc = np.where(grid_tensor[:, :, 0] == 10)
+        grid_tensor[agent_loc[0], agent_loc[1], 0] = 1
 
-    return grid_tensor, (x_coords, y_coords), loc
+        x_coords, y_coords = np.where(
+            (grid_tensor[:, :, 0] != 2)
+            & (grid_tensor[:, :, 0] != 8)
+            & (grid_tensor[:, :, 0] != 9)
+        )  # find idx where not wall
 
+        # return the agent_pos of other agents in the env (red)
+        # leaving placeholder for the agent in control
+        agent_pos = np.full((2 * len(env.agents),), np.nan, dtype=np.float32)
+    elif isinstance(env, CtFWrapper):
+        agent_loc = np.where(grid_tensor[:, :, 1] == 1)
+        grid_tensor[agent_loc[0], agent_loc[1], 1] = 0
+        grid_tensor[agent_loc[0], agent_loc[1], 2] = 0
 
-def get_grid_tensor2(env, grid_type):
-    """
-    Can be extended to the multigrid by removing multiple agents
-    CTF tailored
-    """
-    obs, _ = env.reset(seed=grid_type)
-    grid_tensor = obs["observation"]
-    env.close()
+        x_coords, y_coords = np.where(
+            (grid_tensor[:, :, 0] != 0)
+            & (grid_tensor[:, :, 1] != 2)
+            & (grid_tensor[:, :, 1] != 3)
+            & (grid_tensor[:, :, 1] != 4)
+        )  # find idx where not wall
 
-    # detech the location of blue agent
-    # and mark them empty
-    loc = np.where(grid_tensor[:, :, 1] == 1)
-    grid_tensor[loc[0], loc[1], 1] = 0
-    grid_tensor[loc[0], loc[1], 2] = 0
-
-    # enemy_loc = np.where(grid_tensor[:, :, 1] == 2)
-    # grid_tensor[enemy_loc[0], enemy_loc[1], 1] = 0
-    # grid_tensor[enemy_loc[0], enemy_loc[1], 2] = 0
-
-    # grid_tensor[2, 3, 1] = 2
-    # grid_tensor[2, 3, 2] = 2
-
-    x_coords, y_coords = np.where(
-        (grid_tensor[:, :, 0] != 0)
-        & (grid_tensor[:, :, 1] != 2)
-        & (grid_tensor[:, :, 1] != 3)
-        & (grid_tensor[:, :, 1] != 4)
-    )  # find idx where not wall
-
-    return grid_tensor, (x_coords, y_coords), loc
+        # return the agent_pos of other agents in the env (red)
+        # leaving placeholder for the agent in control
+        agent_pos = np.full((2 * len(env.agents),), np.nan, dtype=np.float32)
+        for i in range(1, len(env.agents)):
+            agent_pos[2 * i : 2 * i + 2] = env.agents[i].pos
+    else:
+        raise NotImplementedError(f"Not implemented for {env}")
+    return grid_tensor, (x_coords, y_coords), agent_pos
 
 
 def generate_possible_tensors(env, path, args, tile_size, grid_type):

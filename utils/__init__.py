@@ -19,7 +19,6 @@ from utils.get_args import get_args
 from utils.get_all_states import (
     generate_possible_tensors,
     get_grid_tensor,
-    get_grid_tensor2,
 )
 from utils.buffer import TrajectoryBuffer
 from utils.sampler import OnlineSampler
@@ -44,7 +43,6 @@ __all__ = [
     "discover_options",
     "generate_possible_tensors",
     "get_grid_tensor",
-    "get_grid_tensor2",
     "TrajectoryBuffer",
     "OnlineSampler",
     "save_dim_to_args",

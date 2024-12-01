@@ -80,17 +80,15 @@ class GradCam(nn.Module):
 
 
 def get_grid(env, env_name, args):
-    if env_name == "FourRooms" or env_name == "LavaRooms":
-        grid, (x_coords, y_coords), loc = get_grid_tensor(env, args.grid_type)
-    else:
-        grid, (x_coords, y_coords), loc = get_grid_tensor2(env, args.grid_type)
+    grid, (x_coords, y_coords), agent_pos = get_grid_tensor(env, args.grid_type)
 
     grid = grid[None, :, :, :]
-    pos = np.hstack((x_coords[:, None], y_coords[:, None]))
+    coords = np.hstack((x_coords[:, None], y_coords[:, None]))
 
     grid = torch.from_numpy(grid).to(torch.float32)
-    pos = torch.from_numpy(pos).to(torch.float32)
-    return grid, pos
+    coords = torch.from_numpy(coords).to(torch.float32)
+    agent_pos = torch.from_numpy(agent_pos).to(torch.float32)
+    return grid, coords, agent_pos
 
 
 def plot(img, heatmap, reward, i):
@@ -135,19 +133,24 @@ def plot(img, heatmap, reward, i):
     plt.close()
 
 
-def run_loop(env_name, grid, pos, target="s"):
-    for i in range(pos.shape[0]):
-        x, y = pos[i, 0], pos[i, 1]
+def run_loop(env_name, grid, coords, agent_pos, target="s"):
+    for i in range(coords.shape[0]):
+        x, y = coords[i, 0], coords[i, 1]
 
         img = grid.clone()
+        pos = agent_pos.clone()
 
         if env_name == "FourRooms" or env_name == "LavaRooms":
             img[:, x.long(), y.long(), 0] = 10
         else:
             img[:, x.long(), y.long(), 1] = 1
             img[:, x.long(), y.long(), 2] = 2
+
+        pos[0] = x
+        pos[1] = y
+
         # do grad-cam
-        out, reward = gradCam(img, pos[i, :].unsqueeze(0), target=target)
+        out, reward = gradCam(img, pos, target=target)
         out.backward()
 
         gradients = gradCam.get_activations_gradient()
@@ -201,6 +204,6 @@ if __name__ == "__main__":
 
     # call env
     env = call_env(args)
-    grid, pos = get_grid(env, args.env_name, args)
+    grid, coords, agent_pos = get_grid(env, args.env_name, args)
 
-    run_loop(args.env_name, grid, pos, target=target)
+    run_loop(args.env_name, grid, coords, agent_pos, target=target)

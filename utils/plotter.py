@@ -371,7 +371,7 @@ class Plotter:
         algo_name: str,
         grid_tensor: np.ndarray,
         coords: tuple,
-        loc: np.ndarray,
+        agent_pos: np.ndarray,
         dir: str,
         device=torch.device("cpu"),
     ):
@@ -390,6 +390,7 @@ class Plotter:
         agent_dirs = [0, 1, 2, 3]
 
         grid_tensor = torch.from_numpy(grid_tensor)
+        agent_pos = torch.from_numpy(agent_pos)
 
         features = torch.zeros(x_grid_dim, y_grid_dim, feature_dim)
         deltaPhi = torch.zeros(len(agent_dirs), x_grid_dim, y_grid_dim, feature_dim)
@@ -408,7 +409,9 @@ class Plotter:
                 if len(img.shape) == 3:
                     img = img[None, :, :, :].to(self._dtype).to(self.device)
 
-                agent_pos = torch.tensor([[x, y]]).to(self._dtype).to(self.device)
+                agent_pos[0] = x
+                agent_pos[1] = y
+                agent_pos = agent_pos.to(self._dtype).to(self.device)
 
                 phi, _ = feaNet(img, agent_pos)
             features[x, y, :] = phi
@@ -606,11 +609,6 @@ class Plotter:
         # Create the plot
         plt.figure(figsize=(6, 6))
         plt.axis("off")
-        img = grid_tensor.clone()
-        img[loc[0], loc[1], :] = 10.0
-        img = torch.sum(img, axis=-1)
-        img = (img - img.min()) / (img.max() - img.min())
-
         plt.imshow(img * 20, cmap="viridis", interpolation="none")
         plt.gca().invert_yaxis()  # Make (0,0) the top-left corner
         plt.tight_layout()
@@ -638,7 +636,7 @@ class Plotter:
         grid_tensor: np.ndarray,
         coords: tuple,
         dir: str,
-        loc: np.ndarray | None = None,
+        agent_pos: np.ndarray | None = None,
         device=torch.device("cpu"),
     ):
         """
@@ -656,6 +654,7 @@ class Plotter:
         agent_dirs = [0, 1, 2, 3]
 
         grid_tensor = torch.from_numpy(grid_tensor)
+        agent_pos = torch.from_numpy(agent_pos)
 
         features = torch.zeros(x_grid_dim, y_grid_dim, feature_dim)
         deltaPhi = torch.zeros(len(agent_dirs), x_grid_dim, y_grid_dim, feature_dim)
@@ -675,7 +674,9 @@ class Plotter:
                 if len(img.shape) == 3:
                     img = img[None, :, :, :].to(self._dtype).to(self.device)
 
-                agent_pos = torch.tensor([[x, y]]).to(self._dtype).to(self.device)
+                agent_pos[0] = x
+                agent_pos[1] = y
+                agent_pos = agent_pos.to(self._dtype).to(self.device)
 
                 phi, _ = feaNet(img, agent_pos)
             features[x, y, :] = phi
@@ -806,15 +807,15 @@ class Plotter:
             # Create the figure and two subplots: one for the 3D plot and one for the 2D heatmap
             fig = plt.figure(figsize=(18, 6))  # Adjust figsize as needed
 
-            # reassign the agent
+            # amplify the agents in different colors
             img = grid_tensor.clone()
             obj_indices = img[:, :, 1] != 0
             obj = (img[:, :, 1] + 1) * 2
             img = torch.sum(img, axis=-1)
             img[obj_indices] = obj[obj_indices]
-
             img = (img - img.min()) / (img.max() - img.min())
 
+            # first plot
             ax0 = fig.add_subplot(131)
             ax0.imshow(img)
             ax0.axis("off")  # Turn off the axis for the image

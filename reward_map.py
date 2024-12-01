@@ -30,9 +30,9 @@ def remove_dir(dir_path):
     os.rmdir(dir_path)
 
 
-def run_loop(env, env_name, option_vals, options):
+def run_loop(env, option_vals, options, args):
     # for i in [0, 4, 5, 6, 9]:
-    if env_name == "FourRooms":
+    if args.env_name == "FourRooms":
         grid, pos, loc = get_grid_tensor(env, grid_type=args.grid_type)
 
         save_path = f"RewardMap/FourRooms"
@@ -55,7 +55,7 @@ def run_loop(env, env_name, option_vals, options):
             dir=save_path,
             device=args.device,
         )
-    elif env_name == "LavaRooms":
+    elif args.env_name == "LavaRooms":
         for i in range(10):
             save_path = f"RewardMap/LavaRooms/{str(i)}"
             if not os.path.exists(save_path):
@@ -64,7 +64,7 @@ def run_loop(env, env_name, option_vals, options):
                 remove_dir(save_path)
                 os.mkdir(save_path)
 
-            grid, pos, loc = get_grid_tensor(env, grid_type=args.grid_type)
+            grid, pos, agent_pos = get_grid_tensor(env, grid_type=args.grid_type)
             # do reward Plot
             plotter.plotRewardMap(
                 feaNet=sf_network.feaNet,
@@ -74,12 +74,12 @@ def run_loop(env, env_name, option_vals, options):
                 algo_name=args.algo_name,
                 grid_tensor=grid,
                 coords=pos,
-                loc=loc,
+                agent_pos=agent_pos,
                 dir=save_path,
                 device=args.device,
             )
 
-    elif env_name == "CtF1v1" or env_name == "CtF1v2":
+    elif args.env_name == "CtF1v1" or args.env_name == "CtF1v2":
         # prepare the grid
         obs, _ = env.reset(seed=args.grid_type)
         grid_tensor = obs["observation"]
@@ -114,6 +114,9 @@ def run_loop(env, env_name, option_vals, options):
                 & (grid[:, :, 1] != 4)
             )
 
+            agent_pos = np.full((2 * args.num_agent,), np.nan, dtype=np.float32)
+            agent_pos[2:] = (x, y)
+
             # prepare the path
             save_path = f"RewardMap/CtF/{str(x)}_{str(y)}"
             if not os.path.exists(save_path):
@@ -130,6 +133,7 @@ def run_loop(env, env_name, option_vals, options):
                 algo_name=args.algo_name,
                 grid_tensor=grid,
                 coords=pos,
+                agent_pos=agent_pos,
                 dir=save_path,
                 device=args.device,
             )
@@ -172,6 +176,7 @@ if __name__ == "__main__":
         feature_dim=args.sf_dim,
         action_dim=args.a_dim,
         hc_action_dim=args.num_vector + 1,
+        agent_num=args.agent_num,
         min_option_length=args.min_option_length,
         min_cover_option_length=args.min_cover_option_length,
         episode_len=args.episode_len,
@@ -191,4 +196,4 @@ if __name__ == "__main__":
     obs, _ = env.reset(seed=args.grid_type)
     grid_tensor = obs["observation"]
 
-    run_loop(env, args.env_name, option_vals, options)
+    run_loop(env, option_vals, options, args)
