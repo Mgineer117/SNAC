@@ -133,27 +133,28 @@ class ConvNetwork(nn.Module):
         self.en_feature = MLP(
             input_dim=flat_dim + 2,  # agent pos concat
             hidden_dims=(fc_dim, fc_dim),
-            activation=nn.Tanh(),
+            activation=self.act,
         )
 
         self.en_reward = MLP(
             input_dim=fc_dim,  # agent pos concat
             hidden_dims=(fc_dim,),
             output_dim=int(sf_dim / 2),
-            activation=nn.Tanh(),
+            activation=self.act,
         )
 
         self.en_state = MLP(
             input_dim=fc_dim,  # agent pos concat
             hidden_dims=(fc_dim,),
             output_dim=int(sf_dim / 2),
-            activation=nn.Tanh(),
+            activation=self.act,
         )
 
         # self.en_last_act = nn.ReLU()
+        self.en_last_act = nn.ELU()
         # self.en_last_act = nn.Tanh()
         # self.en_last_act = nn.Sigmoid()
-        self.en_last_act = nn.Identity()
+        # self.en_last_act = nn.Identity()
         # self.en_last_act = EncoderLastAct(alpha=1.0)
 
         ### Decoding module

@@ -108,10 +108,10 @@ def run_loop(env, env_name, option_vals, options):
 
             # find idx where not wall and red agent
             pos = np.where(
-                (grid_tensor[:, :, 0] != 0)
-                & (grid_tensor[:, :, 1] != 2)
-                & (grid_tensor[:, :, 1] != 3)
-                & (grid_tensor[:, :, 1] != 4)
+                (grid[:, :, 0] != 0)
+                & (grid[:, :, 1] != 2)
+                & (grid[:, :, 1] != 3)
+                & (grid[:, :, 1] != 4)
             )
 
             # prepare the path
