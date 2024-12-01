@@ -526,7 +526,6 @@ class OnlineSampler(Base):
                 data["states"][current_step + t] = obs["observation"]
                 data["next_states"][current_step + t] = next_obs["observation"]
                 data["actions"][current_step + t] = a
-                data["option_actions"][current_step + t] = metaData["z"]
                 data["agent_pos"][current_step + t] = obs["agent_pos"]
                 data["next_agent_pos"][current_step + t] = next_obs["agent_pos"]
                 data["rewards"][current_step + t] = rew
