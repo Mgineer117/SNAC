@@ -25,8 +25,8 @@
     "CtF1v2": {
         "SF_epoch": 200,
         "OP_epoch": 5,
-        "HC_epoch": 50,
-        "PPO_epoch": 50,
+        "HC_epoch": 200,
+        "PPO_epoch": 200,
         "step_per_epoch": 50,
         "sf_log_interval": 100,
         "op_log_interval": 2,

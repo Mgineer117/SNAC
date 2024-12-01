@@ -108,12 +108,16 @@ def discover_options(
     features = torch.from_numpy(batch["features"]).to(torch.float32).to(device)
     terminals = torch.from_numpy(batch["terminals"]).to(torch.float32).to(device)
 
-    #### Compute Psi from Phi
-    with torch.no_grad():
-        psi = estimate_psi(features, terminals, gamma)  # operate on cpu
+    decomp_psi = False
+    if decomp_psi:
+        #### Compute Psi from Phi
+        with torch.no_grad():
+            psi = estimate_psi(features, terminals, gamma)  # operate on cpu
 
-    # to save VRAM
-    del features, terminals
+        # to save VRAM
+        del features, terminals
+    else:
+        psi = features.clone()
 
     ### Compute the vectors via SVD
     if algo_name in ("SNAC", "SNAC+", "SNAC++"):

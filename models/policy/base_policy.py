@@ -33,7 +33,7 @@ class BasePolicy(nn.Module):
             ),
             axis=0,
         )
-        
+
         # self.multiply_options = lambda x, y: torch.einsum(
         #     "naf,nf->na", x, y
         # )  # ~ [N, |A|]
@@ -42,7 +42,7 @@ class BasePolicy(nn.Module):
         )
 
     def weighted_mse_loss(self, x, y):
-        weights = torch.where(y != 0.0, 20.0, 1.0)
+        weights = torch.where(y != 0.0, 50.0, 1.0)
         return torch.mean(weights * torch.pow(y - x, 2))
 
     def compute_gradient_norm(self, models, names, device, dir="None", norm_type=2):
