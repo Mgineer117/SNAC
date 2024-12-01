@@ -150,7 +150,7 @@ def run_loop(env_name, grid, coords, agent_pos, target="s"):
         pos[1] = y
 
         # do grad-cam
-        out, reward = gradCam(img, pos, target=target)
+        out, reward = gradCam(img, pos.unsqueeze(0), target=target)
         out.backward()
 
         gradients = gradCam.get_activations_gradient()
