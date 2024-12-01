@@ -105,8 +105,8 @@ def discover_options(
     batch["features"], _ = policy.get_features(obs, to_numpy=True)
 
     ### Convert to the tensor
-    features = torch.from_numpy(batch["features"]).to(torch.float32).to(device)
-    terminals = torch.from_numpy(batch["terminals"]).to(torch.float32).to(device)
+    features = torch.from_numpy(batch["features"]).to(torch.float32)
+    terminals = torch.from_numpy(batch["terminals"]).to(torch.float32)
 
     decomp_psi = False
     if decomp_psi:
