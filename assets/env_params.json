@@ -1,11 +1,11 @@
 {
     "FourRooms": {
-        "SF_epoch": 2000,
+        "SF_epoch": 500,
         "OP_epoch": 50,
         "HC_epoch": 500,
         "PPO_epoch": 500,
         "step_per_epoch": 5,
-        "sf_log_interval": 500,
+        "sf_log_interval": 250,
         "op_log_interval": 10,
         "hc_log_interval": 100,
         "ppo_log_interval": 100,
@@ -23,12 +23,12 @@
         "gamma": 0.99
     },
     "CtF1v1": {
-        "SF_epoch": 2000,
+        "SF_epoch": 500,
         "OP_epoch": 50,
         "HC_epoch": 1000,
         "PPO_epoch": 1000,
         "step_per_epoch": 5,
-        "sf_log_interval": 500,
+        "sf_log_interval": 250,
         "op_log_interval": 10,
         "hc_log_interval": 250,
         "ppo_log_interval": 250,
@@ -46,12 +46,12 @@
         "gamma": 0.99
     },
     "CtF1v2": {
-        "SF_epoch": 2000,
+        "SF_epoch": 500,
         "OP_epoch": 50,
         "HC_epoch": 1000,
         "PPO_epoch": 1000,
         "step_per_epoch": 5,
-        "sf_log_interval": 500,
+        "sf_log_interval": 250,
         "op_log_interval": 10,
         "hc_log_interval": 250,
         "phi_loss_r_scaler": 1.0,
@@ -68,7 +68,7 @@
         "gamma": 0.99
     },
     "PointNavigation": {
-        "SF_epoch": 5000,
+        "SF_epoch": 2000,
         "OP_epoch": 50,
         "HC_epoch": 1000,
         "PPO_epoch": 1000,
