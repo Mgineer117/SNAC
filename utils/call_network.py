@@ -32,17 +32,8 @@ def get_conv_layer(args):
             "padding": 1,
             "activation": nn.ELU(),
             "in_filters": in_channels,
-            "out_filters": 16,
-        },  # Halve the spatial dimensions
-        {
-            "type": "conv",
-            "kernel_size": 3,
-            "stride": 1,
-            "padding": 0,
-            "activation": nn.ELU(),
-            "in_filters": 16,
             "out_filters": 32,
-        },  # Halve spatial dimensions again
+        },  # Halve the spatial dimensions
         {
             "type": "conv",
             "kernel_size": 3,
@@ -54,12 +45,12 @@ def get_conv_layer(args):
         },  # Halve spatial dimensions again
         {
             "type": "conv",
-            "kernel_size": 3,
-            "stride": 1,
+            "kernel_size": 2,
+            "stride": 2,
             "padding": 0,
             "activation": nn.ELU(),
             "in_filters": 64,
-            "out_filters": 64,
+            "out_filters": 128,
         },  # Halve spatial dimensions again
     ]
 
@@ -71,17 +62,8 @@ def get_conv_layer(args):
             "padding": 1,
             "activation": nn.ELU(),
             "in_filters": in_channels,
-            "out_filters": 16,
-        },  # Halve the spatial dimensions
-        {
-            "type": "conv",
-            "kernel_size": 3,
-            "stride": 1,
-            "padding": 0,
-            "activation": nn.ELU(),
-            "in_filters": 16,
             "out_filters": 32,
-        },  # Halve spatial dimensions again
+        },  # Halve the spatial dimensions
         {
             "type": "conv",
             "kernel_size": 3,
@@ -93,12 +75,12 @@ def get_conv_layer(args):
         },  # Halve spatial dimensions again
         {
             "type": "conv",
-            "kernel_size": 3,
-            "stride": 1,
+            "kernel_size": 2,
+            "stride": 2,
             "padding": 0,
             "activation": nn.ELU(),
             "in_filters": 64,
-            "out_filters": 64,
+            "out_filters": 128,
         },  # Halve spatial dimensions again
     ]
 
