@@ -137,19 +137,19 @@ class ConvNetwork(nn.Module):
         feature_input_dim = flat_dim + (self._grid_size * self._grid_size)
         self.en_feature = MLP(
             input_dim=feature_input_dim,  # agent pos concat
-            hidden_dims=(feature_input_dim, fc_dim),
+            hidden_dims=(feature_input_dim,),
             activation=self.act,
         )
 
         self.en_reward = MLP(
-            input_dim=fc_dim,  # agent pos concat
+            input_dim=feature_input_dim,  # agent pos concat
             hidden_dims=(fc_dim, fc_dim),
             output_dim=int(sf_dim / 2),
             activation=self.act,
         )
 
         self.en_state = MLP(
-            input_dim=fc_dim,  # agent pos concat
+            input_dim=feature_input_dim,  # agent pos concat
             hidden_dims=(fc_dim, fc_dim),
             output_dim=int(sf_dim / 2),
             activation=self.act,

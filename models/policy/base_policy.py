@@ -42,7 +42,7 @@ class BasePolicy(nn.Module):
         )
 
     def weighted_mse_loss(self, x, y):
-        weights = torch.where(y != 0.0, 100.0, 1.0)
+        weights = torch.where(y != 0.0, 2.0, 1.0)
         return torch.mean(weights * torch.pow(y - x, 4))
 
     def compute_gradient_norm(self, models, names, device, dir="None", norm_type=2):
