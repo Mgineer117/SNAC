@@ -89,7 +89,7 @@ def call_env(args):
         )
 
         disc_or_cont(env, args)
-        args.agent_num = None
+        args.agent_num = 1
         return NavigationWrapper(env)
     elif args.env_name == "InvertedPendulum":
         env = gym.make(
@@ -97,7 +97,7 @@ def call_env(args):
             render_mode="rgb_array",
         )
         disc_or_cont(env, args)
-        args.agent_num = None
+        args.agent_num = 1
         return GymWrapper(env)
     elif args.env_name == "Hopper":
         env = gym.make(
@@ -105,7 +105,7 @@ def call_env(args):
             render_mode="rgb_array",
         )
         disc_or_cont(env, args)
-        args.agent_num = None
+        args.agent_num = 1
         return GymWrapper(env)
     else:
         raise ValueError(f"Invalid environment key: {args.env_name}")
