@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import uniform_filter
 
 # Example 10x10 tensor with random noise
-input_tensor = np.random.rand(10, 10)
+np.random.seed(42)
+input_tensor = np.random.rand(12, 12)
 
 # Smoothing the tensor using a uniform filter
-smoothed_tensor = uniform_filter(input_tensor, size=3)
+smoothed_tensor = uniform_filter(input_tensor, size=5)
 
 # Plot original and smoothed tensors as heatmaps
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
