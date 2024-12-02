@@ -337,7 +337,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-num-traj",
         type=int,
-        default=10,
+        default=150,
         help="For buffer learing, this sets the sub-iterations",
     )
     parser.add_argument(
