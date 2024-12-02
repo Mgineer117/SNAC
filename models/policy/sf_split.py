@@ -158,14 +158,14 @@ class SF_Split(BasePolicy):
                 p=2, dim=1, keepdim=True
             )
 
-        self.feature_optims = torch.optim.Adam(
+        self.feature_optims = torch.optim.AdamW(
             [
                 {"params": self.feaNet.parameters(), "lr": feature_lr},
                 {"params": self._options, "lr": option_lr},
             ]
         )
 
-        self.psi_optim = torch.optim.Adam(params=self.psiNet.parameters(), lr=psi_lr)
+        self.psi_optim = torch.optim.AdamW(params=self.psiNet.parameters(), lr=psi_lr)
 
         #
         self.dummy = torch.tensor(1e-5)
@@ -257,8 +257,8 @@ class SF_Split(BasePolicy):
         phi, conv_dict = self.feaNet(states, agent_pos, deterministic=False)
         phi_r, phi_s = self.split(phi)
 
-        reward_pred = torch.sum(phi_r * self._options, axis=-1, keepdim=True)
-        phi_r_loss = self._phi_loss_r_scaler * self.mqe2D_loss(reward_pred, rewards)
+        reward_pred = torch.sum(phi_r * self._options.detach(), axis=-1, keepdim=True)
+        phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(reward_pred, rewards)
 
         state_pred = self.decode(phi_s, actions, conv_dict)
         if isinstance(self.feaNet, VAE):

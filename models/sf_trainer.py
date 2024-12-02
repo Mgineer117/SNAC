@@ -93,10 +93,11 @@ class SFTrainer:
             if self.scheduler is not None:
                 self.scheduler.step()
 
-            batch, sample_time = self.sampler.collect_samples(
-                self.policy, grid_type=self.grid_type
-            )
-            self.buffer.push(batch, sort="reward")
+            if not self.buffer.full:
+                batch, sample_time = self.sampler.collect_samples(
+                    self.policy, grid_type=self.grid_type
+                )
+                self.buffer.push(batch)
 
             ### Eval
             self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.

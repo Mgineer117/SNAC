@@ -41,7 +41,7 @@
         "eval_episodes": 6,
         "feature_fc_dim": 1024,
         "fc_dim": 128,
-        "sf_dim": 256,
+        "sf_dim": 128,
         "render_fps": 10,
         "gamma": 0.99
     },
@@ -64,14 +64,14 @@
         "eval_episodes": 6,
         "feature_fc_dim": 1024,
         "fc_dim": 128,
-        "sf_dim": 256,
+        "sf_dim": 128,
         "render_fps": 10,
         "gamma": 0.99
     },
     "PointNavigation": {
-        "SF_epoch": 2000,
-        "OP_epoch": 50,
-        "HC_epoch": 1000,
+        "SF_epoch": 10,
+        "OP_epoch": 10,
+        "HC_epoch": 10,
         "PPO_epoch": 1000,
         "step_per_epoch": 10,
         "sf_log_interval": 1000,

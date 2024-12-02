@@ -15,6 +15,7 @@ class TrajectoryBuffer:
         # Using lists to store trajectories
         self.trajectories = []
         self.num_trj = 0
+        self.full = False
 
     def decompose(self, batch) -> List[Dict[str, np.ndarray]]:
         """
@@ -64,6 +65,7 @@ class TrajectoryBuffer:
     def wipe(self):
         self.trajectories = []
         self.num_trj = 0
+        self.full = False
 
     def push(self, batch: dict, sort: str | None = None) -> None:
         """
@@ -73,23 +75,29 @@ class TrajectoryBuffer:
                         // mask = not done in gym context
         Output: None
         """
-        trajs = self.decompose(batch)
-        temp_trajs = []
+        # buffer max criteria
+        if len(self.trajectories) >= self.max_num_trj:
+            self.full = True
+            print("\n+++++Buffer is full now+++++")
 
-        if sort == "reward":
-            # stack = 0
-            for trj in trajs:
-                if np.any(trj["rewards"] != 0):
-                    temp_trajs.append(trj)
+        if not self.full:
+            trajs = self.decompose(batch)
+            temp_trajs = []
 
-            trajs = temp_trajs
+            if sort == "reward":
+                # stack = 0
+                for trj in trajs:
+                    if np.any(trj["rewards"] != 0):
+                        temp_trajs.append(trj)
 
-        for traj in trajs:
-            if self.num_trj < self.max_num_trj:
-                self.trajectories.append(traj)
-            else:
-                self.trajectories[self.num_trj % self.max_num_trj] = traj
-            self.num_trj += 1
+                trajs = temp_trajs
+
+            for traj in trajs:
+                if self.num_trj < self.max_num_trj:
+                    self.trajectories.append(traj)
+                else:
+                    self.trajectories[self.num_trj % self.max_num_trj] = traj
+                self.num_trj += 1
 
     def sample(self, num_traj: int) -> Dict[str, torch.Tensor]:
         if num_traj > self.num_trj:
