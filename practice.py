@@ -1,21 +1,24 @@
-import torch
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.ndimage import uniform_filter
 
-# Example 2D tensor of shape (n, b)
-tensor = torch.tensor([[2, 4], [6, 8]])
+# Example 10x10 tensor with random noise
+input_tensor = np.random.rand(10, 10)
 
-# Number of classes
-num_classes = 12
+# Smoothing the tensor using a uniform filter
+smoothed_tensor = uniform_filter(input_tensor, size=3)
 
-# Create one-hot encodings for the tensor along the last dimension
-one_hot = torch.nn.functional.one_hot(tensor, num_classes=num_classes)
+# Plot original and smoothed tensors as heatmaps
+fig, ax = plt.subplots(1, 2, figsize=(10, 5))
 
-# Reshape the result to concatenate along dim=-1
-# Resulting shape will be (n, b * num_classes)
-concatenated = one_hot.view(tensor.size(0), -1)
+ax[0].imshow(input_tensor, cmap="viridis")
+ax[0].set_title("Original Tensor")
+ax[0].axis("off")
 
-print("Original tensor:")
-print(tensor)
-print("\nOne-hot encoded tensor:")
-print(one_hot)
-print("\nConcatenated one-hot encoding along dim=-1:")
-print(concatenated)
+ax[1].imshow(smoothed_tensor, cmap="viridis")
+ax[1].set_title("Smoothed Tensor")
+ax[1].axis("off")
+
+plt.tight_layout()
+plt.savefig("ss.png")
+plt.show()

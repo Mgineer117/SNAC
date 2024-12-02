@@ -8,6 +8,7 @@ import matplotlib.cm as cm
 import matplotlib.image as mpimg
 from matplotlib.transforms import Affine2D
 import matplotlib.colors as mcolors
+from scipy.ndimage import median_filter
 
 from sklearn.manifold import TSNE
 from typing import Optional, Dict, List
@@ -569,6 +570,9 @@ class Plotter:
                 for x, y in zip(coords[0], coords[1]):
                     grid[x, y] += 1.0
 
+            # Smoothing the tensor using a uniform filter
+            grid = median_filter(grid, size=3)
+
             x = np.linspace(0, self.grid_size - 1, self.grid_size)
             y = np.linspace(0, self.grid_size - 1, self.grid_size)
             x, y = np.meshgrid(x, y)
@@ -804,6 +808,9 @@ class Plotter:
             if torch.sum((grid > 0).int()) == 0:
                 for x, y in zip(coords[0], coords[1]):
                     grid[x, y] += 1.0
+
+            # Smoothing the tensor using a uniform filter
+            grid = median_filter(grid, size=3)
 
             x = np.linspace(0, self.grid_size - 1, self.grid_size)
             y = np.linspace(0, self.grid_size - 1, self.grid_size)
