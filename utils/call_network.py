@@ -27,9 +27,9 @@ def get_conv_layer(args):
     encoder_conv_layers = [
         {
             "type": "conv",
-            "kernel_size": 3,
-            "stride": 1,
-            "padding": 1,
+            "kernel_size": 4,
+            "stride": 2,
+            "padding": 2,
             "activation": nn.Tanh(),
             "in_filters": in_channels,
             "out_filters": 16,
@@ -38,7 +38,7 @@ def get_conv_layer(args):
             "type": "conv",
             "kernel_size": 3,
             "stride": 1,
-            "padding": 1,
+            "padding": 0,
             "activation": nn.Tanh(),
             "in_filters": 16,
             "out_filters": 32,
@@ -59,16 +59,16 @@ def get_conv_layer(args):
             "padding": 0,
             "activation": nn.Tanh(),
             "in_filters": 64,
-            "out_filters": 64,
+            "out_filters": 128,
         },  # Halve spatial dimensions again
     ]
 
     decoder_conv_layers = [
         {
             "type": "conv",
-            "kernel_size": 3,
-            "stride": 1,
-            "padding": 1,
+            "kernel_size": 4,
+            "stride": 2,
+            "padding": 2,
             "activation": nn.Tanh(),
             "in_filters": in_channels,
             "out_filters": 16,
@@ -77,7 +77,7 @@ def get_conv_layer(args):
             "type": "conv",
             "kernel_size": 3,
             "stride": 1,
-            "padding": 1,
+            "padding": 0,
             "activation": nn.Tanh(),
             "in_filters": 16,
             "out_filters": 32,
@@ -98,7 +98,7 @@ def get_conv_layer(args):
             "padding": 0,
             "activation": nn.Tanh(),
             "in_filters": 64,
-            "out_filters": 64,
+            "out_filters": 128,
         },  # Halve spatial dimensions again
     ]
 
