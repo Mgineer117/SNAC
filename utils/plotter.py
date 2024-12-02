@@ -390,7 +390,10 @@ class Plotter:
         agent_dirs = [0, 1, 2, 3]
 
         grid_tensor = torch.from_numpy(grid_tensor)
-        agent_pos = torch.from_numpy(agent_pos)
+        if len(agent_pos.shape) == 1:
+            agent_pos = torch.from_numpy(agent_pos).unsqueeze(0)
+        else:
+            agent_pos = torch.from_numpy(agent_pos)
 
         features = torch.zeros(x_grid_dim, y_grid_dim, feature_dim)
         deltaPhi = torch.zeros(len(agent_dirs), x_grid_dim, y_grid_dim, feature_dim)
@@ -409,8 +412,8 @@ class Plotter:
                 if len(img.shape) == 3:
                     img = img[None, :, :, :].to(self._dtype).to(self.device)
 
-                agent_pos[0] = x
-                agent_pos[1] = y
+                agent_pos[0, 0] = x
+                agent_pos[0, 1] = y
                 agent_pos = agent_pos.to(self._dtype).to(self.device)
 
                 phi, _ = feaNet(img, agent_pos)
@@ -654,7 +657,10 @@ class Plotter:
         agent_dirs = [0, 1, 2, 3]
 
         grid_tensor = torch.from_numpy(grid_tensor)
-        agent_pos = torch.from_numpy(agent_pos)
+        if len(agent_pos.shape) == 1:
+            agent_pos = torch.from_numpy(agent_pos).unsqueeze(0)
+        else:
+            agent_pos = torch.from_numpy(agent_pos)
 
         features = torch.zeros(x_grid_dim, y_grid_dim, feature_dim)
         deltaPhi = torch.zeros(len(agent_dirs), x_grid_dim, y_grid_dim, feature_dim)
@@ -673,9 +679,8 @@ class Plotter:
                     img = torch.from_numpy(img).to(self._dtype).to(self.device)
                 if len(img.shape) == 3:
                     img = img[None, :, :, :].to(self._dtype).to(self.device)
-
-                agent_pos[0] = x
-                agent_pos[1] = y
+                agent_pos[0, 0] = x
+                agent_pos[0, 1] = y
                 agent_pos = agent_pos.to(self._dtype).to(self.device)
 
                 phi, _ = feaNet(img, agent_pos)

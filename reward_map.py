@@ -114,8 +114,9 @@ def run_loop(env, option_vals, options, args):
                 & (grid[:, :, 1] != 4)
             )
 
-            agent_pos = np.full((2 * args.num_agent,), np.nan, dtype=np.float32)
-            agent_pos[2:] = (x, y)
+            agent_pos = np.full((2 * args.agent_num,), np.nan, dtype=np.float32)
+            agent_pos[2] = x
+            agent_pos[3] = y
 
             # prepare the path
             save_path = f"RewardMap/CtF/{str(x)}_{str(y)}"
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.env_name = "CtF1v2"
+    args.env_name = "CtF1v1"
     args.algo_name = "SNAC"
     args.num_vector = 16
     if args.env_name == "FourRooms":
