@@ -132,22 +132,29 @@ class ConvNetwork(nn.Module):
         #
         self.en_flatter = torch.nn.Flatten()
 
+        feature_input_dim = flat_dim + 2 * self._agent_num
         self.en_feature = MLP(
-            input_dim=flat_dim + 2 * self._agent_num,  # agent pos concat
-            hidden_dims=(fc_dim, fc_dim),
+            input_dim=feature_input_dim,  # agent pos concat
+            hidden_dims=(feature_input_dim,),
             activation=self.act,
         )
 
         self.en_reward = MLP(
-            input_dim=fc_dim,  # agent pos concat
-            hidden_dims=(fc_dim,),
+            input_dim=feature_input_dim,  # agent pos concat
+            hidden_dims=(
+                fc_dim,
+                sf_dim,
+            ),
             output_dim=int(sf_dim / 2),
             activation=self.act,
         )
 
         self.en_state = MLP(
-            input_dim=fc_dim,  # agent pos concat
-            hidden_dims=(fc_dim,),
+            input_dim=feature_input_dim,  # agent pos concat
+            hidden_dims=(
+                fc_dim,
+                sf_dim,
+            ),
             output_dim=int(sf_dim / 2),
             activation=self.act,
         )

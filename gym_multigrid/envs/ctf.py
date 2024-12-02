@@ -800,7 +800,7 @@ class CtfMvNEnv(MultiGridEnv):
 
         # self.game_stats["red_flag_captured"] = True
         # self.game_stats["captured_red_flags"] += 1
-        
+
         info = {
             "red_flag_captured": self.game_stats["red_flag_captured"],
             "d_ba_ra": distance_points(self.agents[0].pos, self.agents[1].pos),
@@ -1053,7 +1053,7 @@ class CtfMvNEnv(MultiGridEnv):
                         )
 
                 if blue_win:
-                    reward += self.battle_reward
+                    reward += 0.0  # self.battle_reward
                     self.agents[self.num_blue_agents + red_agent_idx].terminated = True
                     self.agents[self.num_blue_agents + red_agent_idx].color = "red_grey"
                     self.game_stats["red_agent_defeated"][red_agent_idx] = True

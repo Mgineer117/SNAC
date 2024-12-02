@@ -157,7 +157,7 @@ def run_loop(env_name, grid, coords, agent_pos, target="s"):
         pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
         activations = gradCam.get_activations(img).detach()
 
-        for j in range(64):
+        for j in range(128):
             activations[:, j, :, :] *= pooled_gradients[j]
 
         # average the channels of the activations
