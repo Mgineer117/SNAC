@@ -103,7 +103,7 @@ def discover_options(
     features = torch.from_numpy(batch["features"]).to(torch.float32)
     terminals = torch.from_numpy(batch["terminals"]).to(torch.float32)
 
-    decomp_psi = True
+    decomp_psi = False
     if decomp_psi:
         #### Compute Psi from Phi
         with torch.no_grad():
