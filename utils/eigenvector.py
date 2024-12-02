@@ -357,7 +357,7 @@ def get_eigenvectors(
 
     if draw_map:
         if args.env_name == "FourRooms":
-            grid_tensor, coords, loc = get_grid_tensor(env, args.grid_type)
+            grid_tensor, coords, agent_pos = get_grid_tensor(env, args.grid_type)
             plotter.plotRewardMap(
                 feaNet=sf_network.feaNet,
                 S=option_vals,
@@ -366,7 +366,7 @@ def get_eigenvectors(
                 algo_name=args.algo_name,
                 grid_tensor=grid_tensor,
                 coords=coords,
-                loc=loc,
+                agent_pos=agent_pos,
                 dir=plotter.log_dir,
                 device=args.device,
             )
