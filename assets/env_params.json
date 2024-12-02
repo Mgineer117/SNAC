@@ -69,12 +69,12 @@
         "gamma": 0.99
     },
     "PointNavigation": {
-        "SF_epoch": 10,
-        "OP_epoch": 10,
-        "HC_epoch": 10,
+        "SF_epoch": 1000,
+        "OP_epoch": 50,
+        "HC_epoch": 1000,
         "PPO_epoch": 1000,
         "step_per_epoch": 10,
-        "sf_log_interval": 1000,
+        "sf_log_interval": 250,
         "op_log_interval": 10,
         "hc_log_interval": 250,
         "ppo_log_interval": 250,
