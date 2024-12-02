@@ -8,7 +8,7 @@ import matplotlib.cm as cm
 import matplotlib.image as mpimg
 from matplotlib.transforms import Affine2D
 import matplotlib.colors as mcolors
-from scipy.ndimage import median_filter
+from scipy.ndimage import uniform_filter
 
 from sklearn.manifold import TSNE
 from typing import Optional, Dict, List
@@ -517,6 +517,11 @@ class Plotter:
                     r_neg_max - r_neg_min + 1e-10
                 )
 
+        # Smoothing the tensor using a uniform filter
+        rewards = rewards.numpy()
+        for k in range(rewards.shape[0]):
+            rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=3)
+
         obstacles = (
             (grid_tensor == 2.0) | (grid_tensor == 8.0) | (grid_tensor == 9.0)
         )[:, :, 0]
@@ -560,18 +565,16 @@ class Plotter:
             "pale_blue_dark_pale_red", colors
         )
 
+        # plot (everything to numpy())
         vec_dir_path = os.path.join(dir, "rewardMap")
         os.mkdir(vec_dir_path)
         for vec_idx in range(num_vec):
-            grid = torch.zeros(self.grid_size, self.grid_size)
+            grid = np.zeros((self.grid_size, self.grid_size))
             grid += rewards[vec_idx, :, :]
 
-            if torch.sum((grid > 0).int()) == 0:
+            if np.sum(np.int8(grid > 0)) == 0:
                 for x, y in zip(coords[0], coords[1]):
                     grid[x, y] += 1.0
-
-            # Smoothing the tensor using a uniform filter
-            grid = median_filter(grid, size=3)
 
             x = np.linspace(0, self.grid_size - 1, self.grid_size)
             y = np.linspace(0, self.grid_size - 1, self.grid_size)
@@ -593,13 +596,13 @@ class Plotter:
 
             # Second subplot: 3D surface plot in the middle
             ax1 = fig.add_subplot(132, projection="3d")
-            ax1.plot_surface(x, y, grid.numpy(), cmap=cmap)
+            ax1.plot_surface(x, y, grid, cmap=cmap)
 
             # Third subplot: 2D heatmap on the right
             ax2 = fig.add_subplot(133)
             ax2.axis("off")  # Turn off the axis for the image
             heatmap = ax2.imshow(
-                grid.numpy(),
+                grid,
                 cmap=cmap,
                 extent=[-9, 9, -9, 9],
                 origin="lower",
@@ -764,6 +767,11 @@ class Plotter:
                 for x, y in zip(coords[0], coords[1]):
                     rewards[vec_idx, x, y] += reward[x, y]
 
+        # Smoothing the tensor using a uniform filter
+        rewards = rewards.numpy()
+        for k in range(rewards.shape[0]):
+            rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=3)
+
         for k in range(num_vec):
             # Identify positive and negative rewards
             pos_rewards = rewards[k, :, :] > 0
@@ -786,9 +794,6 @@ class Plotter:
                     r_neg_max - r_neg_min + 1e-10
                 )
 
-        walls = grid_tensor[:, :, 0] == 0
-        rewards[:, walls] = 0.0
-
         # Define a custom colormap with black at the center
         colors = [
             (0.2, 0.2, 1),
@@ -799,18 +804,24 @@ class Plotter:
             "pale_blue_dark_pale_red", colors
         )
 
+        walls = np.where(
+            (grid_tensor[:, :, 0] == 0)
+            | (grid_tensor[:, :, 1] == 2)
+            | (grid_tensor[:, :, 1] == 3)
+            | (grid_tensor[:, :, 1] == 4)
+        )
+
+        ### Plot (everything into numpy)
         vec_dir_path = os.path.join(dir, "rewardMap")
         os.mkdir(vec_dir_path)
         for vec_idx in range(num_vec):
-            grid = torch.zeros(self.grid_size, self.grid_size)
+            grid = np.zeros((self.grid_size, self.grid_size))
             grid += rewards[vec_idx, :, :]
 
-            if torch.sum((grid > 0).int()) == 0:
+            if np.sum(np.int8(grid > 0)) == 0:
                 for x, y in zip(coords[0], coords[1]):
                     grid[x, y] += 1.0
-
-            # Smoothing the tensor using a uniform filter
-            grid = median_filter(grid, size=3)
+            grid[walls] = 0.0
 
             x = np.linspace(0, self.grid_size - 1, self.grid_size)
             y = np.linspace(0, self.grid_size - 1, self.grid_size)
@@ -835,13 +846,13 @@ class Plotter:
 
             # Second subplot: 3D surface plot in the middle
             ax1 = fig.add_subplot(132, projection="3d")
-            ax1.plot_surface(x, y, grid.numpy(), cmap=cmap)
+            ax1.plot_surface(x, y, grid, cmap=cmap)
 
             # Third subplot: 2D heatmap on the right
             ax2 = fig.add_subplot(133)
             ax2.axis("off")  # Turn off the axis for the image
             heatmap = ax2.imshow(
-                grid.numpy(),
+                grid,
                 cmap=cmap,
                 extent=[-9, 9, -9, 9],
                 origin="lower",
