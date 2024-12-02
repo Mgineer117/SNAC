@@ -134,29 +134,29 @@ class ConvNetwork(nn.Module):
         #
         self.en_flatter = torch.nn.Flatten()
 
-        feature_input_dim = flat_dim + (2 * self._grid_size * self._agent_num)
+        feature_input_dim = flat_dim + (self._grid_size * self._grid_size)
         self.en_feature = MLP(
             input_dim=feature_input_dim,  # agent pos concat
-            hidden_dims=(feature_input_dim,),
+            hidden_dims=(feature_input_dim, fc_dim),
             activation=self.act,
         )
 
         self.en_reward = MLP(
-            input_dim=feature_input_dim,  # agent pos concat
-            hidden_dims=(fc_dim,),
+            input_dim=fc_dim,  # agent pos concat
+            hidden_dims=(fc_dim, fc_dim),
             output_dim=int(sf_dim / 2),
             activation=self.act,
         )
 
         self.en_state = MLP(
-            input_dim=feature_input_dim,  # agent pos concat
-            hidden_dims=(fc_dim,),
+            input_dim=fc_dim,  # agent pos concat
+            hidden_dims=(fc_dim, fc_dim),
             output_dim=int(sf_dim / 2),
             activation=self.act,
         )
 
-        self.en_last_act = nn.ReLU()
-        # self.en_last_act = nn.ELU()
+        # self.en_last_act = nn.ReLU()
+        self.en_last_act = nn.ELU()
         # self.en_last_act = nn.Tanh()
         # self.en_last_act = nn.Sigmoid()
         # self.en_last_act = nn.Identity()
@@ -210,7 +210,8 @@ class ConvNetwork(nn.Module):
                 )
             self.de_conv.append(element)
 
-        self.de_last_act = nn.ReLU()
+        # self.de_last_act = nn.ReLU()
+        self.de_last_act = nn.ELU()
         # self.de_last_act = nn.Tanh()
         # self.de_last_act = nn.Sigmoid()
         # self.de_last_act = nn.Identity()
@@ -227,18 +228,33 @@ class ConvNetwork(nn.Module):
             out, _ = fn(out)
         return out
 
-    def post_grad_cam(self, x: torch.Tensor, agent_pos: torch.Tensor):
+    def post_grad_cam(self, state: torch.Tensor, agent_pos: torch.Tensor):
         """
         For grad-cam to visualize the feature activation
         """
         # Create one-hot encodings for the tensor along the last dimension
-        one_hot = torch.nn.functional.one_hot(
-            agent_pos.long(), num_classes=self._grid_size
-        )
-        agent_pos = one_hot.view(agent_pos.size(0), -1)
+        # one_hot = torch.nn.functional.one_hot(
+        #     agent_pos.long(), num_classes=self._grid_size
+        # )
+        # agent_pos = one_hot.view(agent_pos.size(0), -1)
 
-        out = self.en_flatter(x)
-        out = torch.cat((out, agent_pos), axis=-1)
+        # Initialize an empty map on the same device
+        agent_map = torch.zeros(
+            (state.shape[0], self._grid_size, self._grid_size), device=agent_pos.device
+        )
+
+        # Creates spatial tensor map using agent pos
+        for i in range(self._agent_num):
+            x_pos = agent_pos[:, 2 * i].long()
+            y_pos = agent_pos[:, 2 * i + 1].long()
+            value = 1 if i == 0 else 10  # Value for the agent or enemy
+            agent_map[torch.arange(state.shape[0]), x_pos, y_pos] = value
+
+        # Reshape the map
+        agent_map = agent_map.reshape(state.shape[0], -1)
+
+        out = self.en_flatter(state)
+        out = torch.cat((out, agent_map), axis=-1)
         out = self.en_feature(out)
         r_out = self.en_reward(out)
         s_out = self.en_state(out)
@@ -263,19 +279,35 @@ class ConvNetwork(nn.Module):
             feature: latent representations of the given state
         """
         # Create one-hot encodings for the tensor along the last dimension
-        one_hot = torch.nn.functional.one_hot(
-            agent_pos.long(), num_classes=self._grid_size
-        )
-        agent_pos = one_hot.view(agent_pos.size(0), -1)
-
-        indices = []
-        sizes = []
+        # one_hot = torch.nn.functional.one_hot(
+        #     agent_pos.long(), num_classes=self._grid_size
+        # )
+        # agent_pos = one_hot.view(agent_pos.size(0), -1)
 
         # dimensional work for images
         if len(state.shape) == 3:
             state = state.unsqueeze(0)
         if len(agent_pos.shape) == 1:
             agent_pos = agent_pos.unsqueeze(0)
+
+        # Initialize an empty map on the same device
+        agent_map = torch.zeros(
+            (state.shape[0], self._grid_size, self._grid_size), device=agent_pos.device
+        )
+
+        # Creates spatial tensor map using agent pos
+        for i in range(self._agent_num):
+            x_pos = agent_pos[:, 2 * i].long()
+            y_pos = agent_pos[:, 2 * i + 1].long()
+            value = 1 if i == 0 else 10  # Value for the agent or enemy
+            agent_map[torch.arange(state.shape[0]), x_pos, y_pos] = value
+
+        # Reshape the map
+        agent_map = agent_map.reshape(state.shape[0], -1)
+
+        # forward method
+        indices = []
+        sizes = []
 
         out = self.en_pmt(state)
 
@@ -287,7 +319,7 @@ class ConvNetwork(nn.Module):
                 sizes.append(output_dim)
 
         out = self.en_flatter(out)
-        out = torch.cat((out, agent_pos), axis=-1)
+        out = torch.cat((out, agent_map), axis=-1)
         out = self.en_feature(out)
         r_out = self.en_reward(out)
         s_out = self.en_state(out)

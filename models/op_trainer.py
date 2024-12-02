@@ -115,48 +115,48 @@ class OPTrainer:
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 
-        ### Eval Loop
-        self.policy.eval()
-        rew_mean = np.zeros((self.policy._num_options,))
-        rew_std = np.zeros((self.policy._num_options,))
-        ln_mean = np.zeros((self.policy._num_options,))
-        ln_std = np.zeros((self.policy._num_options,))
-        for z in trange(self.policy._num_options, desc=f"Evaluation", leave=False):
-            avg_rew_mean, avg_rew_std, avg_ln_mean, avg_ln_std = self.evaluator(
-                self.policy,
-                epoch=e + 1,
-                iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
-                idx=z,
-                name1=self._val_options[z],
-                dir_name="OP",
-                write_log=False,  # since OP needs to write log of average of all options
-                grid_type=self.grid_type,
+            ### Eval Loop
+            self.policy.eval()
+            rew_mean = np.zeros((self.policy._num_options,))
+            rew_std = np.zeros((self.policy._num_options,))
+            ln_mean = np.zeros((self.policy._num_options,))
+            ln_std = np.zeros((self.policy._num_options,))
+            for z in trange(self.policy._num_options, desc=f"Evaluation", leave=False):
+                avg_rew_mean, avg_rew_std, avg_ln_mean, avg_ln_std = self.evaluator(
+                    self.policy,
+                    epoch=e + 1,
+                    iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                    idx=z,
+                    name1=self._val_options[z],
+                    dir_name="OP",
+                    write_log=False,  # since OP needs to write log of average of all options
+                    grid_type=self.grid_type,
+                )
+                rew_mean[z] = avg_rew_mean
+                rew_std[z] = avg_rew_std
+                ln_mean[z] = avg_ln_mean
+                ln_std[z] = avg_ln_std
+
+            rew_mean = np.mean(rew_mean)
+            rew_std = np.mean(rew_std)
+            ln_mean = np.mean(ln_mean)
+            ln_std = np.mean(ln_std)
+
+            # manual logging
+            eval_dict = {
+                "OP/eval_rew_mean": rew_mean,
+                "OP/eval_rew_std": rew_std,
+                "OP/eval_ln_mean": ln_mean,
+                "OP/eval_ln_std": ln_std,
+            }
+            self.evaluator.write_log(
+                eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
             )
-            rew_mean[z] = avg_rew_mean
-            rew_std[z] = avg_rew_std
-            ln_mean[z] = avg_ln_mean
-            ln_std[z] = avg_ln_std
 
-        rew_mean = np.mean(rew_mean)
-        rew_std = np.mean(rew_std)
-        ln_mean = np.mean(ln_mean)
-        ln_std = np.mean(ln_std)
+            self.last_reward_mean.append(rew_mean)
+            self.last_reward_std.append(rew_std)
 
-        # manual logging
-        eval_dict = {
-            "OP/eval_rew_mean": rew_mean,
-            "OP/eval_rew_std": rew_std,
-            "OP/eval_ln_mean": ln_mean,
-            "OP/eval_ln_std": ln_std,
-        }
-        self.evaluator.write_log(
-            eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
-        )
-
-        self.last_reward_mean.append(rew_mean)
-        self.last_reward_std.append(rew_std)
-
-        self.save_model(e + 1)
+            self.save_model(e + 1)
 
         ### Psi training
         second_init_epoch = self._epoch
