@@ -75,6 +75,7 @@ class ConvNetwork(nn.Module):
         state_dim: tuple,
         action_dim: int,
         agent_num: int,
+        grid_size: int,
         encoder_conv_layers: list,
         decoder_conv_layers: list,
         fc_dim: int = 256,
@@ -90,6 +91,7 @@ class ConvNetwork(nn.Module):
         self._fc_dim = fc_dim
         self._sf_dim = sf_dim
         self._agent_num = agent_num
+        self._grid_size = grid_size
 
         # Activation functions
         self.act = activation
@@ -132,7 +134,7 @@ class ConvNetwork(nn.Module):
         #
         self.en_flatter = torch.nn.Flatten()
 
-        feature_input_dim = flat_dim + 2 * self._agent_num
+        feature_input_dim = flat_dim + (2 * self._grid_size * self._agent_num)
         self.en_feature = MLP(
             input_dim=feature_input_dim,  # agent pos concat
             hidden_dims=(feature_input_dim,),
@@ -208,7 +210,7 @@ class ConvNetwork(nn.Module):
                 )
             self.de_conv.append(element)
 
-        self.de_last_act = nn.ELU()
+        self.de_last_act = nn.ReLU()
         # self.de_last_act = nn.Tanh()
         # self.de_last_act = nn.Sigmoid()
         # self.de_last_act = nn.Identity()
@@ -229,6 +231,12 @@ class ConvNetwork(nn.Module):
         """
         For grad-cam to visualize the feature activation
         """
+        # Create one-hot encodings for the tensor along the last dimension
+        one_hot = torch.nn.functional.one_hot(
+            agent_pos.long(), num_classes=self._grid_size
+        )
+        agent_pos = one_hot.view(agent_pos.size(0), -1)
+
         out = self.en_flatter(x)
         out = torch.cat((out, agent_pos), axis=-1)
         out = self.en_feature(out)
@@ -254,6 +262,12 @@ class ConvNetwork(nn.Module):
         Returns:
             feature: latent representations of the given state
         """
+        # Create one-hot encodings for the tensor along the last dimension
+        one_hot = torch.nn.functional.one_hot(
+            agent_pos.long(), num_classes=self._grid_size
+        )
+        agent_pos = one_hot.view(agent_pos.size(0), -1)
+
         indices = []
         sizes = []
 
@@ -285,16 +299,16 @@ class ConvNetwork(nn.Module):
             "loss": torch.tensor(0.0),
         }
 
-    def decode(self, features, actions_oh, conv_dict):
+    def decode(self, features, actions, conv_dict):
         """This reconstruct full state given phi_state and actions"""
 
         indices = conv_dict["indices"][::-1]  # indices should be backward
         output_dim = conv_dict["output_dim"][::-1]  # to keep dim correct
 
         features = self.de_state_feature(features)
-        actions_oh = self.de_action(actions_oh)
+        actions = self.de_action(actions)
 
-        out = torch.cat((features, actions_oh), axis=-1)
+        out = torch.cat((features, actions), axis=-1)
         out = self.de_concat(out)
         out = self.reshape(out)
 

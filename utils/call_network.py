@@ -27,13 +27,22 @@ def get_conv_layer(args):
     encoder_conv_layers = [
         {
             "type": "conv",
-            "kernel_size": 4,
-            "stride": 2,
-            "padding": 2,
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
             "activation": nn.Tanh(),
             "in_filters": in_channels,
-            "out_filters": 32,
+            "out_filters": 16,
         },  # Halve the spatial dimensions
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "activation": nn.Tanh(),
+            "in_filters": 16,
+            "out_filters": 32,
+        },  # Halve spatial dimensions again
         {
             "type": "conv",
             "kernel_size": 3,
@@ -50,20 +59,29 @@ def get_conv_layer(args):
             "padding": 0,
             "activation": nn.Tanh(),
             "in_filters": 64,
-            "out_filters": 128,
+            "out_filters": 64,
         },  # Halve spatial dimensions again
     ]
 
     decoder_conv_layers = [
         {
             "type": "conv",
-            "kernel_size": 4,
-            "stride": 2,
-            "padding": 2,
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
             "activation": nn.Tanh(),
             "in_filters": in_channels,
-            "out_filters": 32,
+            "out_filters": 16,
         },  # Halve the spatial dimensions
+        {
+            "type": "conv",
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "activation": nn.Tanh(),
+            "in_filters": 16,
+            "out_filters": 32,
+        },  # Halve spatial dimensions again
         {
             "type": "conv",
             "kernel_size": 3,
@@ -80,7 +98,7 @@ def get_conv_layer(args):
             "padding": 0,
             "activation": nn.Tanh(),
             "in_filters": 64,
-            "out_filters": 128,
+            "out_filters": 64,
         },  # Halve spatial dimensions again
     ]
 
@@ -168,6 +186,7 @@ def call_sfNetwork(args):
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
                     agent_num=args.agent_num,
+                    grid_size=args.grid_size,
                     encoder_conv_layers=encoder_conv_layers,
                     decoder_conv_layers=decoder_conv_layers,
                     fc_dim=args.feature_fc_dim,
@@ -235,6 +254,7 @@ def call_sfNetwork(args):
                     state_dim=args.s_dim,
                     action_dim=args.a_dim,
                     agent_num=args.agent_num,
+                    grid_size=args.grid_size,
                     encoder_conv_layers=encoder_conv_layers,
                     decoder_conv_layers=decoder_conv_layers,
                     fc_dim=args.feature_fc_dim,
