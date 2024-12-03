@@ -23,7 +23,7 @@
         "gamma": 0.995
     },
     "CtF1v1": {
-        "SF_epoch": 500,
+        "SF_epoch": 50,
         "OP_epoch": 100,
         "HC_epoch": 3000,
         "PPO_epoch": 3000,
@@ -46,7 +46,7 @@
         "gamma": 0.995
     },
     "CtF1v2": {
-        "SF_epoch": 500,
+        "SF_epoch": 50,
         "OP_epoch": 100,
         "HC_epoch": 3000,
         "PPO_epoch": 3000,
