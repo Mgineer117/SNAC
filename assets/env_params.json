@@ -20,7 +20,7 @@
         "fc_dim": 64,
         "sf_dim": 128,
         "render_fps": 10,
-        "gamma": 0.999
+        "gamma": 0.995
     },
     "CtF1v1": {
         "SF_epoch": 500,
@@ -43,7 +43,7 @@
         "fc_dim": 128,
         "sf_dim": 256,
         "render_fps": 10,
-        "gamma": 0.999
+        "gamma": 0.995
     },
     "CtF1v2": {
         "SF_epoch": 500,
@@ -66,7 +66,7 @@
         "fc_dim": 128,
         "sf_dim": 256,
         "render_fps": 10,
-        "gamma": 0.999
+        "gamma": 0.995
     },
     "PointNavigation": {
         "SF_epoch": 1000,
