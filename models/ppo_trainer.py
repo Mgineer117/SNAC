@@ -81,7 +81,6 @@ class PPOTrainer:
 
                 # Logging further info
                 self.num_env_steps += len(batch["rewards"])
-                loss_dict["PPO/num_env_steps"] = self.num_env_steps
                 loss_dict["PPO/sample_time"] = sample_time
                 loss_dict["PPO/update_time"] = update_time
 
@@ -94,6 +93,7 @@ class PPOTrainer:
             self.policy.eval()
             rew_mean, rew_std, _, _ = self.evaluator(
                 self.policy,
+                env_step=self.num_env_steps,
                 epoch=e + 1,
                 iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 dir_name="PPO",

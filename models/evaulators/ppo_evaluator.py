@@ -27,7 +27,7 @@ class PPO_Evaluator(Evaluator):
         dir: str = None,
         gridPlot: bool = True,
         renderPlot: bool = False,
-        render_fps:int = 10,
+        render_fps: int = 10,
         eval_ep_num: int = 1,
         log_interval: int = 1,
     ):
@@ -96,7 +96,7 @@ class PPO_Evaluator(Evaluator):
                 with torch.no_grad():
                     a, _ = policy(s, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
-                
+
                 # Update the grid
                 if self.gridCriteria:
                     self.get_agent_pos(env)
@@ -139,7 +139,7 @@ class PPO_Evaluator(Evaluator):
                             epoch=str(epoch),
                             width=width,
                             height=height,
-                            fps=self.render_fps
+                            fps=self.render_fps,
                         )
                         self.recorded_frames = []
 
