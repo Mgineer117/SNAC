@@ -75,29 +75,56 @@ class Base:
         self.num_worker_per_env = int(self.total_num_worker / len(self.training_envs))
         self.rounds = rounds
 
-    def get_reset_data(self, batch_size):
+    def get_reset_data(self, batch_size, init="nan"):
         """
         We create a initialization batch to avoid the daedlocking.
         The remainder of zero arrays will be cut in the end.
         np.nan makes it easy to debug
         """
-        data = dict(
-            states=np.full(((batch_size,) + self.state_dim), np.nan, dtype=np.float32),
-            next_states=np.full(
-                ((batch_size,) + self.state_dim), np.nan, dtype=np.float32
-            ),
-            actions=np.full((batch_size, self.action_dim), np.nan, dtype=np.float32),
-            option_actions=np.full(
-                (batch_size, self.hc_action_dim), np.nan, dtype=np.int8
-            ),
-            agent_pos=np.full((batch_size, 2 * self.agent_num), np.nan, dtype=np.int8),
-            next_agent_pos=np.full(
-                (batch_size, 2 * self.agent_num), np.nan, dtype=np.int8
-            ),
-            rewards=np.full((batch_size, 1), np.nan, dtype=np.float32),
-            terminals=np.full((batch_size, 1), np.nan, dtype=np.int8),
-            logprobs=np.full((batch_size, 1), np.nan, dtype=np.float32),
-        )
+        if init == "zero":
+            data = dict(
+                states=np.zeros(((batch_size,) + self.state_dim), dtype=np.float32),
+                next_states=np.zeros(
+                    ((batch_size,) + self.state_dim), dtype=np.float32
+                ),
+                actions=np.zeros((batch_size, self.action_dim), dtype=np.float32),
+                option_actions=np.zeros(
+                    (batch_size, self.hc_action_dim), dtype=np.int8
+                ),
+                agent_pos=np.zeros((batch_size, 2 * self.agent_num), dtype=np.int8),
+                next_agent_pos=np.zeros(
+                    (batch_size, 2 * self.agent_num), dtype=np.int8
+                ),
+                rewards=np.zeros((batch_size, 1), dtype=np.float32),
+                terminals=np.zeros((batch_size, 1), dtype=np.int8),
+                logprobs=np.zeros((batch_size, 1), dtype=np.float32),
+            )
+        elif init == "nan":
+            data = dict(
+                states=np.full(
+                    ((batch_size,) + self.state_dim), np.nan, dtype=np.float32
+                ),
+                next_states=np.full(
+                    ((batch_size,) + self.state_dim), np.nan, dtype=np.float32
+                ),
+                actions=np.full(
+                    (batch_size, self.action_dim), np.nan, dtype=np.float32
+                ),
+                option_actions=np.full(
+                    (batch_size, self.hc_action_dim), np.nan, dtype=np.int8
+                ),
+                agent_pos=np.full(
+                    (batch_size, 2 * self.agent_num), np.nan, dtype=np.int8
+                ),
+                next_agent_pos=np.full(
+                    (batch_size, 2 * self.agent_num), np.nan, dtype=np.int8
+                ),
+                rewards=np.full((batch_size, 1), np.nan, dtype=np.float32),
+                terminals=np.full((batch_size, 1), np.nan, dtype=np.int8),
+                logprobs=np.full((batch_size, 1), np.nan, dtype=np.float32),
+            )
+        else:
+            NotImplementedError("Not implemented")
 
         return data
 

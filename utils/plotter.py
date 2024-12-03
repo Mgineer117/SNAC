@@ -520,7 +520,7 @@ class Plotter:
         # Smoothing the tensor using a uniform filter
         rewards = rewards.numpy()
         for k in range(rewards.shape[0]):
-            rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=5)
+            rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=3)
 
         obstacles = (
             (grid_tensor == 2.0) | (grid_tensor == 8.0) | (grid_tensor == 9.0)
@@ -770,7 +770,7 @@ class Plotter:
         # Smoothing the tensor using a uniform filter
         rewards = rewards.numpy()
         for k in range(rewards.shape[0]):
-            rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=5)
+            rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=3)
 
         for k in range(num_vec):
             # Identify positive and negative rewards
