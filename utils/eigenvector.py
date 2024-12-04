@@ -318,9 +318,6 @@ def get_eigenvectors(
     sampler,
     plotter,
     args,
-    # idx: int | None = None,
-    app_trj_num: int = 100,
-    # prev_batch: dict | None = None,
     draw_map: bool = False,
 ):
     if args.algo_name in ("SNAC", "SNAC+", "SNAC++"):
@@ -331,7 +328,7 @@ def get_eigenvectors(
             grid_type=args.grid_type,
             algo_name=args.algo_name,
             num=int(args.num_vector / 2),
-            num_trj=app_trj_num,
+            num_trj=args.num_traj_decomp,
             draw_map=draw_map,
             gamma=args.gamma,
             device=args.device,
@@ -345,7 +342,7 @@ def get_eigenvectors(
             grid_type=args.grid_type,
             algo_name=args.algo_name,
             num=args.num_vector,
-            num_trj=app_trj_num,
+            num_trj=args.num_traj_decomp,
             draw_map=draw_map,
             gamma=args.gamma,
             device=args.device,

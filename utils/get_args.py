@@ -329,6 +329,12 @@ def get_args(verbose=True):
 
     # Training parameters
     parser.add_argument(
+        "--num-traj-decomp",
+        type=int,
+        default=None,
+        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
+    )
+    parser.add_argument(
         "--max-num-traj",
         type=int,
         default=200,
