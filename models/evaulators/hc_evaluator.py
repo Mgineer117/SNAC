@@ -181,7 +181,7 @@ class HC_Evaluator(Evaluator):
                             epoch=str(epoch),
                             width=width,
                             height=height,
-                            fps=self.render_fps
+                            fps=self.render_fps,
                         )
                         self.recorded_frames = []
 
