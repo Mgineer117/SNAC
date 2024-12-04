@@ -526,7 +526,7 @@ class Plotter:
             (grid_tensor == 2.0) | (grid_tensor == 8.0) | (grid_tensor == 9.0)
         )[:, :, 0]
         rewards[:, obstacles] = -10.0
-        rewards_clone = rewards.clone()
+        rewards_clone = rewards.copy()
         rewards[:, obstacles] = 0.0
 
         # get the maximum indices
