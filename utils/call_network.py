@@ -153,6 +153,7 @@ def call_sfNetwork(args):
                     fc_dim=args.feature_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=int(args.sf_dim / 2),
+                    is_snac=True,
                     activation=nn.Tanh(),
                 )
             else:
@@ -222,6 +223,7 @@ def call_sfNetwork(args):
                     fc_dim=args.feature_fc_dim,
                     sf_dim=args.sf_dim,
                     decoder_inpuit_dim=args.sf_dim,
+                    is_snac=False,
                     activation=nn.Tanh(),
                 )
             else:

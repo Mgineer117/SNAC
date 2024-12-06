@@ -371,6 +371,7 @@ class VAE(nn.Module):
         fc_dim: int = 256,
         sf_dim: int = 256,
         decoder_inpuit_dim: int = 256,
+        is_snac: bool = False,
         activation: nn.Module = nn.ReLU(),
     ):
         super(VAE, self).__init__()
@@ -392,6 +393,7 @@ class VAE(nn.Module):
         # Parameters
         self._fc_dim = fc_dim
         self._sf_dim = sf_dim
+        self._is_snac = is_snac
 
         self.logstd_range = (-10, 2)
 
@@ -475,8 +477,19 @@ class VAE(nn.Module):
 
         feature = mu if deterministic else dist.rsample()
 
-        # Sum over latent dimensions, then mean over batch
-        kl = -0.5 * torch.sum(1 + torch.log(std**2) - mu**2 - std**2, dim=-1)
+        if self._is_snac:
+            # Sum over latent dimensions, then mean over batch
+            # Only for spatial features
+            dim_half = mu.size(-1) // 2  # Half the dimension
+            mu_half = mu[..., :dim_half]
+            std_half = std[..., :dim_half]
+
+            kl = -0.5 * torch.sum(
+                1 + torch.log(std_half**2) - mu_half**2 - std_half**2, dim=-1
+            )
+        else:
+            # Sum over latent dimensions, then mean over batch
+            kl = -0.5 * torch.sum(1 + torch.log(std**2) - mu**2 - std**2, dim=-1)
         kl_loss = torch.mean(kl)
 
         return feature, {"loss": kl_loss}
