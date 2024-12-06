@@ -72,7 +72,7 @@
         "gamma": 0.995
     },
     "PointNavigation": {
-        "SF_epoch": 100,
+        "SF_epoch": 200,
         "OP_epoch": 50,
         "HC_epoch": 2000,
         "PPO_epoch": 2000,
