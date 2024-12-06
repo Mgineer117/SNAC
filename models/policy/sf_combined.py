@@ -214,11 +214,11 @@ class SF_Combined(BasePolicy):
 
         state_pred = self.decode(phi, actions, conv_dict)
         if isinstance(self.feaNet, VAE):
-            phi_s_loss = (
-                5 * self._phi_loss_s_scaler * self.mse_loss(next_states, state_pred)
+            phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(
+                state_pred, next_states
             )
         else:
-            phi_s_loss = self._phi_loss_s_scaler * self.mqe4D_loss(
+            phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(
                 next_states, state_pred
             )
 

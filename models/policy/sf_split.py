@@ -258,17 +258,15 @@ class SF_Split(BasePolicy):
         phi_r, phi_s = self.split(phi)
 
         reward_pred = torch.sum(phi_r * self._options, axis=-1, keepdim=True)
-        phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(
-            reward_pred, rewards
-        )
+        phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(reward_pred, rewards)
 
         state_pred = self.decode(phi_s, actions, conv_dict)
         if isinstance(self.feaNet, VAE):
-            phi_s_loss = (
-                5 * self._phi_loss_s_scaler * self.mse_loss(state_pred, next_states)
+            phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(
+                state_pred, next_states
             )
         else:
-            phi_s_loss = self._phi_loss_s_scaler * self.mqe4D_loss(
+            phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(
                 next_states, state_pred
             )
 
