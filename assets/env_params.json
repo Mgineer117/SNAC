@@ -74,8 +74,8 @@
     "PointNavigation": {
         "SF_epoch": 100,
         "OP_epoch": 50,
-        "HC_epoch": 3000,
-        "PPO_epoch": 3000,
+        "HC_epoch": 2000,
+        "PPO_epoch": 2000,
         "step_per_epoch": 50,
         "sf_log_interval": 50,
         "op_log_interval": 10,
