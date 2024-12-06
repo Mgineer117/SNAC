@@ -99,7 +99,7 @@
         "num_traj_decomp": 30,
         "feature_fc_dim": 512,
         "fc_dim": 256,
-        "sf_dim": 128,
+        "sf_dim": 64,
         "render_fps": 60,
         "gamma": 0.999
     },
