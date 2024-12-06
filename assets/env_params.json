@@ -25,12 +25,12 @@
     },
     "CtF1v1": {
         "SF_epoch": 50,
-        "OP_epoch": 50,
+        "OP_epoch": 25,
         "HC_epoch": 2000,
         "PPO_epoch": 2000,
         "step_per_epoch": 50,
         "sf_log_interval": 25,
-        "op_log_interval": 25,
+        "op_log_interval": 5,
         "hc_log_interval": 250,
         "ppo_log_interval": 250,
         "phi_loss_r_scaler": 1.0,
@@ -43,7 +43,7 @@
         "num_traj_decomp": 100,
         "feature_fc_dim": 1024,
         "fc_dim": 128,
-        "sf_dim": 256,
+        "sf_dim": 128,
         "render_fps": 10,
         "gamma": 0.995
     },
@@ -67,7 +67,7 @@
         "num_traj_decomp": 100,
         "feature_fc_dim": 1024,
         "fc_dim": 128,
-        "sf_dim": 256,
+        "sf_dim": 128,
         "render_fps": 10,
         "gamma": 0.995
     },

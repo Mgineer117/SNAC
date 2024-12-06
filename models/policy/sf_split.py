@@ -257,8 +257,8 @@ class SF_Split(BasePolicy):
         phi, conv_dict = self.feaNet(states, agent_pos, deterministic=False)
         phi_r, phi_s = self.split(phi)
 
-        reward_pred = torch.sum(phi_r * self._options.detach(), axis=-1, keepdim=True)
-        phi_r_loss = self._phi_loss_r_scaler * self.weighted_mse_loss(
+        reward_pred = torch.sum(phi_r * self._options, axis=-1, keepdim=True)
+        phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(
             reward_pred, rewards
         )
 
