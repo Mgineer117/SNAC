@@ -91,7 +91,7 @@
         "option_lr": 1e-4,
         "phi_loss_r_scaler": 1.0,
         "phi_loss_s_scaler": 0.1,
-        "phi_loss_kl_scaler": 5.0,
+        "phi_loss_kl_scaler": 10.0,
         "phi_loss_l2_scaler": 1e-4,
         "episode_len": 500,
         "episode_num": 6,
