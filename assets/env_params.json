@@ -11,7 +11,7 @@
         "op_log_interval": 1,
         "hc_log_interval": 5,
         "ppo_log_interval": 5,
-        "oc_log_interval": 5,
+        "oc_log_interval": 100,
         "feature_lr": 1e-4,
         "option_lr": 1e-4,
         "phi_loss_r_scaler": 1.0,
