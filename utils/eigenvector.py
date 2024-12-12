@@ -57,6 +57,20 @@ def vector(evals, evecs, option_dim: int, num: int, classification: str):
     return evals, evecs
 
 
+def process_in_chunks(func, data, chunk_size, **kwargs):
+    results = []
+    for i in range(0, len(data["observation"]), chunk_size):
+        # Slice the batch into chunks
+        chunk = {
+            "observation": data["observation"][i : i + chunk_size],
+            "agent_pos": data["agent_pos"][i : i + chunk_size],
+        }
+        result, _ = func(chunk, **kwargs)
+        results.append(result)
+    # Concatenate results along the batch dimension
+    return np.concatenate(results, axis=0)
+
+
 def discover_options(
     policy: BasePolicy,
     sampler: OnlineSampler,
@@ -85,35 +99,46 @@ def discover_options(
     num = int(num / 2)
 
     ### Collect batch to compute phi for psi
-    is_covering_option = True if idx is not None else False
+    is_covering_option = idx is not None  # Simplified conditional
     option_buffer = TrajectoryBuffer(
-        min_num_trj=num_trj, max_num_trj=500, device=device
+        min_num_trj=num_trj, max_num_trj=500, device="cpu"  # Operate on CPU
     )
+
+    # Collecting samples to meet the minimum trajectory count
     while option_buffer.num_trj < option_buffer.min_num_trj:
         batch, sample_time = sampler.collect_samples(
             policy, grid_type=grid_type, idx=idx, is_covering_option=is_covering_option
         )
         option_buffer.push(batch)
+
+    # Sampling and cleaning up buffer
     batch = option_buffer.sample_all()
     option_buffer.wipe()
 
-    obs = {"observation": batch["states"], "agent_pos": batch["agent_pos"]}
-    features, _ = policy.get_features(obs, to_numpy=True)
+    # Convert collected batch data to tensors on CPU
+    obs = {
+        "observation": torch.tensor(batch["states"], dtype=torch.float32, device="cpu"),
+        "agent_pos": torch.tensor(
+            batch["agent_pos"], dtype=torch.float32, device="cpu"
+        ),
+    }
 
-    ### Convert to the tensor
-    features = torch.from_numpy(features).to(torch.float32)
-    terminals = torch.from_numpy(batch["terminals"]).to(torch.float32)
+    # Process features in smaller chunks
+    chunk_size = 1024  # Adjust chunk size based on available memory
+    features = process_in_chunks(policy.get_features, obs, chunk_size, to_numpy=True)
+    features = torch.from_numpy(features).to(torch.float32).cpu()  # Ensure it's on CPU
+    terminals = torch.tensor(batch["terminals"], dtype=torch.float32, device="cpu")
 
+    ### Compute Psi from Phi
     decomp_psi = True
     if decomp_psi:
-        #### Compute Psi from Phi
+        # Using CPU for computation and releasing memory early
         with torch.no_grad():
-            psi = estimate_psi(features, terminals, gamma)  # operate on cpu
-
-        # to save VRAM
-        del features, terminals
+            psi = estimate_psi(features, terminals, gamma)  # Operate on CPU
+        del features, terminals  # Free resources
     else:
         psi = features.clone()
+        del features  # Free resources
 
     ### Compute the vectors via SVD
     if algo_name in ("SNAC", "SNAC+", "SNAC++"):
