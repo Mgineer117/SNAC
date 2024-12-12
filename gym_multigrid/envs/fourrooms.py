@@ -180,7 +180,7 @@ class FourRooms(MultiGridEnv):
         order = np.random.permutation(len(actions))
 
         rewards = np.zeros(len(actions))
-
+        info = {"success": False}
         for i in order:
             if (
                 self.agents[i].terminated
@@ -203,10 +203,7 @@ class FourRooms(MultiGridEnv):
                     if fwd_cell.type == "goal":
                         done = True
                         rewards = self._reward(i, rewards, 1)
-                    elif fwd_cell.type == "switch":
-                        self._handle_switch(i, rewards, fwd_pos, fwd_cell)
-                    elif fwd_cell.type == "ball":
-                        rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
+                        info["success"] = True
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
@@ -222,10 +219,7 @@ class FourRooms(MultiGridEnv):
                     if fwd_cell.type == "goal":
                         done = True
                         rewards = self._reward(i, rewards, 1)
-                    elif fwd_cell.type == "switch":
-                        self._handle_switch(i, rewards, fwd_pos, fwd_cell)
-                    elif fwd_cell.type == "ball":
-                        rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
+                        info["success"] = True
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
@@ -241,10 +235,7 @@ class FourRooms(MultiGridEnv):
                     if fwd_cell.type == "goal":
                         done = True
                         rewards = self._reward(i, rewards, 1)
-                    elif fwd_cell.type == "switch":
-                        self._handle_switch(i, rewards, fwd_pos, fwd_cell)
-                    elif fwd_cell.type == "ball":
-                        rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
+                        info["success"] = True
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
@@ -259,10 +250,7 @@ class FourRooms(MultiGridEnv):
                     if fwd_cell.type == "goal":
                         done = True
                         rewards = self._reward(i, rewards, 1)
-                    elif fwd_cell.type == "switch":
-                        self._handle_switch(i, rewards, fwd_pos, fwd_cell)
-                    elif fwd_cell.type == "ball":
-                        rewards = self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
+                        info["success"] = True
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*self.agents[i].pos, None)
                     self.grid.set(*fwd_pos, self.agents[i])
@@ -296,4 +284,4 @@ class FourRooms(MultiGridEnv):
         ### NOTE: not multiagent
         observations = {"image": obs[0][:, :, 0:1]}
 
-        return observations, rewards, terminated, truncated, {}
+        return observations, rewards, terminated, truncated, info
