@@ -5,7 +5,7 @@
         "OP_epoch": 5,
         "HC_epoch": 75,
         "PPO_epoch": 150,
-        "OC_epoch": 150,
+        "OC_epoch": 2000,
         "step_per_epoch": 10,
         "sf_log_interval": 500,
         "op_log_interval": 1,
