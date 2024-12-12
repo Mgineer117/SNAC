@@ -135,14 +135,14 @@ def discover_options(
         # Using CPU for computation and releasing memory early
         with torch.no_grad():
             psi = estimate_psi(features, terminals, gamma)  # Operate on CPU
-        del features, terminals  # Free resources
+        del terminals  # Free resources
     else:
         psi = features.clone()
-        del features  # Free resources
 
     ### Compute the vectors via SVD
     if algo_name in ("SNAC", "SNAC+", "SNAC++"):
         psi_r, psi_s = policy.split(psi)
+        phi_r, phi_s = policy.split(features)
 
         option_dim = psi_r.shape[-1]
 
@@ -194,10 +194,9 @@ def discover_options(
             S_list = [evals_r, evals_s]
             V_list = [evecs_r, evecs_s]
 
-            r_rewards = (
-                evecs_r @ psi_r.T
-            )  # F x T (Num options (row) and rewards (column))
-            s_rewards = evecs_s @ psi_s.T  # F x T
+            # F x T (Num options (row) and rewards (column))
+            r_rewards = evecs_r @ phi_r.T
+            s_rewards = evecs_s @ phi_s.T
 
             # S_r, S_s are the dummy input since we just want clustered indicies
             _, _, metaData = cluster_vecvtors(
@@ -261,7 +260,7 @@ def discover_options(
             options = torch.cat((V, -V), axis=0)
         elif algo_name == "EigenOption++":
             ##### cluster in action-value space #####
-            rewards = evecs @ psi.T  # (num options) x T
+            rewards = evecs @ features.T  # (num options) x T
 
             _, _, metaData = cluster_vecvtors([evals], [rewards], k=num)  # S is dummy
 
