@@ -335,7 +335,9 @@ def setup_logger(args, unique_id, seed):
     return logger, writer
 
 
-def estimate_advantages(rewards, terminals, values, gamma, tau, device):
+def estimate_advantages(
+    rewards, terminals, values, gamma=0.99, tau=0.95, device=torch.device("cpu")
+):
     rewards, terminals, values = (
         rewards.to(torch.device("cpu")),
         terminals.to(torch.device("cpu")),

@@ -193,4 +193,4 @@ class OC_Critic(nn.Module):
         state = state.reshape(state.shape[0], -1)
 
         Q = self.model(state)
-        return torch.argmax(Q, dim=-1)
+        return torch.argmax(Q, dim=-1, keepdim=True)

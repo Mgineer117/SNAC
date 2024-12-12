@@ -94,7 +94,7 @@ class OC_Learner(BasePolicy):
 
         # the first iteration where z is not given
         if z is None:
-            greedy_option = self.critic.greedy_option(obs["observation"])
+            greedy_option = self.critic.greedy_option(obs["observation"]).squeeze()
         else:
             greedy_option = z
 
@@ -129,48 +129,59 @@ class OC_Learner(BasePolicy):
         Args:
             states (_type_): _description_
         """
-        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        next_states = (
-            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
+        states = self.to_tensor(batch["states"], self._dtype, self.device)
+        next_states = self.to_tensor(batch["next_states"], self._dtype, self.device)
+        option_actions = self.to_tensor(
+            batch["option_actions"], self._dtype, self.device
         )
-        option_actions = (
-            torch.from_numpy(batch["option_actions"]).to(self._dtype).to(self.device)
-        )
-        rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
-        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
-        logprobs = torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
-        entropys = torch.from_numpy(batch["entropys"]).to(self._dtype).to(self.device)
+        rewards = self.to_tensor(batch["rewards"], self._dtype, self.device)
+        terminals = self.to_tensor(batch["terminals"], self._dtype, self.device)
+        logprobs = self.to_tensor(batch["logprobs"], self._dtype, self.device)
+        entropys = self.to_tensor(batch["entropys"], self._dtype, self.device)
 
-        index_matrix = F.one_hot(option_actions, num_classes=self.policy._num_options)
-        option_term_prob = self.policy.get_terminations(states) @ index_matrix
+        option_term_prob = self.policy.get_terminations(states)
+        option_term_prob = self.multiply_options(option_term_prob, option_actions)
 
-        next_option_term_prob = self.policy.get_terminations(next_states) @ index_matrix
-        next_option_term_prob = next_option_term_prob.detach()
+        next_option_term_prob = self.policy.get_terminations(next_states)
+        next_option_term_prob = self.multiply_options(
+            next_option_term_prob, option_actions
+        ).detach()
 
-        Q = self.critic(states).detach().squeeze()
-        next_Q_prime = self.target_critic(next_states).detach().squeeze()
+        Q = self.critic(states).detach()
+        next_Q_prime = self.target_critic(next_states).detach()
+
+        Q_by_option = self.multiply_options(Q, option_actions)
+        Q_by_argmax = torch.argmax(Q, dim=-1, keepdim=True)
+
+        next_Q_prime_by_option = self.multiply_options(next_Q_prime, option_actions)
+        next_Q_prime_by_argmax = torch.argmax(next_Q_prime, dim=-1, keepdim=True)
+
+        # print(
+        #     rewards.shape,
+        #     Q_by_option.shape,
+        #     Q_by_argmax.shape,
+        #     next_Q_prime_by_argmax.shape,
+        #     next_Q_prime_by_option.shape,
+        #     next_option_term_prob.shape,
+        # )
 
         # Target update gt
         gt = rewards + (1 - terminals) * self._gamma * (
-            (1 - next_option_term_prob) * next_Q_prime @ index_matrix
-            + next_option_term_prob * next_Q_prime.max(dim=-1)[0]
+            (1 - next_option_term_prob) * next_Q_prime_by_option
+            + next_option_term_prob * next_Q_prime_by_argmax
         )
 
         # The termination loss
         termination_loss = torch.mean(
             option_term_prob
-            * (
-                (Q @ index_matrix).detach()
-                - Q.max(dim=-1)[0].detach()
-                + self._termination_reg
-            )
+            * (Q_by_option.detach() - Q_by_argmax.detach() + self._termination_reg)
             * (1 - terminals)
         )
 
         # actor-critic policy gradient with entropy regularization
         entropy_loss = self._entropy_scaler * entropys
 
-        policy_loss = -logprobs * (gt.detach() - Q @ index_matrix) - entropy_loss
+        policy_loss = -logprobs * (gt.detach() - Q_by_option) - entropy_loss
 
         actor_loss = torch.mean(termination_loss + policy_loss)
 
@@ -184,34 +195,34 @@ class OC_Learner(BasePolicy):
         """
         Training Q
         """
-        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
-        next_states = (
-            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
+        states = self.to_tensor(batch["states"], self._dtype, self.device)
+        next_states = self.to_tensor(batch["next_states"], self._dtype, self.device)
+        option_actions = self.to_tensor(
+            batch["option_actions"], self._dtype, self.device
         )
-        option_actions = (
-            torch.from_numpy(batch["option_actions"]).to(self._dtype).to(self.device)
-        )
-        rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
-        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
+        rewards = self.to_tensor(batch["rewards"], self._dtype, self.device)
+        terminals = self.to_tensor(batch["terminals"], self._dtype, self.device)
 
         Q = self.critic(states)
         next_Q_prime = self.target_critic(next_states).detach()
 
-        index_matrix = F.one_hot(
-            option_actions.long(), num_classes=self.policy._num_options
-        ).to(self._dtype)
+        next_option_term_prob = self.policy.get_terminations(next_states)
 
-        next_option_term_prob = self.policy.get_terminations(next_states) @ index_matrix
-        next_option_term_prob = next_option_term_prob.detach()
+        next_option_term_prob = self.multiply_options(
+            next_option_term_prob, option_actions
+        ).detach()
+
+        next_Q_prime_by_option = self.multiply_options(next_Q_prime, option_actions)
+        next_Q_prime_by_argmax = torch.argmax(next_Q_prime, dim=-1, keepdim=True)
 
         # Target update gt
         gt = rewards + (1 - terminals) * self._gamma * (
-            (1 - next_option_term_prob) * next_Q_prime @ index_matrix
-            + next_option_term_prob * next_Q_prime.max(dim=-1)[0]
+            (1 - next_option_term_prob) * next_Q_prime_by_option
+            + next_option_term_prob * next_Q_prime_by_argmax
         )
 
         # to update Q we want to use the actual network, not the prime
-        td_err = (Q @ index_matrix - gt.detach()).pow(2).mul(0.5).mean()
+        td_err = (Q * option_actions - gt.detach()).pow(2).mul(0.5).mean()
         return td_err, {}
 
     def learn_policy(self, batch):
@@ -244,7 +255,7 @@ class OC_Learner(BasePolicy):
             "OC/terminationLoss": torch.mean(metaData["termination_loss"]).item(),
             "OC/policyLoss": torch.mean(metaData["policy_loss"]).item(),
             "OC/entropyLoss": torch.mean(metaData["entropy_loss"]).item(),
-            "OC/trainAvgReward": torch.mean(batch["rewards"]).item(),
+            "OC/trainAvgReward": np.sum(batch["rewards"]) / np.sum(batch["terminals"]),
         }
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
@@ -263,21 +274,22 @@ class OC_Learner(BasePolicy):
             batch (_type_): offline batch but live
         """
         t0 = time.time()
+
         if self.is_bfgs:
             # L-BFGS-F value network update
             def closure(flat_params):
                 set_flat_params_to(self.policy, torch.tensor(flat_params))
-                for param in self.critic.parameters():
-                    if param.grad is not None:
-                        param.grad.data.fill_(0)
-                valueLoss, _ = self.critic_loss(batch)
-                for param in self.critic.parameters():
-                    valueLoss += param.pow(2).sum() * self._l2_reg
-                valueLoss.backward()
+                self.critic.zero_grad()
+                value_loss, _ = self.critic_loss(batch)
+                value_loss += sum(
+                    param.pow(2).sum() * self._l2_reg
+                    for param in self.critic.parameters()
+                )
+                value_loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
 
                 return (
-                    valueLoss.item(),
+                    value_loss.item(),
                     get_flat_grad_from(self.critic.parameters()).cpu().numpy(),
                 )
 
@@ -288,32 +300,48 @@ class OC_Learner(BasePolicy):
             )
             set_flat_params_to(self.critic, torch.tensor(flat_params))
         else:
-            batch = self.divide_into_subbatches(batch, self._bfgs_iter)
-            for minibatch in batch:
+            # Divide batch into sub-batches for non-BFGS optimization
+            sub_batches = self.divide_into_subbatches(batch, self._bfgs_iter)
+            for minibatch in sub_batches:
+                # Convert sub-batch data to tensors
+
+                # Update critic with minibatch
                 self.optimizer.zero_grad()
-                valueLoss, _ = self.critic_loss(minibatch)
-                valueLoss.backward()
-                grad_dict = self.compute_gradient_norm(
-                    [self.policy, self.critic],
-                    ["policy", "critic"],
-                    dir="PPO",
-                    device=self.device,
-                )
-                norm_dict = self.compute_weight_norm(
-                    [self.policy, self.critic],
-                    ["policy", "critic"],
-                    dir="PPO",
-                    device=self.device,
-                )
+                value_loss, _ = self.critic_loss(minibatch)
+                value_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
                 self.optimizer.step()
 
         # migrate the parameters
         self.target_critic.load_state_dict(self.critic.state_dict())
 
+        # Convert batch data to tensors
+        states = self.to_tensor(batch["states"], self._dtype, self.device)
+        rewards = self.to_tensor(batch["rewards"], self._dtype, self.device)
+        terminals = self.to_tensor(batch["terminals"], self._dtype, self.device)
+
+        # Compute advantages and returns
+        with torch.no_grad():
+            values = self.critic.greedy_option(states)
+            _, returns = estimate_advantages(
+                rewards,
+                terminals,
+                values,
+                gamma=self._gamma,
+                device=self.device,
+            )
+            valueLoss = self.mse_loss(returns, values)
+
+        norm_dict = self.compute_weight_norm(
+            [self.policy, self.critic],
+            ["policy", "critic"],
+            dir="PPO",
+            device=self.device,
+        )
+
         loss_dict = {
             "OC/valueLoss": valueLoss.item(),
         }
-        loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
 
         t1 = time.time()
@@ -345,6 +373,9 @@ class OC_Learner(BasePolicy):
             subbatches.append(subbatch)
 
         return subbatches
+
+    def to_tensor(self, data, dtype, device):
+        return torch.from_numpy(data).to(dtype).to(device)
 
     def save_model(self, logdir, epoch=None, is_best=False):
         self.policy = self.policy.cpu()
