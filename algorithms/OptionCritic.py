@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import gymnasium as gym
 from gym_multigrid.envs.fourrooms import FourRooms
 
-from models.evaulators import PPO_Evaluator
+from models.evaulators import OC_Evaluator
 from models import OCTrainer
 from utils import *
 
@@ -61,14 +61,14 @@ class OptionCritic:
 
         ### Define evaulators tailored for each process
         # each evaluator has slight deviations
-        self.oc_evaluator = PPO_Evaluator(
+        self.oc_evaluator = OC_Evaluator(
             logger=logger,
             writer=writer,
             training_env=self.env,
             plotter=self.plotter,
             renderPlot=args.rendering,
             render_fps=args.render_fps,
-            dir=self.ppo_path,
+            dir=self.oc_path,
             log_interval=args.ppo_log_interval,
             eval_ep_num=10,
         )

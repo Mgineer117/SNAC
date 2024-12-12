@@ -48,6 +48,8 @@ class OC_Learner(BasePolicy):
         self.critic = critic
         self.target_critic = deepcopy(self.critic)
 
+        # Option-critic's critic is not mse-based
+        # so BFGS is highly unstable -> ADAM
         critic_lr = 1e-4
 
         if critic_lr is None:

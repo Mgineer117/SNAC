@@ -382,7 +382,7 @@ def get_eigenvectors(
         pass
 
     if draw_map:
-        if args.env_name == "FourRooms":
+        if args.env_name in ("FourRooms", "Maze"):
             grid_tensor, coords, agent_pos = get_grid_tensor(env, args.grid_type)
             plotter.plotRewardMap(
                 feaNet=sf_network.feaNet,
