@@ -124,11 +124,12 @@ def discover_options(
     }
 
     # Process features in smaller chunks
+    policy.cpu()
     chunk_size = 1024  # Adjust chunk size based on available memory
     features = process_in_chunks(policy.get_features, obs, chunk_size, to_numpy=True)
     features = torch.from_numpy(features).to(torch.float32).cpu()  # Ensure it's on CPU
     terminals = torch.tensor(batch["terminals"], dtype=torch.float32, device="cpu")
-
+    policy.to(device)
     ### Compute Psi from Phi
     decomp_psi = True
     if decomp_psi:

@@ -24,7 +24,7 @@ class OptionCritic:
             state_dim=args.s_dim,
             feature_dim=args.sf_dim,
             action_dim=args.a_dim,
-            hc_action_dim=args.num_vector + 1,
+            hc_action_dim=args.num_vector,
             agent_num=args.agent_num,
             min_option_length=args.min_option_length,
             min_cover_option_length=args.min_cover_option_length,
@@ -74,10 +74,10 @@ class OptionCritic:
         )
 
     def run(self):
-        self.train_ppo()
+        self.train_oc()
         torch.cuda.empty_cache()
 
-    def train_ppo(self):
+    def train_oc(self):
         self.sampler.initialize(episode_num=self.args.oc_episode_num)
 
         ### Call network param and run
@@ -90,7 +90,7 @@ class OptionCritic:
                 logger=self.logger,
                 writer=self.writer,
                 evaluator=self.oc_evaluator,
-                epoch=self.curr_epoch + self.args.oc_epoch,
+                epoch=self.curr_epoch + self.args.OC_epoch,
                 init_epoch=self.curr_epoch,
                 step_per_epoch=self.args.step_per_epoch,
                 eval_episodes=self.args.eval_episodes,

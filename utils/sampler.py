@@ -492,6 +492,7 @@ class OnlineSampler(Base):
                                 if done:
                                     break
                         else:
+                            o_t = 0
                             while not metaData["option_termination"]:
                                 # env stepping
                                 with torch.no_grad():
@@ -504,6 +505,7 @@ class OnlineSampler(Base):
 
                                 next_obs, op_rew, done, infos = env_step(option_a)
                                 rew += self.gamma ** (o_t + 1) * op_rew
+                                o_t += 1
                                 if done:
                                     break
                 else:

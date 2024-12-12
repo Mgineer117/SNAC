@@ -73,15 +73,14 @@ class OCTrainer:
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
-                    self.policy,
-                    grid_type=self.grid_type,
+                    self.policy, grid_type=self.grid_type, is_option=True
                 )
 
                 update_time = 0
-                loss_dict, uTime = self.policy.critic_learn(batch)
+                loss_dict, uTime = self.policy.learn_critic(batch)
                 update_time += uTime
                 if e % 2 == 0:  # for lower time scaler learning
-                    loss_dict, uTime = self.policy.policy_learn(batch)
+                    loss_dict, uTime = self.policy.learn_policy(batch)
                     update_time += uTime
 
                 # Logging further info

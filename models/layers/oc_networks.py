@@ -48,7 +48,8 @@ class OC_Policy(nn.Module):
 
         self.is_discrete = is_discrete
 
-        self.terminations = nn.Linear(fc_dim, num_options)  # Option-Termination
+        # Option-Termination
+        self.terminations = MLP(input_dim, (fc_dim,), num_options, activation=nn.Tanh())
 
         if self.is_discrete:
             self.option_W = nn.Parameter(
@@ -65,9 +66,17 @@ class OC_Policy(nn.Module):
             self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Identity())
 
     def get_terminations(self, state: torch.Tensor):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+        state = state.reshape(state.shape[0], -1)
+
         return F.sigmoid(self.terminations(state))
 
     def predict_option_termination(self, state: torch.Tensor, z: int):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+        state = state.reshape(state.shape[0], -1)
+
         termination = F.sigmoid(self.terminations(state)[:, z])
         option_termination = Bernoulli(termination).sample()
         return bool(option_termination.item())  # , next_option.item()
@@ -120,7 +129,14 @@ class OC_Policy(nn.Module):
             logprobs = dist.log_prob(a)
             probs = torch.exp(logprobs)
 
-        return a, {"dist": dist, "probs": probs, "logprobs": logprobs}
+        entropy = dist.entropy()
+
+        return a, {
+            "dist": dist,
+            "probs": probs,
+            "logprobs": logprobs,
+            "entropy": entropy,
+        }
 
     def log_prob(self, dist: torch.distributions, actions: torch.Tensor):
         """
@@ -164,9 +180,17 @@ class OC_Critic(nn.Module):
         )
 
     def forward(self, state: torch.Tensor):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+        state = state.reshape(state.shape[0], -1)
+
         Q = self.model(state)
         return Q
 
     def greedy_option(self, state: torch.Tensor):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+        state = state.reshape(state.shape[0], -1)
+
         Q = self.model(state)
-        return torch.argmax(Q, dim=-1).item()
+        return torch.argmax(Q, dim=-1)

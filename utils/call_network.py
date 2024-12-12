@@ -16,6 +16,8 @@ from models.layers import (
     HC_Critic,
     PPO_Policy,
     PPO_Critic,
+    OC_Policy,
+    OC_Critic,
 )
 
 from log.logger_util import colorize
@@ -178,7 +180,7 @@ def call_ppoNetwork(args):
     if args.import_ppo_model:
         print("Loading previous PPO parameters....")
         policy, critic = pickle.load(
-            open("log/eval_log/model_for_eval/ppo_model.p", "rb")
+            open(f"log/eval_log/model_for_eval/{args.env_name}/ppo_model.p", "rb")
         )
     else:
         policy = PPO_Policy(
@@ -213,7 +215,39 @@ def call_ppoNetwork(args):
 def call_ocNetwork(args):
     from models.policy import OC_Learner
 
-    pass
+    if args.import_oc_model:
+        print("Loading previous OC parameters....")
+        policy, critic = pickle.load(
+            open(f"log/eval_log/model_for_eval/{args.env_name}/oc_model.p", "rb")
+        )
+    else:
+        policy = OC_Policy(
+            input_dim=args.s_flat_dim,
+            fc_dim=args.fc_dim,
+            a_dim=args.a_dim,
+            num_options=args.num_vector,
+            activation=nn.Tanh(),
+            is_discrete=args.is_discrete,
+        )
+        critic = OC_Critic(
+            input_dim=args.s_flat_dim,
+            fc_dim=args.fc_dim,
+            num_options=args.num_vector,
+            activation=nn.Tanh(),
+        )
+
+    policy = OC_Learner(
+        policy=policy,
+        critic=critic,
+        policy_lr=args.ppo_policy_lr,
+        critic_lr=args.ppo_critic_lr,
+        entropy_scaler=args.ppo_entropy_scaler,
+        gamma=args.gamma,
+        K=args.K_epochs,
+        device=args.device,
+    )
+
+    return policy
 
 
 def call_sfNetwork(args):

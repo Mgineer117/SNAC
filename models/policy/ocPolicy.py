@@ -20,16 +20,13 @@ from models.policy.base_policy import BasePolicy
 class OC_Learner(BasePolicy):
     def __init__(
         self,
-        sf_network: BasePolicy,
         policy: OC_Policy,
         critic: OC_Critic,
         policy_lr: float = 3e-4,
         critic_lr: float = 5e-4,
-        eps: float = 0.2,
         entropy_scaler: float = 1e-3,
         termination_reg: float = 1e-2,
         gamma: float = 0.99,
-        tau: float = 0.9,
         K: int = 5,
         device: str = "cpu",
     ):
@@ -41,16 +38,12 @@ class OC_Learner(BasePolicy):
         self._a_dim = policy._a_dim
         self._entropy_scaler = entropy_scaler
         self._termination_reg = termination_reg
-        self._eps = eps
         self._gamma = gamma
-        self._tau = tau
-        self._K = K
         self._l2_reg = 1e-6
         self._bfgs_iter = K
         self._forward_steps = 0
 
         # trainable networks
-        self.sf_network = sf_network
         self.policy = policy
         self.critic = critic
         self.target_critic = deepcopy(self.critic)
@@ -106,10 +99,11 @@ class OC_Learner(BasePolicy):
             greedy_option = z
 
         current_option = (
-            np.random.choice(self.policy._num_options)
+            torch.randint(self.policy._num_options, (1,))
             if np.random.rand() < epsilon
             else greedy_option
         )
+        z = F.one_hot(current_option, num_classes=self.policy._num_options)
 
         a, metaData = self.policy(
             obs["observation"], z=current_option, deterministic=deterministic
@@ -120,9 +114,12 @@ class OC_Learner(BasePolicy):
         )
 
         return a, {
-            # "z": self.dummy.item(),
+            "z": z,
+            "z_argmax": current_option,
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
+            "entropy": metaData["entropy"],
+            "is_option": True,
             "option_termination": option_termination,
         }
 
@@ -132,9 +129,17 @@ class OC_Learner(BasePolicy):
         Args:
             states (_type_): _description_
         """
-        states, next_states, option_actions, entropy, logprobs, rewards, terminals = (
-            batch
+        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
+        next_states = (
+            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
         )
+        option_actions = (
+            torch.from_numpy(batch["option_actions"]).to(self._dtype).to(self.device)
+        )
+        rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
+        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
+        logprobs = torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
+        entropys = torch.from_numpy(batch["entropys"]).to(self._dtype).to(self.device)
 
         index_matrix = F.one_hot(option_actions, num_classes=self.policy._num_options)
         option_term_prob = self.policy.get_terminations(states) @ index_matrix
@@ -163,7 +168,7 @@ class OC_Learner(BasePolicy):
         )
 
         # actor-critic policy gradient with entropy regularization
-        entropy_loss = self._entropy_scaler * entropy
+        entropy_loss = self._entropy_scaler * entropys
 
         policy_loss = -logprobs * (gt.detach() - Q @ index_matrix) - entropy_loss
 
@@ -179,12 +184,22 @@ class OC_Learner(BasePolicy):
         """
         Training Q
         """
-        states, next_states, option_actions, _, _, rewards, terminals = batch
+        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
+        next_states = (
+            torch.from_numpy(batch["next_states"]).to(self._dtype).to(self.device)
+        )
+        option_actions = (
+            torch.from_numpy(batch["option_actions"]).to(self._dtype).to(self.device)
+        )
+        rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
+        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
 
         Q = self.critic(states)
         next_Q_prime = self.target_critic(next_states).detach()
 
-        index_matrix = F.one_hot(option_actions, num_classes=self.policy._num_options)
+        index_matrix = F.one_hot(
+            option_actions.long(), num_classes=self.policy._num_options
+        ).to(self._dtype)
 
         next_option_term_prob = self.policy.get_terminations(next_states) @ index_matrix
         next_option_term_prob = next_option_term_prob.detach()
