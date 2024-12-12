@@ -16,17 +16,17 @@ from typing import Optional, Dict, List
 from tqdm.auto import trange
 from collections import deque
 from log.wandb_logger import WandbLogger
-from models.policy.base_policy import BasePolicy
+from models.policy.ocPolicy import OC_Learner
 from utils.sampler import OnlineSampler
 from utils.buffer import TrajectoryBuffer
 from models.evaulators.sf_evaluator import Evaluator
 
 
 # model-free policy trainer
-class PPOTrainer:
+class OCTrainer:
     def __init__(
         self,
-        policy: BasePolicy,
+        policy: OC_Learner,
         sampler: OnlineSampler,
         logger: WandbLogger,
         writer: SummaryWriter,
@@ -68,7 +68,7 @@ class PPOTrainer:
         self.last_reward_std = deque(maxlen=3)
 
         # train loop
-        for e in trange(self._init_epoch, self._epoch, desc=f"PPO Epoch"):
+        for e in trange(self._init_epoch, self._epoch, desc=f"OC Epoch"):
             ### training loop
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
@@ -77,12 +77,17 @@ class PPOTrainer:
                     grid_type=self.grid_type,
                 )
 
-                loss_dict, update_time = self.policy.learn(batch)
+                update_time = 0
+                loss_dict, uTime = self.policy.critic_learn(batch)
+                update_time += uTime
+                if e % 2 == 0:  # for lower time scaler learning
+                    loss_dict, uTime = self.policy.policy_learn(batch)
+                    update_time += uTime
 
                 # Logging further info
                 self.num_env_steps += len(batch["rewards"])
-                loss_dict["PPO/sample_time"] = sample_time
-                loss_dict["PPO/update_time"] = update_time
+                loss_dict["OC/sample_time"] = sample_time
+                loss_dict["OC/update_time"] = update_time
 
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
 
@@ -96,7 +101,7 @@ class PPOTrainer:
                 env_step=self.num_env_steps,
                 epoch=e + 1,
                 iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
-                dir_name="PPO",
+                dir_name="OC",
                 grid_type=self.grid_type,
             )
 
@@ -107,7 +112,7 @@ class PPOTrainer:
             torch.cuda.empty_cache()
 
         self.logger.print(
-            "total PPO training time: {:.2f} hours".format(
+            "total OC training time: {:.2f} hours".format(
                 (time.time() - start_time) / 3600
             )
         )

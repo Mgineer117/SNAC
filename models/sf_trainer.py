@@ -1,9 +1,4 @@
 import time
-import random
-import os
-import cv2
-import wandb
-import pickle
 import numpy as np
 from copy import deepcopy
 import matplotlib.cm as cm
@@ -14,9 +9,9 @@ import torch.multiprocessing as multiprocessing
 
 from typing import Optional, Dict, List
 from tqdm.auto import trange
-from collections import deque
 from log.wandb_logger import WandbLogger
 from models.policy.base_policy import BasePolicy
+from models.policy.sf_split import SF_Split
 from utils.sampler import OnlineSampler
 from utils.buffer import TrajectoryBuffer
 from models.evaulators.sf_evaluator import Evaluator
@@ -156,6 +151,11 @@ class SFTrainer:
         # make sure there is nothing there
         self.buffer.wipe()
 
+        if isinstance(self.policy, SF_Split):
+            post_process = "nonzero_rewards"
+        else:
+            post_process = None
+
         # collect enough batch
         count = 0
         total_sample_time = 0
@@ -164,7 +164,7 @@ class SFTrainer:
             batch, sampleT = self.sampler.collect_samples(
                 self.policy, grid_type=self.grid_type
             )
-            self.buffer.push(batch, post_process="nonzero_rewards")
+            self.buffer.push(batch, post_process=post_process)
             sample_time += sampleT
             total_sample_time += sampleT
             if count % 100 == 0:
