@@ -254,14 +254,14 @@ class OC_Learner(BasePolicy):
         actorLoss.backward()
         torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1.0)
         grad_dict = self.compute_gradient_norm(
-            [self.policy, self.critic],
-            ["policy", "critic"],
+            [self.policy],
+            ["policy"],
             dir="OC",
             device=self.device,
         )
         norm_dict = self.compute_weight_norm(
-            [self.policy, self.critic],
-            ["policy", "critic"],
+            [self.policy],
+            ["policy"],
             dir="OC",
             device=self.device,
         )
@@ -337,8 +337,8 @@ class OC_Learner(BasePolicy):
             valueLoss, _ = self.critic_loss(batch)
 
         norm_dict = self.compute_weight_norm(
-            [self.policy, self.critic],
-            ["policy", "critic"],
+            [self.critic],
+            ["critic"],
             dir="OC",
             device=self.device,
         )
