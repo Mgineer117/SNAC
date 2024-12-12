@@ -22,7 +22,7 @@ class OC_Policy(nn.Module):
         temperature: float = 1.0,
         eps_start: float = 1.0,
         eps_min: float = 0.1,
-        eps_decay: int = int(1e6),
+        eps_decay: int = int(5e5),
         eps_test: float = 0.05,
         activation: nn.Module = nn.Tanh(),
         is_discrete: bool = False,

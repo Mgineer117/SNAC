@@ -252,7 +252,7 @@ class OC_Learner(BasePolicy):
         self.optimizer.zero_grad()
         actorLoss, metaData = self.actor_loss(batch)
         actorLoss.backward()
-        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=10.0)
+        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1.0)
         grad_dict = self.compute_gradient_norm(
             [self.policy, self.critic],
             ["policy", "critic"],
@@ -303,7 +303,7 @@ class OC_Learner(BasePolicy):
                     for param in self.critic.parameters()
                 )
                 value_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
 
                 return (
                     value_loss.item(),
@@ -326,7 +326,7 @@ class OC_Learner(BasePolicy):
                 self.optimizer.zero_grad()
                 value_loss, _ = self.critic_loss(minibatch)
                 value_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=10.0)
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
                 self.optimizer.step()
 
         # migrate the parameters
