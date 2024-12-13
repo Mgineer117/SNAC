@@ -397,7 +397,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--trj-per-iter",
         type=int,
-        default=10,
+        default=None,
         help="This sets the number of trajectories to use for one sub-iteration",
     )
 
