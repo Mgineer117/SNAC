@@ -52,7 +52,7 @@
         "phi_loss_s_scaler": 0.1,
         "phi_loss_kl_scaler": 10.0,
         "phi_loss_l2_scaler": 1e-7,
-        "episode_len": 300,
+        "episode_len": 500,
         "op_episode_num": 15,
         "hc_episode_num": 30,
         "ppo_episode_num": 15,
