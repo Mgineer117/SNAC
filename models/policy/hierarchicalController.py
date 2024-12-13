@@ -111,6 +111,7 @@ class HC_Controller(BasePolicy):
             self.is_bfgs = False
 
         #
+        self.dummy = torch.tensor(1e-10)
         self.to(self.device)
 
     def to_device(self, device):
@@ -154,7 +155,11 @@ class HC_Controller(BasePolicy):
             z = F.one_hot(idx, num_classes=self.policy._a_dim)
             z_argmax = idx
             probs = torch.tensor(1.0)
-            metaData = {"probs": probs, "logprobs": torch.log(probs)}  # dummy
+            metaData = {
+                "probs": probs,
+                "logprobs": torch.log(probs),
+                "entropy": self.dummy,
+            }  # dummy
 
         is_option = True if z_argmax < self._num_options else False
 
