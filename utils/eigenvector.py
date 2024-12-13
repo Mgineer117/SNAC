@@ -129,7 +129,7 @@ def discover_options(
     features = process_in_chunks(policy.get_features, obs, chunk_size, to_numpy=True)
     features = torch.from_numpy(features).to(torch.float32).cpu()  # Ensure it's on CPU
     terminals = torch.tensor(batch["terminals"], dtype=torch.float32, device="cpu")
-    policy.to(device)
+
     ### Compute Psi from Phi
     decomp_psi = True
     if decomp_psi:
@@ -290,6 +290,7 @@ def discover_options(
     else:
         pass
 
+    policy.to(device)
     return option_vals, options, batch
 
 
