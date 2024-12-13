@@ -84,6 +84,13 @@ class OC_Learner(BasePolicy):
 
         return {"observation": observation, "agent_pos": agent_pos}
 
+    def predict_option_termination(self, next_obs: torch.Tensor, z: int):
+        next_obs = self.preprocess_obs(next_obs)
+        option_termination = self.policy.predict_option_termination(
+            next_obs["observation"], z=z
+        )
+        return option_termination
+
     def forward(self, obs, z=None, deterministic=False):
         """
         Image-based state dimension ~ [Batch, width, height, channel] or [width, height, channel]
@@ -113,10 +120,6 @@ class OC_Learner(BasePolicy):
             obs["observation"], z=current_option, deterministic=deterministic
         )
 
-        option_termination = self.policy.predict_option_termination(
-            obs["observation"], z=current_option
-        )
-
         return a, {
             "z": z,
             "z_argmax": current_option,
@@ -124,7 +127,7 @@ class OC_Learner(BasePolicy):
             "logprobs": metaData["logprobs"],
             "entropy": metaData["entropy"],
             "is_option": True,
-            "option_termination": option_termination,
+            "is_hc_controller": False,
         }
 
     def actor_loss(self, batch):
@@ -156,19 +159,19 @@ class OC_Learner(BasePolicy):
         option_term_prob = self.policy.get_terminations(states)
         option_term_prob = self.multiply_options(option_term_prob, option_actions)
 
-        next_option_term_prob = self.policy.get_terminations(next_states)
+        next_option_term_prob = self.policy.get_terminations(next_states).detach()
         next_option_term_prob = self.multiply_options(
             next_option_term_prob, option_actions
-        ).detach()
+        )
 
         Q = self.critic(states).detach()
         next_Q_prime = self.target_critic(next_states).detach()
 
         Q_by_option = self.multiply_options(Q, option_actions)
-        Q_by_argmax = torch.argmax(Q, dim=-1, keepdim=True)
+        Q_by_argmax = torch.max(Q, dim=-1, keepdim=True)[0]
 
         next_Q_prime_by_option = self.multiply_options(next_Q_prime, option_actions)
-        next_Q_prime_by_argmax = torch.argmax(next_Q_prime, dim=-1, keepdim=True)
+        next_Q_prime_by_max = torch.max(next_Q_prime, dim=-1, keepdim=True)[0]
 
         # print(
         #     rewards.shape,
@@ -182,7 +185,7 @@ class OC_Learner(BasePolicy):
         # Target update gt
         gt = rewards + (1 - terminals) * self._gamma * (
             (1 - next_option_term_prob) * next_Q_prime_by_option
-            + next_option_term_prob * next_Q_prime_by_argmax
+            + next_option_term_prob * next_Q_prime_by_max
         )
 
         # The termination loss
@@ -191,13 +194,11 @@ class OC_Learner(BasePolicy):
             * (Q_by_option.detach() - Q_by_argmax.detach() + self._termination_reg)
             * (1 - terminals)
         )
-
         # actor-critic policy gradient with entropy regularization
         entropy_loss = self._entropy_scaler * entropys
+        policy_loss = -logprobs * (gt.detach() - Q_by_option.detach())
 
-        policy_loss = -logprobs * (gt.detach() - Q_by_option.detach()) - entropy_loss
-
-        actor_loss = torch.mean(termination_loss + policy_loss)
+        actor_loss = torch.mean(termination_loss + policy_loss - entropy_loss)
 
         return actor_loss, {
             "termination_loss": termination_loss,
@@ -221,10 +222,9 @@ class OC_Learner(BasePolicy):
         next_Q_prime = self.target_critic(next_states).detach()
 
         Q_by_option = self.multiply_options(Q, option_actions)
-        Q_by_argmax = torch.argmax(Q, dim=-1, keepdim=True)
 
         next_Q_prime_by_option = self.multiply_options(next_Q_prime, option_actions)
-        next_Q_prime_by_argmax = torch.argmax(next_Q_prime, dim=-1, keepdim=True)
+        next_Q_prime_by_max = torch.max(next_Q_prime, dim=-1, keepdim=True)[0]
 
         next_option_term_prob = self.policy.get_terminations(next_states).detach()
         next_option_term_prob = self.multiply_options(
@@ -234,7 +234,7 @@ class OC_Learner(BasePolicy):
         # Target update gt
         gt = rewards + (1 - terminals) * self._gamma * (
             (1 - next_option_term_prob) * next_Q_prime_by_option
-            + next_option_term_prob * next_Q_prime_by_argmax
+            + next_option_term_prob * next_Q_prime_by_max
         )
 
         # to update Q we want to use the actual network, not the prime

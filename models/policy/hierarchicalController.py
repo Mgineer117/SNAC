@@ -175,12 +175,10 @@ class HC_Controller(BasePolicy):
             "z": z,
             "z_argmax": z_argmax,
             "is_option": is_option,
+            "is_hc_controller": True,
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
             "entropy": metaData["entropy"],
-            # since termination is part of Hierarchical controller
-            # no explicit termination learning is required
-            "option_termination": None,
         }
 
     def learn(self, batch, prefix="HC"):

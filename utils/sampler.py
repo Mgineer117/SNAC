@@ -476,7 +476,7 @@ class OnlineSampler(Base):
                 if metaData["is_option"]:
                     next_obs, rew, done, infos = env_step(a)
                     if not done:
-                        if metaData["option_termination"] is None:
+                        if metaData["is_hc_controller"]:
                             for o_t in range(self.min_option_length - 1):
                                 # env stepping
                                 with torch.no_grad():
@@ -493,7 +493,8 @@ class OnlineSampler(Base):
                                     break
                         else:
                             o_t = 0
-                            while not metaData["option_termination"]:
+                            option_termination = False
+                            while not option_termination:
                                 # env stepping
                                 with torch.no_grad():
                                     option_a, _ = policy(
@@ -504,6 +505,9 @@ class OnlineSampler(Base):
                                     option_a = option_a.cpu().numpy().squeeze()
 
                                 next_obs, op_rew, done, infos = env_step(option_a)
+                                option_termination = policy.predict_option_termination(
+                                    next_obs, metaData["z_argmax"]
+                                )
                                 rew += self.gamma ** (o_t + 1) * op_rew
                                 o_t += 1
                                 if done:
