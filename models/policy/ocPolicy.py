@@ -168,7 +168,7 @@ class OC_Learner(BasePolicy):
         next_Q_prime = self.target_critic(next_states).detach()
 
         Q_by_option = self.multiply_options(Q, option_actions)
-        Q_by_argmax = torch.max(Q, dim=-1, keepdim=True)[0]
+        Q_by_max = torch.max(Q, dim=-1, keepdim=True)[0]
 
         next_Q_prime_by_option = self.multiply_options(next_Q_prime, option_actions)
         next_Q_prime_by_max = torch.max(next_Q_prime, dim=-1, keepdim=True)[0]
@@ -191,7 +191,7 @@ class OC_Learner(BasePolicy):
         # The termination loss
         termination_loss = torch.mean(
             option_term_prob
-            * (Q_by_option.detach() - Q_by_argmax.detach() + self._termination_reg)
+            * (Q_by_option.detach() - Q_by_max.detach() + self._termination_reg)
             * (1 - terminals)
         )
         # actor-critic policy gradient with entropy regularization

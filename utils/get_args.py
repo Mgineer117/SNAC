@@ -288,7 +288,7 @@ def get_args(verbose=True):
         help="Intermediate-level model learning rate",
     )
     parser.add_argument(
-        "--op-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--op-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--op-critic-lr",
@@ -297,7 +297,7 @@ def get_args(verbose=True):
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--hc-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--hc-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--hc-critic-lr",
@@ -306,7 +306,7 @@ def get_args(verbose=True):
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--ppo-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--ppo-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--ppo-critic-lr",
@@ -341,10 +341,10 @@ def get_args(verbose=True):
 
     # PPO parameters
     parser.add_argument(
-        "--K-epochs", type=int, default=10, help="PPO update per one iter"
+        "--K-epochs", type=int, default=5, help="PPO update per one iter"
     )
     parser.add_argument(
-        "--OP-K-epochs", type=int, default=15, help="PPO update per one iter"
+        "--OP-K-epochs", type=int, default=10, help="PPO update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"

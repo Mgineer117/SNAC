@@ -81,7 +81,7 @@ class OC_Policy(nn.Module):
 
         #
         self.flatter = torch.nn.Flatten()
-        self.FCL = MLP(flat_dim, (512,), 512)
+        self.FCL = MLP(flat_dim, (512, 512), 512)
 
         self.en_pmt = Permute((0, 3, 1, 2))
 
@@ -220,9 +220,7 @@ class OC_Critic(nn.Module):
         self.act = activation
         self._dtype = torch.float32
 
-        self.model = MLP(
-            input_dim, (fc_dim, fc_dim, fc_dim), num_options, activation=self.act
-        )
+        self.model = MLP(input_dim, (fc_dim, fc_dim), num_options, activation=self.act)
 
     def forward(self, state: torch.Tensor):
         if len(state.shape) == 3 or len(state.shape) == 1:
