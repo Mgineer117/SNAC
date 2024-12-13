@@ -284,7 +284,7 @@ class OC_Learner(BasePolicy):
             t1 - t0,
         )
 
-    def learn_critic(self, batch):
+    def learn_critic(self, batch, merge_critic: bool = False):
         """_summary_
 
         Args:
@@ -330,7 +330,8 @@ class OC_Learner(BasePolicy):
                 self.optimizer.step()
 
         # migrate the parameters
-        self.target_critic.load_state_dict(self.critic.state_dict())
+        if merge_critic:
+            self.target_critic.load_state_dict(self.critic.state_dict())
 
         # Compute advantages and returns
         with torch.no_grad():

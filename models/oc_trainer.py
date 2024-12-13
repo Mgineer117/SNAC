@@ -77,7 +77,10 @@ class OCTrainer:
                 )
 
                 update_time = 0
-                loss_dict, uTime = self.policy.learn_critic(batch)
+                merge_critic = True if it == 0 else False
+                loss_dict, uTime = self.policy.learn_critic(
+                    batch, merge_critic=merge_critic
+                )
                 update_time += uTime
                 if (it + 1) % 5 == 0:  # for lower time scaler learning
                     loss_dict, uTime = self.policy.learn_policy(batch)
