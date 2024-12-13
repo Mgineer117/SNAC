@@ -5,7 +5,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.distributions import MultivariateNormal, Categorical, Bernoulli
+from torch.nn import MaxPool2d, MaxUnpool2d
 from models.layers.building_blocks import MLP, Conv, DeConv
+from models.layers.sf_networks import Permute
+from utils.utils import calculate_flatten_size, check_output_padding_needed
 
 
 class OC_Policy(nn.Module):
@@ -15,10 +18,11 @@ class OC_Policy(nn.Module):
 
     def __init__(
         self,
-        input_dim: int,
+        state_dim: int,
         fc_dim: int,
         a_dim: int,
         num_options: int,
+        encoder_conv_layers: dict,
         temperature: float = 1.0,
         eps_start: float = 1.0,
         eps_min: float = 0.1,
@@ -31,6 +35,8 @@ class OC_Policy(nn.Module):
 
         # |A| duplicate networks
         self.act = activation
+
+        s_dim, _, in_channels = state_dim
 
         self._a_dim = a_dim
         self._num_options = num_options
@@ -48,34 +54,73 @@ class OC_Policy(nn.Module):
 
         self.is_discrete = is_discrete
 
+        # Define the fully connected layers
+        flat_dim, _ = calculate_flatten_size(state_dim, encoder_conv_layers)
+
+        self.features = nn.ModuleList()
+        for layer in encoder_conv_layers:
+            if layer["type"] == "conv":
+                element = Conv(
+                    in_channels=in_channels,
+                    out_channels=layer["out_filters"],
+                    kernel_size=layer["kernel_size"],
+                    stride=layer["stride"],
+                    padding=layer["padding"],
+                    activation=layer["activation"],
+                )
+                in_channels = layer["out_filters"]
+
+            elif layer["type"] == "pool":
+                element = MaxPool2d(
+                    kernel_size=layer["kernel_size"],
+                    stride=layer["stride"],
+                    padding=layer["padding"],
+                    return_indices=True,
+                )
+            self.features.append(element)
+
+        #
+        self.flatter = torch.nn.Flatten()
+        self.FCL = MLP(flat_dim, (512,), 512)
+
+        self.en_pmt = Permute((0, 3, 1, 2))
+
         # Option-Termination
-        self.terminations = MLP(input_dim, (fc_dim,), num_options, activation=nn.Tanh())
+        self.terminations = MLP(512, (fc_dim,), num_options, activation=nn.Tanh())
 
         if self.is_discrete:
             self.option_W = nn.Parameter(
-                torch.zeros(self._num_options, input_dim, self._a_dim)
+                torch.zeros(self._num_options, 512, self._a_dim)
             )
             self.option_b = nn.Parameter(torch.zeros(self._num_options, self._a_dim))
         else:
-            self.option_W = nn.Parameter(
-                torch.zeros(self._num_options, input_dim, fc_dim)
-            )
+            self.option_W = nn.Parameter(torch.zeros(self._num_options, 512, fc_dim))
             self.option_b = nn.Parameter(torch.zeros(self._num_options, fc_dim))
 
             self.mu = MLP(fc_dim, (a_dim,), activation=nn.Identity())
             self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Identity())
 
+    def to_features(self, state: torch.Tensor):
+        out = self.en_pmt(state)
+
+        for fn in self.features:
+            output_dim = out.shape
+            out, info = fn(out)
+        out = self.flatter(out)
+        features = self.FCL(out)
+        return features
+
     def get_terminations(self, state: torch.Tensor):
         if len(state.shape) == 3 or len(state.shape) == 1:
             state = state.unsqueeze(0)
-        state = state.reshape(state.shape[0], -1)
+        state = self.to_features(state)
 
         return F.sigmoid(self.terminations(state))
 
     def predict_option_termination(self, state: torch.Tensor, z: int):
         if len(state.shape) == 3 or len(state.shape) == 1:
             state = state.unsqueeze(0)
-        state = state.reshape(state.shape[0], -1)
+        state = self.to_features(state)
 
         termination = F.sigmoid(self.terminations(state)[:, z])
         option_termination = Bernoulli(termination).sample()
@@ -94,7 +139,7 @@ class OC_Policy(nn.Module):
     def forward(self, state: torch.Tensor, z: int, deterministic: bool = False):
         if len(state.shape) == 3 or len(state.shape) == 1:
             state = state.unsqueeze(0)
-        state = state.reshape(state.shape[0], -1)
+        state = self.to_features(state)
 
         logits = state.data @ self.option_W[z] + self.option_b[z]
 

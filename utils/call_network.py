@@ -221,11 +221,13 @@ def call_ocNetwork(args):
             open(f"log/eval_log/model_for_eval/{args.env_name}/oc_model.p", "rb")
         )
     else:
+        encoder_conv_layers, _ = get_conv_layer(args)
         policy = OC_Policy(
-            input_dim=args.s_flat_dim,
+            state_dim=args.s_dim,
             fc_dim=args.fc_dim,
             a_dim=args.a_dim,
             num_options=args.num_vector,
+            encoder_conv_layers=encoder_conv_layers,
             activation=nn.Tanh(),
             is_discrete=args.is_discrete,
         )
