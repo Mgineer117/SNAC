@@ -2,7 +2,7 @@
     "FourRooms": {
         "SF_epoch": 1500,
         "Psi_epoch": 0,
-        "OP_epoch": 5,
+        "OP_epoch": 10,
         "HC_epoch": 500,
         "PPO_epoch": 150,
         "OC_epoch": 500,
@@ -37,7 +37,7 @@
     "Maze": {
         "SF_epoch": 1500,
         "Psi_epoch": 0,
-        "OP_epoch": 10,
+        "OP_epoch": 20,
         "HC_epoch": 500,
         "PPO_epoch": 150,
         "OC_epoch": 1000,
