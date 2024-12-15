@@ -473,7 +473,7 @@ class Plotter:
         # deltaPhi -= features
         deltaPhi = features
 
-        if algo_name in ("SNAC", "SNAC+", "SNAC++"):
+        if algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
             r_deltaPhi, s_deltaPhi = torch.split(
                 deltaPhi, deltaPhi.size(-1) // 2, dim=-1
             )
@@ -745,7 +745,7 @@ class Plotter:
         # deltaPhi = torch.mean(deltaPhi, axis=0)  # [x, y, f]
         deltaPhi = features
 
-        if algo_name in ("SNAC", "SNAC+", "SNAC++"):
+        if algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
             r_deltaPhi, s_deltaPhi = torch.split(
                 deltaPhi, deltaPhi.size(-1) // 2, dim=-1
             )

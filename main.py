@@ -34,7 +34,7 @@ def train(args, seed, unique_id):
     save_dim_to_args(env, args)  # given env, save its state and action dim
     logger, writer = setup_logger(args, unique_id, seed)
 
-    if args.algo_name in ("SNAC", "SNAC+", "SNAC++"):
+    if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
         # start the sf training or import it
         ft = FeatureTrain(env=env, logger=logger, writer=writer, args=args)
         sf_network, prev_epoch = ft.train()

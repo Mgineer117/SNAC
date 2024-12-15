@@ -255,7 +255,7 @@ def call_ocNetwork(args):
 def call_sfNetwork(args):
     from models.policy import SF_Combined, SF_Split
 
-    if args.algo_name in ("SNAC", "SNAC+", "SNAC++"):
+    if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
         if args.import_sf_model:
             print("Loading previous SF parameters....")
             feaNet, psiNet, options = pickle.load(
@@ -408,7 +408,7 @@ def call_opNetwork(
 
     if args.import_op_model:
         print("Loading previous OP parameters....")
-        if args.algo_name in ("SNAC", "SNAC+", "SNAC++"):
+        if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
             optionPolicy, optionCritic, option_vals, options = pickle.load(
                 open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
             )
