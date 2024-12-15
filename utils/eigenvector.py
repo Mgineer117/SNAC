@@ -13,7 +13,7 @@ from models.policy.base_policy import BasePolicy
 
 
 def print_option_info(option_vals, options, algo_name, desired_num):
-    if algo_name in ("SNAC", "SNAC+", "SNAC++"):
+    if algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
         vec_num = int(len(option_vals) / 2)
 
         msg = colorize(
@@ -23,7 +23,12 @@ def print_option_info(option_vals, options, algo_name, desired_num):
         )
         print(msg)
 
-    elif algo_name in ("EigenOption", "EigenOption+", "EigenOption++"):
+    elif algo_name in (
+        "EigenOption",
+        "EigenOption+",
+        "EigenOption++",
+        "EigenOption+++",
+    ):
         vec_num = len(option_vals)
         msg = colorize(
             f"{algo_name} with {vec_num} / {desired_num} vectors with shape {options.shape}",
@@ -291,7 +296,7 @@ def discover_options(
 
         elif algo_name == "EigenOption+++":
             ##### cluster in action-value space + top #####
-            num_top_vector = ceil(num * 0.2)
+            num_top_vector = ceil(num * 0.15)
             num_cluster_vector = num - num_top_vector
 
             rewards = evecs @ features.T  # (num options) x T

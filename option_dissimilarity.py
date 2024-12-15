@@ -16,7 +16,7 @@ def init_args(num_vector):
     args = DotDict(config)
     args.import_sf_model = True
     args.s_dim = tuple(args.s_dim)
-    args.algo_name = "EigenOption+"
+    args.algo_name = "EigenOption++"
     args.device = torch.device("cpu")
 
     args.num_vector = num_vector
@@ -93,15 +93,11 @@ def get_feature_matrix(feaNet, grid, pos, args):
 def get_similarity_metric(features, option_vals, options, pos, args):
     """This sweeps possible blue agent states to
     compute all options for each feature then average"""
-    # print(f"option dims: {options.shape}")
-    # print(f"feature dim: {features[0,0,:].shape}")
-    # print(f"vector dim: {(options[0,:] - options[1, :]).shape}")
-
     total_dissimilarity = 0
     total_diss_dict = {}
     feature_num = len(pos[0])
 
-    if args.algo_name == "SNAC":
+    if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
         # parameters
         vector_dividend = int(args.num_vector / 2)
         feature_dividend = int(args.sf_dim / 2)
@@ -176,42 +172,43 @@ def get_similarity_metric(features, option_vals, options, pos, args):
 
 
 if __name__ == "__main__":
-    num_vector = 48
-    args = init_args(num_vector=num_vector)
+    num_vectors = [6, 12, 24, 48]
+    for num_vector in num_vectors:
+        args = init_args(num_vector=num_vector)
 
-    env = call_env(args)
-    sf_network = call_sfNetwork(args)
+        env = call_env(args)
+        sf_network = call_sfNetwork(args)
 
-    grid, pos = get_grid(args)
-    feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
+        grid, pos = get_grid(args)
+        feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
 
-    n = 10
-    mean_diss = 0
-    dict_list = []
-    for i in range(n):
-        option_vals, options = get_vectors(args)
-        diss, diss_dict = get_similarity_metric(
-            feature_matrix, option_vals, options, pos, args
-        )
-        mean_diss += diss / n
-        dict_list.append(diss_dict)
+        n = 10
+        mean_diss = 0
+        dict_list = []
+        for i in range(n):
+            option_vals, options = get_vectors(args)
+            diss, diss_dict = get_similarity_metric(
+                feature_matrix, option_vals, options, pos, args
+            )
+            mean_diss += diss / n
+            dict_list.append(diss_dict)
 
-    # Organize data by keys
-    data_by_key = {key: [] for key in range(num_vector)}
-    for d in dict_list:
-        i = 0
-        for _, value in d.items():
-            data_by_key[i].append(value)
-            i += 1
+        # Organize data by keys
+        data_by_key = {key: [] for key in range(num_vector)}
+        for d in dict_list:
+            i = 0
+            for _, value in d.items():
+                data_by_key[i].append(value)
+                i += 1
 
-    # Compute mean and std dev for each key (if needed)
-    means = {key: np.mean(values) for key, values in data_by_key.items()}
-    std_devs = {key: np.std(values) for key, values in data_by_key.items()}
+        # Compute mean and std dev for each key (if needed)
+        means = {key: np.mean(values) for key, values in data_by_key.items()}
+        std_devs = {key: np.std(values) for key, values in data_by_key.items()}
 
-    # Prepare data for boxplot
-    boxplot_data = [values for key, values in sorted(data_by_key.items())]
-    plt.figure(figsize=(12, 8))  # Width=12, Height=8 (adjust as needed)
-    plt.boxplot(boxplot_data, patch_artist=True)
-    plt.title(f"Mean dissimilarity: {mean_diss} for {args.algo_name}")
-    plt.tight_layout()
-    plt.savefig(f"data_{args.algo_name}.png")
+        # Prepare data for boxplot
+        boxplot_data = [values for key, values in sorted(data_by_key.items())]
+        plt.figure(figsize=(12, 8))  # Width=12, Height=8 (adjust as needed)
+        plt.boxplot(boxplot_data, patch_artist=True)
+        plt.title(f"Mean dissimilarity: {mean_diss} for {args.algo_name}")
+        plt.tight_layout()
+        plt.savefig(f"data_{args.algo_name}_{num_vector}.png")

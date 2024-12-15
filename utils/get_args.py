@@ -352,19 +352,19 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-entropy-scaler",
         type=float,
-        default=5e-2,
+        default=5e-3,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
         "--hc-entropy-scaler",
         type=float,
-        default=5e-3,
+        default=5e-2,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
         "--ppo-entropy-scaler",
         type=float,
-        default=5e-3,
+        default=5e-2,
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
@@ -423,7 +423,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(
