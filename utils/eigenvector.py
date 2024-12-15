@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from math import ceil
 from sklearn.cluster import KMeans
 
 from log.logger_util import colorize
@@ -163,6 +164,8 @@ def discover_options(
                 evals_s, evecs_s, option_dim=option_dim, num=num, classification="top"
             )
 
+            vec_list = [V_r, V_s]
+
             S_r = torch.cat((S_r, -S_r), axis=0)
             V_r = torch.cat((V_r, -V_r), axis=0)
             S_s = torch.cat((S_s, -S_s), axis=0)
@@ -177,19 +180,19 @@ def discover_options(
             )
 
             # Pull out the cluster result
-            S_r, S_s = metaData["evals_list"]
-            V_r, V_s = metaData["centroids_list"]
+            clustered_S_r, clustered_S_s = metaData["evals_list"]
+            clustered_V_r, clustered_V_s = metaData["centroids_list"]
 
             # Obtain (+/-) of vectors
-            S_r = torch.cat((S_r, -S_r), axis=0)
-            V_r = torch.cat((V_r, -V_r), axis=0)
-            S_s = torch.cat((S_s, -S_s), axis=0)
-            V_s = torch.cat((V_s, -V_s), axis=0)
+            S_r = torch.cat((clustered_S_r, -clustered_S_r), axis=0)
+            V_r = torch.cat((clustered_V_r, -clustered_V_r), axis=0)
+            S_s = torch.cat((clustered_S_s, -clustered_S_s), axis=0)
+            V_s = torch.cat((clustered_V_s, -clustered_V_s), axis=0)
+
+            vec_list = [clustered_V_r, clustered_V_s]
 
             option_vals = torch.cat((S_r, S_s), dim=0)
             options = torch.cat((V_r, V_s), dim=0)
-
-            vec_list = [V_r, V_s]
         elif algo_name == "SNAC++":
             # V_list = [torch.cat((V_r, -V_r), axis=0), torch.cat((V_s, -V_s), axis=0)]
             S_list = [evals_r, evals_s]
@@ -214,14 +217,14 @@ def discover_options(
                     values[k] = torch.mean(S_list[i][idx])
                     vectors[k, :] = torch.mean(V_list[i][idx, :], axis=0)
 
-                S, indices = torch.sort(values, descending=True)
-                V = vectors[indices]
+                clustered_S, indices = torch.sort(values, descending=True)
+                clustered_V = vectors[indices]
 
-                S = torch.cat((S, -S), axis=0)
-                V = torch.cat((V, -V), axis=0)
+                val_list.append(clustered_S)
+                vec_list.append(clustered_V)
 
-                val_list.append(S)
-                vec_list.append(V)
+                S = torch.cat((clustered_S, -clustered_S), axis=0)
+                V = torch.cat((clustered_V, -clustered_V), axis=0)
 
             option_vals = torch.cat(val_list, dim=0)
             options = torch.cat(vec_list, dim=0)
@@ -235,7 +238,12 @@ def discover_options(
                 dir=plotter.sf_path,
             )
 
-    elif algo_name in ("EigenOption", "EigenOption+", "EigenOption++"):
+    elif algo_name in (
+        "EigenOption",
+        "EigenOption+",
+        "EigenOption++",
+        "EigenOption+++",
+    ):
         option_dim = psi.shape[-1]
         if option_dim < 3 * num:
             raise ValueError(
@@ -254,11 +262,13 @@ def discover_options(
             options = torch.cat((V, -V), axis=0)
         elif algo_name == "EigenOption+":
             ##### cluster in eigen space #####
-            S, V, metaData = cluster_vecvtors([evals], [evecs], k=num)
+            clustered_S, clustered_V, metaData = cluster_vecvtors(
+                [evals], [evecs], k=num
+            )
 
             # Obtain (+/-) of vectors
-            option_vals = torch.cat((S, -S), axis=0)
-            options = torch.cat((V, -V), axis=0)
+            option_vals = torch.cat((clustered_S, -clustered_S), axis=0)
+            options = torch.cat((clustered_V, -clustered_V), axis=0)
         elif algo_name == "EigenOption++":
             ##### cluster in action-value space #####
             rewards = evecs @ features.T  # (num options) x T
@@ -273,16 +283,47 @@ def discover_options(
                 values[k] = torch.mean(evals[idx])
                 vectors[k, :] = torch.mean(evecs[idx, :], axis=0)
 
-            S, indices = torch.sort(values, descending=True)
-            V = vectors[indices]
+            clustered_S, indices = torch.sort(values, descending=True)
+            clustered_V = vectors[indices]
 
-            option_vals = torch.cat((S, -S), axis=0)
-            options = torch.cat((V, -V), axis=0)
+            option_vals = torch.cat((clustered_S, -clustered_S), axis=0)
+            options = torch.cat((clustered_V, -clustered_V), axis=0)
 
-        if algo_name in ("EigenOption+", "EigenOption++") and draw_map:
+        elif algo_name == "EigenOption+++":
+            ##### cluster in action-value space + top #####
+            num_top_vector = ceil(num * 0.2)
+            num_cluster_vector = num - num_top_vector
+
+            rewards = evecs @ features.T  # (num options) x T
+
+            _, _, metaData = cluster_vecvtors(
+                [evals], [rewards], k=num_cluster_vector
+            )  # S is dummy
+
+            values = torch.empty(num)
+            vectors = torch.empty(num, option_dim)
+
+            values[:num_top_vector] = evals[:num_top_vector]
+            vectors[:num_top_vector] = evecs[:num_top_vector]
+
+            for k in range(num - num_top_vector):
+                idx = metaData["labels_list"][0] == k
+                values[k + num_top_vector] = torch.mean(evals[idx])
+                vectors[k + num_top_vector, :] = torch.mean(evecs[idx, :], axis=0)
+
+            clustered_S, indices = torch.sort(values, descending=True)
+            clustered_V = vectors[indices]
+
+            option_vals = torch.cat((clustered_S, -clustered_S), axis=0)
+            options = torch.cat((clustered_V, -clustered_V), axis=0)
+
+        if (
+            algo_name in ("EigenOption+", "EigenOption++", "EigenOption+++")
+            and draw_map
+        ):
             plotter.plotClusteredVectors(
                 V_list=[evecs],
-                centroids=[options],
+                centroids=[clustered_V],
                 labels=metaData["labels_list"],
                 names=["S-feature"],
                 dir=plotter.sf_path,
@@ -363,7 +404,12 @@ def get_eigenvectors(
             device=args.device,
         )
         print_option_info(option_vals, options, args.algo_name, args.num_vector)
-    elif args.algo_name in ("EigenOption", "EigenOption+", "EigenOption++"):
+    elif args.algo_name in (
+        "EigenOption",
+        "EigenOption+",
+        "EigenOption++",
+        "EigenOption+++",
+    ):
         option_vals, options, batch = discover_options(
             policy=sf_network,
             sampler=sampler,

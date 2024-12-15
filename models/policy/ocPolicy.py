@@ -50,7 +50,8 @@ class OC_Learner(BasePolicy):
 
         # Option-critic's critic is not mse-based
         # so BFGS is highly unstable -> ADAM
-        critic_lr = 1e-4
+        policy_lr = 2e-4
+        critic_lr = 2e-4
 
         if critic_lr is None:
             self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
@@ -105,7 +106,7 @@ class OC_Learner(BasePolicy):
 
         # the first iteration where z is not given
         if z is None:
-            greedy_option = self.critic.greedy_option(obs["observation"]).squeeze()
+            greedy_option = self.critic.greedy_option(obs["observation"])
         else:
             greedy_option = z
 
@@ -113,7 +114,7 @@ class OC_Learner(BasePolicy):
             torch.randint(self.policy._num_options, (1,))
             if np.random.rand() < epsilon
             else greedy_option
-        )
+        ).squeeze()
         z = F.one_hot(current_option, num_classes=self.policy._num_options)
 
         a, metaData = self.policy(
@@ -189,7 +190,7 @@ class OC_Learner(BasePolicy):
         )
 
         # The termination loss
-        termination_loss = torch.mean(
+        termination_loss = (
             option_term_prob
             * (Q_by_option.detach() - Q_by_max.detach() + self._termination_reg)
             * (1 - terminals)

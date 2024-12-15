@@ -327,24 +327,35 @@ class Plotter:
         for vector, centroid, label, name in zip(V_list, centroids, labels, names):
             vector = vector.cpu().numpy()
 
-            k = centroid.shape[0]
+            num_vector = vector.shape[0]
+            num_centroids = centroid.shape[0]
 
             tsne = TSNE(n_components=2, perplexity=10, random_state=0)
 
             data = np.concatenate((vector, centroid), axis=0)
             data_2d = tsne.fit_transform(data)
 
-            centroid_2d = data_2d[-k:, :]
-            data_2d = data_2d[:-k, :]
+            vector_2d = data_2d[:num_vector, :]
+            centroid_2d = data_2d[-num_centroids:, :]
+
             plt.figure(figsize=(8, 6))
 
             plt.scatter(
-                data_2d[:, 0],
-                data_2d[:, 1],
+                vector_2d[:, 0],
+                vector_2d[:, 1],
                 c=label,
                 cmap="viridis",
                 label="Data Points",
             )
+            plt.scatter(
+                vector_2d[:num_centroids, 0],
+                vector_2d[:num_centroids, 1],
+                c="blue",
+                marker="4",
+                s=100,
+                label=f"Top {num_centroids}",
+            )  # Plot centroids
+
             plt.scatter(
                 centroid_2d[:, 0],
                 centroid_2d[:, 1],
@@ -355,7 +366,7 @@ class Plotter:
             )  # Plot centroids
 
             plt.colorbar()
-            plt.title(f"{name} Clustering with {k} Clusters")
+            plt.title(f"{name} Clustering with {num_centroids} Clusters")
             plt.xlabel("t-SNE Dimension 1")
             plt.ylabel("t-SNE Dimension 2")
             plt.legend()
@@ -519,8 +530,8 @@ class Plotter:
 
         # Smoothing the tensor using a uniform filter
         rewards = rewards.numpy()
-        for k in range(rewards.shape[0]):
-            rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=3)
+        # for k in range(rewards.shape[0]):
+        #     rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=3)
 
         obstacles = (
             (grid_tensor == 2.0) | (grid_tensor == 8.0) | (grid_tensor == 9.0)

@@ -46,7 +46,12 @@ def train(args, seed, unique_id):
             writer=writer,
             args=args,
         )
-    elif args.algo_name in ("EigenOption", "EigenOption+", "EigenOption++"):
+    elif args.algo_name in (
+        "EigenOption",
+        "EigenOption+",
+        "EigenOption++",
+        "EigenOption+++",
+    ):
         # start the sf training or import it
         ft = FeatureTrain(env=env, logger=logger, writer=writer, args=args)
         sf_network, prev_epoch = ft.train()

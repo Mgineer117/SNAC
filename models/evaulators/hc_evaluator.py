@@ -122,7 +122,7 @@ class HC_Evaluator(Evaluator):
             while not done:
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=True)
-                    a = a.cpu().numpy().squeeze()
+                    a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
 
                 ### Create an Option Loop
                 if metaData["is_option"]:

@@ -39,6 +39,8 @@ def get_vectors(args):
         state_dim=args.s_dim,
         feature_dim=args.sf_dim,
         action_dim=args.a_dim,
+        hc_action_dim=args.num_vector + 1,
+        agent_num=args.agent_num,
         min_option_length=args.min_option_length,
         min_cover_option_length=args.min_cover_option_length,
         episode_len=args.episode_len,
@@ -60,10 +62,7 @@ def get_vectors(args):
 
 
 def get_grid(args):
-    if args.env_name == "FourRooms" or args.env_name == "LavaRooms":
-        grid, pos, loc = get_grid_tensor(env, grid_type=args.grid_type)
-    else:  # args.env_name == "CtF1v1" or args.env_name == "CtF1v2"
-        grid, pos, loc = get_grid_tensor2(env, grid_type=args.grid_type)
+    grid, pos, loc = get_grid_tensor(env, grid_type=args.grid_type)
 
     return grid, pos
 
@@ -177,7 +176,8 @@ def get_similarity_metric(features, option_vals, options, pos, args):
 
 
 if __name__ == "__main__":
-    args = init_args(num_vector=16)
+    num_vector = 48
+    args = init_args(num_vector=num_vector)
 
     env = call_env(args)
     sf_network = call_sfNetwork(args)
@@ -186,22 +186,32 @@ if __name__ == "__main__":
     feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
 
     n = 10
-    data = 0
+    mean_diss = 0
+    dict_list = []
     for i in range(n):
         option_vals, options = get_vectors(args)
         diss, diss_dict = get_similarity_metric(
             feature_matrix, option_vals, options, pos, args
         )
-        data += diss / n
-        try:
-            for k, v in diss_dict.items():
-                data_dict[k] += diss_dict[k] / n
-        except:
-            data_dict = diss_dict
+        mean_diss += diss / n
+        dict_list.append(diss_dict)
 
-    data_list = []
-    for k, v in diss_dict.items():
-        data_list.append(v)
-    plt.plot(data_list)
-    plt.title(f"Mean dissimilarity: {data} for {args.algo_name}")
+    # Organize data by keys
+    data_by_key = {key: [] for key in range(num_vector)}
+    for d in dict_list:
+        i = 0
+        for _, value in d.items():
+            data_by_key[i].append(value)
+            i += 1
+
+    # Compute mean and std dev for each key (if needed)
+    means = {key: np.mean(values) for key, values in data_by_key.items()}
+    std_devs = {key: np.std(values) for key, values in data_by_key.items()}
+
+    # Prepare data for boxplot
+    boxplot_data = [values for key, values in sorted(data_by_key.items())]
+    plt.figure(figsize=(12, 8))  # Width=12, Height=8 (adjust as needed)
+    plt.boxplot(boxplot_data, patch_artist=True)
+    plt.title(f"Mean dissimilarity: {mean_diss} for {args.algo_name}")
+    plt.tight_layout()
     plt.savefig(f"data_{args.algo_name}.png")
