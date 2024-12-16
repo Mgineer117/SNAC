@@ -256,7 +256,9 @@ def discover_options(
 
             # S_r, S_s are the dummy input since we just want clustered indicies
             _, _, metaData = cluster_vecvtors(
-                [evals_r, evals_s], [r_rewards, s_rewards], k=num
+                [evals_r[num_top_vector:], evals_s[num_top_vector:]],
+                [r_rewards[num_top_vector:], s_rewards[num_top_vector:]],
+                k=num,
             )
 
             val_list = []
@@ -269,12 +271,13 @@ def discover_options(
                 values[:num_top_vector] = S_list[i][:num_top_vector]
                 vectors[:num_top_vector] = V_list[i][:num_top_vector]
 
+                evals = S_list[i][num_top_vector:]
+                evecs = V_list[i][num_top_vector:]
+
                 for k in range(num - num_top_vector):
                     idx = label == k
-                    values[k + num_top_vector] = torch.mean(S_list[i][idx])
-                    vectors[k + num_top_vector, :] = torch.mean(
-                        V_list[i][idx, :], axis=0
-                    )
+                    values[k + num_top_vector] = torch.mean(evals[idx])
+                    vectors[k + num_top_vector, :] = torch.mean(evecs[idx, :], axis=0)
 
                 clustered_S, indices = torch.sort(values, descending=True)
                 clustered_V = vectors[indices]
@@ -288,6 +291,17 @@ def discover_options(
 
             option_vals = torch.cat(val_list, dim=0)
             options = torch.cat(vec_list, dim=0)
+
+            for i, label in enumerate(metaData["labels_list"]):
+                metaData["labels_list"][i] = np.concatenate(
+                    (
+                        np.arange(
+                            start=num_cluster_vector,
+                            stop=num_cluster_vector + num_top_vector,
+                        ),
+                        label,
+                    )
+                )
 
         if algo_name in ("SNAC+", "SNAC++", "SNAC+++") and draw_map:
             plotter.plotClusteredVectors(
@@ -357,7 +371,9 @@ def discover_options(
             rewards = evecs @ features.T  # (num options) x T
 
             _, _, metaData = cluster_vecvtors(
-                [evals], [rewards], k=num_cluster_vector
+                [evals[num_top_vector:]],
+                [rewards[num_top_vector:]],
+                k=num_cluster_vector,
             )  # S is dummy
 
             values = torch.empty(num)
@@ -366,16 +382,29 @@ def discover_options(
             values[:num_top_vector] = evals[:num_top_vector]
             vectors[:num_top_vector] = evecs[:num_top_vector]
 
+            rm_evals = evals[num_top_vector:]
+            rm_evecs = evecs[num_top_vector:]
             for k in range(num - num_top_vector):
                 idx = metaData["labels_list"][0] == k
-                values[k + num_top_vector] = torch.mean(evals[idx])
-                vectors[k + num_top_vector, :] = torch.mean(evecs[idx, :], axis=0)
+                values[k + num_top_vector] = torch.mean(rm_evals[idx])
+                vectors[k + num_top_vector, :] = torch.mean(rm_evecs[idx, :], axis=0)
 
             clustered_S, indices = torch.sort(values, descending=True)
             clustered_V = vectors[indices]
 
             option_vals = torch.cat((clustered_S, -clustered_S), axis=0)
             options = torch.cat((clustered_V, -clustered_V), axis=0)
+
+            for i, label in enumerate(metaData["labels_list"]):
+                metaData["labels_list"][i] = np.concatenate(
+                    (
+                        np.arange(
+                            start=num_cluster_vector,
+                            stop=num_cluster_vector + num_top_vector,
+                        ),
+                        label,
+                    )
+                )
 
         if (
             algo_name in ("EigenOption+", "EigenOption++", "EigenOption+++")
