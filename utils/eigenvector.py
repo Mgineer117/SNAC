@@ -351,7 +351,7 @@ def discover_options(
 
         elif algo_name == "EigenOption+++":
             ##### cluster in action-value space + top #####
-            num_top_vector = ceil(num * 0.2)
+            num_top_vector = ceil(num * 0.25)
             num_cluster_vector = num - num_top_vector
 
             rewards = evecs @ features.T  # (num options) x T
