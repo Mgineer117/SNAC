@@ -148,6 +148,7 @@ def discover_options(
 
     ### Compute the vectors via SVD
     if algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
+
         psi_r, psi_s = policy.split(psi)
         phi_r, phi_s = policy.split(features)
 

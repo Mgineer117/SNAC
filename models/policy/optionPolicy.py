@@ -157,7 +157,7 @@ class OP_Controller(BasePolicy):
     def _intricsicReward(self, phi, next_phi, z):
         option = self._options[z, :]
 
-        if self._algo_name in ("SNAC", "SNAC+", "SNAC++"):
+        if self._algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
             # divide phi in half
             phi_r, phi_s = self.split(phi)
             next_phi_r, next_phi_s = self.split(next_phi)
