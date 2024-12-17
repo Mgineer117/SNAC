@@ -61,7 +61,7 @@
         "eval_episodes": 106,
         "num_traj_decomp": 250,
         "max_num_traj": 300,
-        "min_num_traj": 50,
+        "min_num_traj": 150,
         "trj_per_iter": 5,
         "feature_fc_dim": 512,
         "fc_dim": 512,

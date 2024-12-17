@@ -128,6 +128,10 @@ class HC_PrimitivePolicy(nn.Module):
             self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Identity())
 
     def forward(self, state: torch.Tensor, deterministic: bool = False):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+            state = state.reshape(state.shape[0], -1)
+            
         logits = self.model(state)
 
         if self.is_discrete:

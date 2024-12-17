@@ -175,7 +175,8 @@ class HC_Controller(BasePolicy):
                 a, _ = self.op_network(obs, z_argmax, deterministic=deterministic)
         else:
             # primitive action selection
-            a = torch.rand((1, self._a_dim)).to(self.device)
+            # a = torch.rand((1, self._a_dim)).to(self.device)
+            a, _ = self.primitivePolicy(obs["observation"], deterministic=deterministic)
 
         return a, {
             "z": z,
