@@ -350,9 +350,9 @@ class Plotter:
             plt.scatter(
                 vector_2d[:num_centroids, 0],
                 vector_2d[:num_centroids, 1],
-                c="blue",
+                c="magenta",
                 marker="4",
-                s=100,
+                s=150,
                 label=f"Top {num_centroids}",
             )  # Plot centroids
 

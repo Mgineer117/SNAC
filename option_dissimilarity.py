@@ -3,20 +3,56 @@ import torch
 import json
 import itertools
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set_theme()
 
 from utils import *
 from utils.call_env import call_env
 from models.evaulators.base_evaluator import DotDict
 
+COLORS = {
+    "SNAC": "red",
+    "SNAC+": "red",
+    "SNAC++": "red",
+    "SNAC+++": "red",
+    "EigenOption": "blue",
+    "EigenOption+": "blue",
+    "EigenOption++": "blue",
+    "EigenOption+++": "blue",
+    "CoveringOption": "green",
+    "PPO": "magenta",
+}
 
-def init_args(num_vector):
+LINESTYLES = {
+    "SNAC": "-",
+    "SNAC+": "--",
+    "SNAC++": ":",
+    "SNAC+++": "-.",
+    "EigenOption": "-",
+    "EigenOption+": "--",
+    "EigenOption++": ":",
+    "EigenOption+++": "-.",
+    "CoveringOption": "-",
+    "PPO": "-",
+}
+
+LABEL = {
+    "EigenOption": f"Top n heuristics",
+    "EigenOption+": f"Clustering in Vector Space",
+    "EigenOption++": f"Clustering in Reward Space",
+    "EigenOption+++": f"Top n + Clustering in Reward Space",
+}
+
+
+def init_args(algo_name: str, num_vector: str):
     model_dir = "log/eval_log/model_for_eval/"
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
     args.import_sf_model = True
     args.s_dim = tuple(args.s_dim)
-    args.algo_name = "EigenOption++"
+    args.algo_name = algo_name
     args.device = torch.device("cpu")
 
     args.num_vector = num_vector
@@ -172,43 +208,74 @@ def get_similarity_metric(features, option_vals, options, pos, args):
 
 
 if __name__ == "__main__":
-    num_vectors = [6, 12, 24, 48]
-    for num_vector in num_vectors:
-        args = init_args(num_vector=num_vector)
+    algo_names = ["EigenOption", "EigenOption+", "EigenOption++", "EigenOption+++"]
+    num_vectors = [6, 12, 24, 48, 60]  # , 24, 48]
 
-        env = call_env(args)
-        sf_network = call_sfNetwork(args)
+    mean_diss_dict = {}
+    for algo_name in algo_names:
+        mean_diss_list = []
+        for num_vector in num_vectors:
+            args = init_args(algo_name=algo_name, num_vector=num_vector)
 
-        grid, pos = get_grid(args)
-        feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
+            env = call_env(args)
+            sf_network = call_sfNetwork(args)
 
-        n = 10
-        mean_diss = 0
-        dict_list = []
-        for i in range(n):
-            option_vals, options = get_vectors(args)
-            diss, diss_dict = get_similarity_metric(
-                feature_matrix, option_vals, options, pos, args
-            )
-            mean_diss += diss / n
-            dict_list.append(diss_dict)
+            grid, pos = get_grid(args)
+            feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
 
-        # Organize data by keys
-        data_by_key = {key: [] for key in range(num_vector)}
-        for d in dict_list:
-            i = 0
-            for _, value in d.items():
-                data_by_key[i].append(value)
-                i += 1
+            n = 10
+            mean_diss = 0
+            dict_list = []
+            for i in range(n):
+                option_vals, options = get_vectors(args)
+                diss, diss_dict = get_similarity_metric(
+                    feature_matrix, option_vals, options, pos, args
+                )
+                mean_diss += diss / n
+                dict_list.append(diss_dict)
+            mean_diss_list.append(mean_diss)
 
-        # Compute mean and std dev for each key (if needed)
-        means = {key: np.mean(values) for key, values in data_by_key.items()}
-        std_devs = {key: np.std(values) for key, values in data_by_key.items()}
+            # Organize data by keys
+            data_by_key = {key: [] for key in range(num_vector)}
+            for d in dict_list:
+                i = 0
+                for _, value in d.items():
+                    data_by_key[i].append(value)
+                    i += 1
 
-        # Prepare data for boxplot
-        boxplot_data = [values for key, values in sorted(data_by_key.items())]
-        plt.figure(figsize=(12, 8))  # Width=12, Height=8 (adjust as needed)
-        plt.boxplot(boxplot_data, patch_artist=True)
-        plt.title(f"Mean dissimilarity: {mean_diss} for {args.algo_name}")
-        plt.tight_layout()
-        plt.savefig(f"data_{args.algo_name}_{num_vector}.png")
+            # Compute mean and std dev for each key (if needed)
+            means = {key: np.mean(values) for key, values in data_by_key.items()}
+            std_devs = {key: np.std(values) for key, values in data_by_key.items()}
+
+            # Prepare data for boxplot
+            boxplot_data = [values for key, values in sorted(data_by_key.items())]
+            plt.figure(figsize=(12, 8))  # Width=12, Height=8 (adjust as needed)
+            plt.boxplot(boxplot_data, patch_artist=True)
+            plt.title(f"Mean dissimilarity: {mean_diss} for {args.algo_name}")
+            plt.tight_layout()
+            plt.savefig(f"data_{args.algo_name}_{num_vector}.png")
+            plt.close()
+
+        mean_diss_dict[algo_name] = mean_diss_list
+
+    print(mean_diss_dict)
+
+    # Plot the results
+    for k, v in mean_diss_dict.items():
+        plt.plot(
+            num_vectors,
+            v,
+            label=f"{LABEL[k]}",
+            color=COLORS[k],
+            linestyle=LINESTYLES[k],
+        )
+
+    plt.xlabel("Number of Vectors/ Clusters", fontsize=20)
+    plt.ylabel("Mean Dissimilarity per State", fontsize=16)
+    plt.xticks(num_vectors, labels=[str(x) for x in num_vectors], fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.legend(fontsize=12)
+    # plt.xscale("log")
+    plt.tight_layout()
+    plt.savefig(f"FourRooms cluster.png")
+    plt.close()
