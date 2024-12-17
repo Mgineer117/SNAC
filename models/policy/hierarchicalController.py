@@ -14,7 +14,7 @@ from utils.utils import estimate_advantages
 from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
 from models.policy.optionPolicy import OP_Controller
-from models.layers.hc_networks import HC_Policy, HC_PrimitivePolicy, HC_Critic
+from models.layers.hc_networks import HC_Policy, HC_PPO, HC_Critic
 from models.policy.base_policy import BasePolicy
 
 
@@ -63,7 +63,7 @@ class HC_Controller(BasePolicy):
         sf_network: BasePolicy,
         op_network: OP_Controller,
         policy: HC_Policy,
-        primitivePolicy: HC_PrimitivePolicy,
+        primitivePolicy: HC_PPO,
         critic: HC_Critic,
         a_dim: int,
         policy_lr: float = 5e-4,
