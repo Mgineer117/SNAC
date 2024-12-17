@@ -219,10 +219,10 @@ class HC_RW(nn.Module):
             a_argmax = torch.argmax(a, dim=1)
             a = F.one_hot(a_argmax, num_classes=self._a_dim)
 
-        dist = None
-        probs = self.dummy
-        logprobs = self.dummy
-        entropy = self.dummy
+        dist = torch.zeros((state.shape[0], 1)).to(self.device)
+        probs = torch.zeros_like(dist)
+        logprobs = torch.zeros_like(dist)
+        entropy = torch.zeros_like(dist)
 
         return a, {
             "dist": dist,
@@ -236,10 +236,10 @@ class HC_RW(nn.Module):
         Actions must be tensor
         """
 
-        return self.dummy
+        return torch.zeros_like(dist)
 
     def entropy(self, dist: torch.distributions):
         """
         For code consistency
         """
-        return self.dummy
+        return torch.zeros_like(dist)

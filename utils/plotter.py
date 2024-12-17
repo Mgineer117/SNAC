@@ -352,7 +352,7 @@ class Plotter:
                 vector_2d[:num_centroids, 1],
                 c="magenta",
                 marker="4",
-                s=150,
+                s=200,
                 label=f"Top {num_centroids}",
             )  # Plot centroids
 
@@ -365,12 +365,18 @@ class Plotter:
                 label="Centroids",
             )  # Plot centroids
 
-            plt.colorbar()
-            plt.title(f"{name} Clustering with {num_centroids} Clusters")
-            plt.xlabel("t-SNE Dimension 1")
-            plt.ylabel("t-SNE Dimension 2")
+            plt.title(
+                f"{name} with {num_centroids} Clusters / {num_vector} Features",
+                fontsize=22,
+            )  # Increase title font size
+            plt.xlabel(
+                "t-SNE Dimension 1", fontsize=18
+            )  # Increase x-axis label font size
+            plt.ylabel(
+                "t-SNE Dimension 2", fontsize=18
+            )  # Increase y-axis label font size
             plt.legend()
-
+            plt.tight_layout()
             plt.savefig(dir + f"/{name}Vectors.png")
             plt.close()
 
