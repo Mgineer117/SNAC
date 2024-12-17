@@ -194,7 +194,8 @@ class HC_Controller(BasePolicy):
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         states = states.reshape(states.shape[0], -1)
-        actions = (
+        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
+        option_actions = (
             torch.from_numpy(batch["option_actions"]).to(self._dtype).to(self.device)
         )
         rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
@@ -248,19 +249,19 @@ class HC_Controller(BasePolicy):
                 valueLoss = self.mse_loss(returns, values)
 
             # find mask: the actions contributions by hc policy only
-            hc_mask = torch.argmax(actions, dim=-1) < self._num_options
+            hc_mask = torch.argmax(option_actions, dim=-1) < self._num_options
             pm_mask = ~hc_mask
 
             _, _, hc_metaData = self.policy(states)
             _, pm_metaData = self.primitivePolicy(states)
 
             # Compute hierarchical policy logprobs and entropy
-            hc_logprobs = self.policy.log_prob(hc_metaData["dist"], actions)[hc_mask]
+            hc_logprobs = self.policy.log_prob(hc_metaData["dist"], option_actions)[
+                hc_mask
+            ]
             hc_entropy = self.policy.entropy(hc_metaData["dist"])[hc_mask]
 
             # Compute primitive policy logprobs and entropy
-            print(pm_metaData["dist"])
-            print(actions.shape)
             pm_logprobs = self.primitivePolicy.log_prob(pm_metaData["dist"], actions)[
                 pm_mask
             ]
