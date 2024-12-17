@@ -476,6 +476,7 @@ def call_hcNetwork(sf_network, op_network, args):
             input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             a_dim=args.a_dim,
+            is_discrete=args.is_discrete,
             activation=nn.Tanh(),
         )
         critic = HC_Critic(

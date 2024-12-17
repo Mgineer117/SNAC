@@ -99,12 +99,18 @@ class HC_Controller(BasePolicy):
         self.op_network = op_network
 
         if critic_lr is None:
-            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
+            self.optimizer = torch.optim.Adam(
+                [
+                    {"params": self.policy.parameters(), "lr": policy_lr},
+                    {"params": self.primitivePolicy.parameters(), "lr": policy_lr},
+                ]
+            )
             self.is_bfgs = True
         else:
             self.optimizer = torch.optim.Adam(
                 [
                     {"params": self.policy.parameters(), "lr": policy_lr},
+                    {"params": self.primitivePolicy.parameters(), "lr": policy_lr},
                     {"params": self.critic.parameters(), "lr": critic_lr},
                 ]
             )
@@ -241,10 +247,30 @@ class HC_Controller(BasePolicy):
                 values, _ = self.critic(states)
                 valueLoss = self.mse_loss(returns, values)
 
-            _, _, metaData = self.policy(states)
+            # find mask: the actions contributions by hc policy only
+            hc_mask = torch.argmax(actions, dim=-1) < self._num_options
+            pm_mask = ~hc_mask
 
-            logprobs = self.policy.log_prob(metaData["dist"], actions)
-            entropy = self.policy.entropy(metaData["dist"])
+            _, _, hc_metaData = self.policy(states)
+            _, pm_metaData = self.primitivePolicy(states)
+
+            # Compute hierarchical policy logprobs and entropy
+            hc_logprobs = self.policy.log_prob(hc_metaData["dist"], actions)[hc_mask]
+            hc_entropy = self.policy.entropy(hc_metaData["dist"])[hc_mask]
+
+            # Compute primitive policy logprobs and entropy
+            pm_logprobs = self.primitivePolicy.log_prob(pm_metaData["dist"], actions)[
+                pm_mask
+            ]
+            pm_entropy = self.primitivePolicy.entropy(pm_metaData["dist"])[pm_mask]
+
+            # Combine logprobs and entropy in the original order
+            logprobs = torch.empty_like(rewards)
+            entropy = torch.empty_like(rewards)
+            logprobs[hc_mask] = hc_logprobs
+            logprobs[pm_mask] = pm_logprobs
+            entropy[hc_mask] = hc_entropy
+            entropy[pm_mask] = pm_entropy
 
             ratios = torch.exp(logprobs - old_logprobs)
 
