@@ -12,7 +12,8 @@ from models.layers import (
     OptionCritic,
     PsiCritic2,
     HC_Policy,
-    HC_PrimitivePolicy,
+    HC_PPO,
+    HC_RW,
     HC_Critic,
     PPO_Policy,
     PPO_Critic,
@@ -472,13 +473,21 @@ def call_hcNetwork(sf_network, op_network, args):
             num_options=args.num_vector,
             activation=nn.Tanh(),
         )
-        primitivePolicy = HC_PrimitivePolicy(
-            input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
-            a_dim=args.a_dim,
-            is_discrete=args.is_discrete,
-            activation=nn.Tanh(),
-        )
+        if args.PM_policy == "PPO":
+            primitivePolicy = HC_PPO(
+                input_dim=args.s_flat_dim,
+                fc_dim=args.fc_dim,
+                a_dim=args.a_dim,
+                is_discrete=args.is_discrete,
+                activation=nn.Tanh(),
+            )
+        elif args.PM_policy == "RW":
+            primitivePolicy = HC_RW(
+                a_dim=args.a_dim,
+                is_discrete=args.is_discrete,
+            )
+        else:
+            NotImplementedError(f"{args.PM_policy} is not implemented")
         critic = HC_Critic(
             input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,

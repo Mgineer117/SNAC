@@ -94,7 +94,7 @@ class HC_Critic(nn.Module):
         return value, {}
 
 
-class HC_PrimitivePolicy(nn.Module):
+class HC_PPO(nn.Module):
     """
     Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
     """
@@ -107,7 +107,7 @@ class HC_PrimitivePolicy(nn.Module):
         is_discrete: bool = False,
         activation: nn.Module = nn.Tanh(),
     ):
-        super(HC_PrimitivePolicy, self).__init__()
+        super(HC_PPO, self).__init__()
         """
         a_dim must be num_options + 1
         """
@@ -131,7 +131,7 @@ class HC_PrimitivePolicy(nn.Module):
         if len(state.shape) == 3 or len(state.shape) == 1:
             state = state.unsqueeze(0)
             state = state.reshape(state.shape[0], -1)
-            
+
         logits = self.model(state)
 
         if self.is_discrete:
@@ -192,3 +192,54 @@ class HC_PrimitivePolicy(nn.Module):
         For code consistency
         """
         return dist.entropy().unsqueeze(-1)
+
+
+class HC_RW(nn.Module):
+    """
+    Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
+    """
+
+    def __init__(
+        self, a_dim: int, is_discrete: bool = False, device=torch.device("cpu")
+    ):
+        super(HC_RW, self).__init__()
+        """
+        a_dim must be num_options + 1
+        """
+        # parameters
+        self._a_dim = a_dim
+        self.is_discrete = is_discrete
+
+        self.device = device
+        self.dummy = torch.tensor(1e-10)
+
+    def forward(self, state: torch.Tensor, deterministic: bool = False):
+        a = torch.rand((1, self._a_dim)).to(self.device)
+        if self.is_discrete:
+            a_argmax = torch.argmax(a, dim=1)
+            a = F.one_hot(a_argmax, num_classes=self._a_dim)
+
+        dist = None
+        probs = self.dummy
+        logprobs = self.dummy
+        entropy = self.dummy
+
+        return a, {
+            "dist": dist,
+            "probs": probs,
+            "logprobs": logprobs,
+            "entropy": entropy,
+        }
+
+    def log_prob(self, dist: torch.distributions, actions: torch.Tensor):
+        """
+        Actions must be tensor
+        """
+
+        return self.dummy
+
+    def entropy(self, dist: torch.distributions):
+        """
+        For code consistency
+        """
+        return self.dummy

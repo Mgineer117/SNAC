@@ -268,6 +268,12 @@ def get_args(verbose=True):
         help="Must be divided by 2. ex) 10, 20, 30. Minimum = 4 for SNAC.",
     )
 
+    parser.add_argument(
+        "--PM-policy",
+        type=str,
+        default=None,
+        help="CNN lr where scheduler is used so can be high",
+    )
     # learning rates
     parser.add_argument(
         "--feature-lr",
