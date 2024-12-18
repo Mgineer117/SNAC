@@ -45,6 +45,7 @@ class CoveringOption:
             episode_num=args.episode_num,
             num_cores=args.num_cores,
             gamma=args.gamma,
+            verbose=False,
         )
 
         # object initialization
