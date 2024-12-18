@@ -109,16 +109,26 @@ def discover_options(
     option_buffer = TrajectoryBuffer(
         min_num_trj=num_trj, max_num_trj=1001, device="cpu"  # Operate on CPU
     )
-
     # Collecting samples to meet the minimum trajectory count
+    count = 0
     while option_buffer.num_trj < option_buffer.min_num_trj:
         batch, sample_time = sampler.collect_samples(
             policy, grid_type=grid_type, idx=idx, is_covering_option=is_covering_option
         )
         option_buffer.push(batch)
+        if (count + 1) % 2 == 0:
+            print(
+                f"\nWarming buffer {option_buffer.num_trj}/{option_buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                end="",
+            )
+        count += 1
+    print(
+        f"\nWarming Complete! {option_buffer.num_trj}/{option_buffer.min_num_trj} | {option_buffer.min_num_trj} will only be used!!!",
+        end="",
+    )
 
     # Sampling and cleaning up buffer
-    batch = option_buffer.sample_all()
+    batch = option_buffer.sample(num_trj)
     option_buffer.wipe()
 
     # Convert collected batch data to tensors on CPU
