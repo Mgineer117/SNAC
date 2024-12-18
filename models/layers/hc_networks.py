@@ -30,9 +30,7 @@ class HC_Policy(nn.Module):
         self._dtype = torch.float32
         self._num_options = num_options
 
-        self.model = MLP(
-            input_dim, (fc_dim, fc_dim, fc_dim), self._a_dim, activation=self.act
-        )
+        self.model = MLP(input_dim, (fc_dim, fc_dim), self._a_dim, activation=self.act)
 
     def forward(self, state: torch.Tensor, deterministic=False):
         # when the input is raw by forawrd() not learn()
@@ -119,11 +117,9 @@ class HC_PPO(nn.Module):
         self.act = activation
 
         if self.is_discrete:
-            self.model = MLP(
-                input_dim, (fc_dim, fc_dim, fc_dim), a_dim, activation=self.act
-            )
+            self.model = MLP(input_dim, (fc_dim, fc_dim), a_dim, activation=self.act)
         else:
-            self.model = MLP(input_dim, (fc_dim, fc_dim, fc_dim), activation=self.act)
+            self.model = MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
             self.mu = MLP(fc_dim, (a_dim,), activation=nn.Identity())
             self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Identity())
 

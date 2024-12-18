@@ -37,7 +37,7 @@ class OptionPolicy(nn.Module):
         if self.is_discrete:
             self.models = nn.ModuleList()
             for _ in range(num_options):
-                self.models.append(self.create_model(input_dim, fc_dim, a_dim))
+                self.models.append(self.create_model(input_dim, fc_dim, fc_dim, a_dim))
         else:
             self.models = nn.ModuleList()
             self.mus = nn.ModuleList()
@@ -148,7 +148,7 @@ class OptionCritic(nn.Module):
 
         self.models = nn.ModuleList()
         for _ in range(num_options):
-            self.models.append(self.create_model(input_dim, fc_dim, 1))
+            self.models.append(self.create_model(input_dim, fc_dim, fc_dim, 1))
 
     def create_model(self, input_dim, fc_dim, output_dim):
         return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)

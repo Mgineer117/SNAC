@@ -256,6 +256,12 @@ def get_args(verbose=True):
         help="This is a dimension of FCL that decodes the output of CNN or VAE",
     )
     parser.add_argument(
+        "--option-fc-dim",
+        type=int,
+        default=None,
+        help="This is a dimension of FCL that decodes the output of CNN or VAE",
+    )
+    parser.add_argument(
         "--sf-dim",
         type=int,
         default=None,

@@ -420,7 +420,7 @@ def call_opNetwork(
     else:
         optionPolicy = OptionPolicy(
             input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.option_fc_dim,
             a_dim=args.a_dim,
             num_options=options.shape[0],
             activation=nn.Tanh(),
