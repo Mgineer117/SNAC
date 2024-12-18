@@ -37,7 +37,7 @@ class OptionPolicy(nn.Module):
         if self.is_discrete:
             self.models = nn.ModuleList()
             for _ in range(num_options):
-                self.models.append(self.create_model(input_dim, fc_dim, fc_dim, a_dim))
+                self.models.append(self.create_model(input_dim, fc_dim, a_dim))
         else:
             self.models = nn.ModuleList()
             self.mus = nn.ModuleList()
@@ -49,11 +49,9 @@ class OptionPolicy(nn.Module):
 
     def create_model(self, input_dim, fc_dim, output_dim):
         if self.is_discrete:
-            return MLP(
-                input_dim, (fc_dim, fc_dim, fc_dim), output_dim, activation=self.act
-            )
+            return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
         else:
-            return MLP(input_dim, (fc_dim, fc_dim, fc_dim), activation=self.act)
+            return MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
 
     def create_mu_model(self, input_dim, fc_dim, output_dim):
         return MLP(fc_dim, (output_dim,), activation=nn.Identity())
@@ -125,7 +123,7 @@ class OptionPolicy(nn.Module):
         return dist.entropy().unsqueeze(-1)
 
 
-class OptionCritic(nn.Module):
+class OP_Critic(nn.Module):
     """
     Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
     """
@@ -137,7 +135,7 @@ class OptionCritic(nn.Module):
         num_options: int,
         activation: nn.Module = nn.ReLU(),
     ):
-        super(OptionCritic, self).__init__()
+        super(OP_Critic, self).__init__()
 
         # |A| duplicate networks
         self.act = activation
@@ -148,7 +146,7 @@ class OptionCritic(nn.Module):
 
         self.models = nn.ModuleList()
         for _ in range(num_options):
-            self.models.append(self.create_model(input_dim, fc_dim, fc_dim, 1))
+            self.models.append(self.create_model(input_dim, fc_dim, 1))
 
     def create_model(self, input_dim, fc_dim, output_dim):
         return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)

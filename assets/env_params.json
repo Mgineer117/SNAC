@@ -62,7 +62,7 @@
         "ppo_episode_num": 40,
         "oc_episode_num": 40,
         "eval_episodes": 10,
-        "num_traj_decomp": 250,
+        "num_traj_decomp": 500,
         "max_num_traj": 300,
         "min_num_traj": 150,
         "trj_per_iter": 5,

@@ -33,11 +33,9 @@ class PPO_Policy(nn.Module):
         self.is_discrete = is_discrete
 
         if self.is_discrete:
-            self.model = MLP(
-                input_dim, (fc_dim, fc_dim, fc_dim), a_dim, activation=self.act
-            )
+            self.model = MLP(input_dim, (fc_dim, fc_dim), a_dim, activation=self.act)
         else:
-            self.model = MLP(input_dim, (fc_dim, fc_dim, fc_dim), activation=self.act)
+            self.model = MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
             self.mu = MLP(fc_dim, (a_dim,), activation=nn.Identity())
             self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Identity())
 

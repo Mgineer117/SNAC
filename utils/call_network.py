@@ -9,7 +9,7 @@ from models.layers import (
     ConvNetwork,
     PsiCritic,
     OptionPolicy,
-    OptionCritic,
+    OP_Critic,
     PsiCritic2,
     HC_Policy,
     HC_PPO,
@@ -34,7 +34,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": in_channels,
                 "out_filters": 32,
             },  # Halve the spatial dimensions
@@ -43,7 +43,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 32,
                 "out_filters": 64,
             },  # Halve spatial dimensions again
@@ -52,7 +52,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 64,
                 "out_filters": 128,
             },  # Halve spatial dimensions again
@@ -61,7 +61,7 @@ def get_conv_layer(args):
                 "kernel_size": 2,
                 "stride": 2,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 128,
                 "out_filters": 128,
             },  # Halve spatial dimensions again
@@ -73,7 +73,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": in_channels,
                 "out_filters": 32,
             },  # Halve the spatial dimensions
@@ -82,7 +82,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 32,
                 "out_filters": 64,
             },  # Halve spatial dimensions again
@@ -91,7 +91,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 64,
                 "out_filters": 128,
             },  # Halve spatial dimensions again
@@ -100,7 +100,7 @@ def get_conv_layer(args):
                 "kernel_size": 2,
                 "stride": 2,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 128,
                 "out_filters": 128,
             },  # Halve spatial dimensions again
@@ -113,7 +113,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": in_channels,
                 "out_filters": 32,
             },  # Halve the spatial dimensions
@@ -122,7 +122,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 32,
                 "out_filters": 64,
             },  # Halve spatial dimensions again
@@ -131,7 +131,7 @@ def get_conv_layer(args):
                 "kernel_size": 2,
                 "stride": 2,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 64,
                 "out_filters": 128,
             },  # Halve spatial dimensions again
@@ -143,7 +143,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 1,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": in_channels,
                 "out_filters": 32,
             },  # Halve the spatial dimensions
@@ -152,7 +152,7 @@ def get_conv_layer(args):
                 "kernel_size": 3,
                 "stride": 1,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 32,
                 "out_filters": 64,
             },  # Halve spatial dimensions again
@@ -161,7 +161,7 @@ def get_conv_layer(args):
                 "kernel_size": 2,
                 "stride": 2,
                 "padding": 0,
-                "activation": nn.ELU(),
+                "activation": nn.Tanh(),
                 "in_filters": 64,
                 "out_filters": 128,
             },  # Halve spatial dimensions again
@@ -426,7 +426,7 @@ def call_opNetwork(
             activation=nn.Tanh(),
             is_discrete=args.is_discrete,
         )
-        optionCritic = OptionCritic(
+        optionCritic = OP_Critic(
             input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             num_options=options.shape[0],

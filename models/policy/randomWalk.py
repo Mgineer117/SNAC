@@ -11,7 +11,6 @@ from copy import deepcopy
 from utils.utils import estimate_advantages
 from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
-from models.layers.op_networks import OptionPolicy, OptionCritic
 from models.policy.base_policy import BasePolicy
 
 

@@ -234,7 +234,7 @@ class CoveringOption:
                 - To concat the batch to improve the diffusion SF matrix
         """
         option_buffer = TrajectoryBuffer(
-            min_num_trj=app_trj_num, max_num_trj=200, device=self.args.device
+            min_num_trj=app_trj_num, max_num_trj=1001, device=self.args.device
         )
 
         while option_buffer.num_trj < option_buffer.min_num_trj:

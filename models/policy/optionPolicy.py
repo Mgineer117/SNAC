@@ -12,7 +12,7 @@ from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_param
 from utils.utils import estimate_advantages, estimate_psi
 from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
-from models.layers.op_networks import OptionPolicy, OptionCritic, PsiCritic2
+from models.layers.op_networks import OptionPolicy, OP_Critic, PsiCritic2
 from models.policy.base_policy import BasePolicy
 
 
@@ -26,7 +26,7 @@ class OP_Controller(BasePolicy):
         self,
         sf_network: BasePolicy,
         optionPolicy: OptionPolicy,
-        optionCritic: OptionCritic,
+        optionCritic: OP_Critic,
         algo_name: str,
         options: nn.Module,
         option_vals: torch.Tensor,

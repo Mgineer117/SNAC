@@ -107,7 +107,7 @@ def discover_options(
     ### Collect batch to compute phi for psi
     is_covering_option = idx is not None  # Simplified conditional
     option_buffer = TrajectoryBuffer(
-        min_num_trj=num_trj, max_num_trj=500, device="cpu"  # Operate on CPU
+        min_num_trj=num_trj, max_num_trj=1001, device="cpu"  # Operate on CPU
     )
 
     # Collecting samples to meet the minimum trajectory count

@@ -110,7 +110,7 @@ class EigenOption:
         This discovers the eigenvectors via clustering for each of reward and state decompositions.
         --------------------------------------------------------------------------------------------
         """
-        self.sampler.initialize(episode_num=self.args.op_episode_num)
+        self.sampler.initialize(episode_num=self.args.num_traj_decomp)
 
         if not self.args.import_op_model:
             self.option_vals, self.options, _ = get_eigenvectors(
