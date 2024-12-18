@@ -67,8 +67,8 @@
         "min_num_traj": 150,
         "trj_per_iter": 5,
         "feature_fc_dim": 512,
-        "option_fc_dim": 256,
-        "fc_dim": 512,
+        "option_fc_dim": 128,
+        "fc_dim": 256,
         "sf_dim": 256,
         "render_fps": 10,
         "gamma": 0.995
