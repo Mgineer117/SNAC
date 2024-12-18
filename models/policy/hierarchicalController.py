@@ -257,17 +257,19 @@ class HC_Controller(BasePolicy):
             _, pm_metaData = self.primitivePolicy(states)
 
             # Compute hierarchical policy logprobs and entropy
+            print(hc_logprobs.device)
             hc_logprobs = self.policy.log_prob(hc_metaData["dist"], option_actions)[
                 hc_mask
             ]
-            print(hc_logprobs.device)
+
             hc_entropy = self.policy.entropy(hc_metaData["dist"])[hc_mask]
 
             # Compute primitive policy logprobs and entropy
+            print(pm_logprobs.device)
             pm_logprobs = self.primitivePolicy.log_prob(pm_metaData["dist"], actions)[
                 pm_mask
             ]
-            print(pm_logprobs.device)
+
             pm_entropy = self.primitivePolicy.entropy(pm_metaData["dist"])[pm_mask]
 
             # Combine logprobs and entropy in the original order
