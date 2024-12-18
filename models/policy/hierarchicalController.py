@@ -260,11 +260,9 @@ class HC_Controller(BasePolicy):
             hc_logprobs = self.policy.log_prob(hc_metaData["dist"], option_actions)[
                 hc_mask
             ]
-            print(hc_logprobs.device)
             hc_entropy = self.policy.entropy(hc_metaData["dist"])[hc_mask]
 
             # Compute primitive policy logprobs and entropy
-            print(pm_metaData["dist"].device)
             pm_logprobs = self.primitivePolicy.log_prob(pm_metaData["dist"], actions)[
                 pm_mask
             ]
