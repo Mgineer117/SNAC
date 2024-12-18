@@ -102,6 +102,7 @@ class OPTrainer:
                     policy_loss.append(loss_dict)
                     avgRewDictList.append(avgRewDict)
                     update_time += updateT
+                    torch.cuda.empty_cache()
 
                 loss = self.average_dict_values(policy_loss)
 
