@@ -214,12 +214,16 @@ class HC_RW(nn.Module):
         self.dummy = torch.tensor(1e-10)
 
     def forward(self, state: torch.Tensor, deterministic: bool = False):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+            state = state.reshape(state.shape[0], -1)
+
         a = torch.rand((1, self._a_dim)).to(self.device)
         if self.is_discrete:
             a_argmax = torch.argmax(a, dim=1)
             a = F.one_hot(a_argmax, num_classes=self._a_dim)
 
-        dist = torch.zeros((state.shape[0], 1)).to(self.device)
+        dist = torch.zeros_like(state)[:, 0:1]
         probs = torch.zeros_like(dist)
         logprobs = torch.zeros_like(dist)
         entropy = torch.zeros_like(dist)
