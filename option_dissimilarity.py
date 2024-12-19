@@ -25,23 +25,44 @@ COLORS = {
 }
 
 LINESTYLES = {
-    "SNAC": "-",
-    "SNAC+": "--",
-    "SNAC++": ":",
-    "SNAC+++": "-.",
     "EigenOption": "-",
-    "EigenOption+": "--",
+    "EigenOption+": (0, (5, 10)),
     "EigenOption++": ":",
-    "EigenOption+++": "-.",
-    "CoveringOption": "-",
-    "PPO": "-",
+    "EigenOption+++": "--",
+}
+
+MARKERS = {
+    "EigenOption": {
+        "marker": "o",
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 15,
+    },
+    "EigenOption+": {
+        "marker": "s",
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 15,
+    },
+    "EigenOption++": {
+        "marker": "X",
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 15,
+    },
+    "EigenOption+++": {
+        "marker": "^",
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 15,
+    },
 }
 
 LABEL = {
-    "EigenOption": f"Top n heuristics",
-    "EigenOption+": f"Clustering in Vector Space",
-    "EigenOption++": f"Clustering in Reward Space",
-    "EigenOption+++": f"Top n + Clustering in Reward Space",
+    "EigenOption": f"Top n",
+    "EigenOption+": f"CVS",
+    "EigenOption++": f"CRS",
+    "EigenOption+++": f"TRS",
 }
 
 
@@ -209,7 +230,7 @@ def get_similarity_metric(features, option_vals, options, pos, args):
 
 if __name__ == "__main__":
     algo_names = ["EigenOption", "EigenOption+", "EigenOption++", "EigenOption+++"]
-    num_vectors = [6, 12, 24, 48, 60]  # , 24, 48]
+    num_vectors = [6, 12, 24, 36, 48, 60, 72, 84]  # , 24, 48]
 
     mean_diss_dict = {}
     for algo_name in algo_names:
@@ -268,6 +289,7 @@ if __name__ == "__main__":
             label=f"{LABEL[k]}",
             color=COLORS[k],
             linestyle=LINESTYLES[k],
+            **MARKERS[k],
         )
 
     plt.xlabel("Number of Vectors/ Clusters", fontsize=20)

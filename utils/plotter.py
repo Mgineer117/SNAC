@@ -9,9 +9,11 @@ import matplotlib.image as mpimg
 from matplotlib.transforms import Affine2D
 import matplotlib.colors as mcolors
 from scipy.ndimage import uniform_filter
-
+import seaborn as sns
 from sklearn.manifold import TSNE
 from typing import Optional, Dict, List
+
+sns.set_theme()
 
 
 class Plotter:
@@ -316,6 +318,7 @@ class Plotter:
         cv2.destroyAllWindows()
 
     def plotOptionIndices(self, option_indices: list, dir: str, epoch: int):
+        plt.figure(figsize=(8, 6))
         option_figure_path = os.path.join(dir, "option_figure")
         if not os.path.exists(option_figure_path):
             os.mkdir(option_figure_path)
