@@ -332,6 +332,7 @@ class OPTrainer2:
                 update_time += updateT
                 t3 = torch.cuda.memory_allocated()
                 print(t3)
+                print(f"Memory increase before: {t3 / (1024**2):.2f} MB")
 
                 # Logging further info
                 loss_dict[self.prefix + "_sample_time"] = sample_time
