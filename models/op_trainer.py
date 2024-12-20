@@ -193,6 +193,7 @@ class OPTrainer:
                 rew_std[z] = eval_dict["rew_std"]
                 ln_mean[z] = eval_dict["ln_mean"]
                 ln_std[z] = eval_dict["ln_std"]
+                torch.cuda.empty_cache()
 
             rew_mean = np.mean(rew_mean)
             rew_std = np.mean(rew_std)
@@ -333,6 +334,7 @@ class OPTrainer2:
                 loss_dict[self.prefix + "_update_time"] = update_time
 
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
+                torch.cuda.empty_cache()
 
             # Eval Loop
             eval_dict = self.evaluator(
