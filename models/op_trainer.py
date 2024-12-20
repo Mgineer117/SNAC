@@ -331,9 +331,7 @@ class OPTrainer2:
                 loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
                 update_time += updateT
                 t3 = torch.cuda.memory_allocated()
-
-                print(f"Memory increase before: {(t2 - t1) / (1024**2):.2f} MB")
-                print(f"Memory increase at train_op: {(t3 - t2) / (1024**2):.2f} MB")
+                print(t3)
 
                 # Logging further info
                 loss_dict[self.prefix + "_sample_time"] = sample_time
@@ -341,6 +339,7 @@ class OPTrainer2:
 
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
 
+            t4 = torch.cuda.memory_allocated()
             # Eval Loop
             eval_dict = self.evaluator(
                 self.policy,
@@ -365,6 +364,12 @@ class OPTrainer2:
 
             self.last_reward_mean.append(eval_dict["rew_mean"])
             self.last_reward_std.append(eval_dict["rew_std"])
+
+            t4 = torch.cuda.memory_allocated()
+
+            print(f"Memory increase before: {(t2 - t1) / (1024**2):.2f} MB")
+            print(f"Memory increase at train_op: {(t3 - t2) / (1024**2):.2f} MB")
+            print(f"Memory increase at train_op: {(t4 - t3) / (1024**2):.2f} MB")
 
             self.save_model(e)
             torch.cuda.empty_cache()
