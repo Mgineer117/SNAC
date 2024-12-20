@@ -145,8 +145,12 @@ class CoveringOption:
                 S, V = self.get_vector(batch)
 
             # update option in op network
-            self.op_network._option_vals[0:2] = S
-            self.op_network._options[0:2, :] = V
+            self.option_vals[0:2] = S
+            self.options[0:2, :] = V
+            self.op_network._option_vals = self.option_vals
+            self.op_network._options = nn.Parameter(
+                self.options.to(torch.float32).to(self.args.device)
+            )
 
             self.train_op_network(vec_idx=0)
             for idx in range(1, int(self.args.num_vector / 2)):
@@ -162,8 +166,12 @@ class CoveringOption:
                 with torch.no_grad():
                     S, V = self.get_vector(batch)
 
-                self.op_network._option_vals[vec_idx : vec_idx + 2] = S
-                self.op_network._options[vec_idx : vec_idx + 2] = V
+                self.option_vals[vec_idx : vec_idx + 2] = S
+                self.options[vec_idx : vec_idx + 2, :] = V
+                self.op_network._option_vals = self.option_vals.clone()
+                self.op_network._options = nn.Parameter(
+                    self.options.clone().to(torch.float32).to(self.args.device)
+                )
                 self.train_op_network(vec_idx=vec_idx)
 
             if self.evaluator_params["gridPlot"]:
