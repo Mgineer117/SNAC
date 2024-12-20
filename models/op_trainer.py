@@ -331,7 +331,6 @@ class OPTrainer2:
                 loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
                 update_time += updateT
                 t3 = torch.cuda.memory_allocated()
-                print(t3)
                 print(f"Memory increase before: {t3 / (1024**2):.2f} MB")
 
                 # Logging further info
