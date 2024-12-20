@@ -334,7 +334,6 @@ class OPTrainer2:
                 loss_dict[self.prefix + "_update_time"] = update_time
 
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
-                torch.cuda.empty_cache()
 
             # Eval Loop
             eval_dict = self.evaluator(
