@@ -96,7 +96,7 @@ class CoveringOption:
             dir=self.hc_path,
             log_interval=args.hc_log_interval,
             min_option_length=args.min_option_length,
-            **self.evaluator_params
+            **self.evaluator_params,
         )
 
     def run(self):
@@ -135,6 +135,8 @@ class CoveringOption:
         print_model_summary(self.op_network, model_name="OP model")
 
         if not self.args.import_op_model:
+            t1 = torch.cuda.memory_allocated()
+
             app_trj_num = int(self.args.num_traj_decomp / self.args.num_vector)
 
             ### get first vector with random walk
@@ -152,7 +154,14 @@ class CoveringOption:
                 self.options.to(torch.float32).to(self.args.device)
             )
 
+            t2 = torch.cuda.memory_allocated()
+
             self.train_op_network(vec_idx=0)
+
+            t3 = torch.cuda.memory_allocated()
+
+            print(f"Memory increase before: {(t2 - t1) / (1024**2):.2f} MB")
+            print(f"Memory increase at train_op: {(t3 - t2) / (1024**2):.2f} MB")
             for idx in range(1, int(self.args.num_vector / 2)):
                 vec_idx = idx * 2
                 new_batch1 = self.collect_batch(
