@@ -167,6 +167,7 @@ class CoveringOption:
 
                 with torch.no_grad():
                     S, V = self.get_vector(batch)
+
                 self.option_vals[vec_idx : vec_idx + 2] = S
                 self.options[vec_idx : vec_idx + 2, :] = V
                 self.op_network._option_vals = self.option_vals.clone()
@@ -276,6 +277,9 @@ class CoveringOption:
             )
 
             _, S, V = torch.svd(psi)  # S: max - min
+
+        del states, agent_pos, features, terminals
+        torch.cuda.empty_cache()
 
         S = S[0].unsqueeze(0)
         V = V[0, :].unsqueeze(0)

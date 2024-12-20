@@ -293,6 +293,19 @@ class OP_Controller(BasePolicy):
         avgRewDict = {
             f"OP/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
+
+        del (
+            states,
+            actions,
+            agent_pos,
+            next_agent_pos,
+            next_states,
+            rewards,
+            terminals,
+            old_logprobs,
+        )
+        torch.cuda.empty_cache()
+
         t1 = time.time()
         self.eval()
         return (

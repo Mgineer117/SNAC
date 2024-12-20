@@ -174,15 +174,6 @@ class OC_Learner(BasePolicy):
         next_Q_prime_by_option = self.multiply_options(next_Q_prime, option_actions)
         next_Q_prime_by_max = torch.max(next_Q_prime, dim=-1, keepdim=True)[0]
 
-        # print(
-        #     rewards.shape,
-        #     Q_by_option.shape,
-        #     Q_by_argmax.shape,
-        #     next_Q_prime_by_argmax.shape,
-        #     next_Q_prime_by_option.shape,
-        #     next_option_term_prob.shape,
-        # )
-
         # Target update gt
         gt = rewards + (1 - terminals) * self._gamma * (
             (1 - next_option_term_prob) * next_Q_prime_by_option
@@ -200,6 +191,9 @@ class OC_Learner(BasePolicy):
         policy_loss = -logprobs * (gt.detach() - Q_by_option.detach())
 
         actor_loss = torch.mean(termination_loss + policy_loss - entropy_loss)
+
+        del states, next_states, option_action, rewards, terminals
+        torch.cuda.empty_cache()
 
         return actor_loss, {
             "termination_loss": termination_loss,

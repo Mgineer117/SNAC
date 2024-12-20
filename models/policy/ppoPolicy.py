@@ -200,6 +200,15 @@ class PPO_Learner(BasePolicy):
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
 
+        del (
+            states,
+            actions,
+            rewards,
+            terminals,
+            old_logprobs,
+        )
+        torch.cuda.empty_cache()
+
         t1 = time.time()
         self.eval()
         return (
