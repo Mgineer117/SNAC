@@ -135,8 +135,6 @@ class CoveringOption:
         print_model_summary(self.op_network, model_name="OP model")
 
         if not self.args.import_op_model:
-            t1 = torch.cuda.memory_allocated()
-
             app_trj_num = int(self.args.num_traj_decomp / self.args.num_vector)
 
             ### get first vector with random walk
@@ -154,16 +152,10 @@ class CoveringOption:
                 self.options.to(torch.float32).to(self.args.device)
             )
 
-            t2 = torch.cuda.memory_allocated()
-
             self.train_op_network(vec_idx=0)
 
-            t3 = torch.cuda.memory_allocated()
-
-            print(f"Memory increase before: {(t2 - t1) / (1024**2):.2f} MB")
-            print(f"Memory increase at train_op: {(t3 - t2) / (1024**2):.2f} MB")
             for idx in range(1, int(self.args.num_vector / 2)):
-                t1 = torch.cuda.memory_allocated()
+
                 vec_idx = idx * 2
                 new_batch1 = self.collect_batch(
                     self.op_network, app_trj_num=app_trj_num, idx=vec_idx
@@ -182,11 +174,8 @@ class CoveringOption:
                 self.op_network._options = nn.Parameter(
                     self.options.clone().to(torch.float32).to(self.args.device)
                 )
-                t2 = torch.cuda.memory_allocated()
+
                 self.train_op_network(vec_idx=vec_idx)
-                t3 = torch.cuda.memory_allocated()
-                print(f"Memory increase before: {(t2 - t1) / (1024**2):.2f} MB")
-                print(f"Memory increase at train_op: {(t3 - t2) / (1024**2):.2f} MB")
 
             if self.evaluator_params["gridPlot"]:
                 grid_tensor, coords, agent_pos = get_grid_tensor(

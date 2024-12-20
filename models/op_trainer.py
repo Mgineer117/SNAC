@@ -316,6 +316,7 @@ class OPTrainer2:
         ):
             ### training loop
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
+                t1 = torch.cuda.memory_allocated()
                 sample_time = 0
                 update_time = 0
 
@@ -324,10 +325,15 @@ class OPTrainer2:
                     self.policy, idx=z, grid_type=self.grid_type
                 )
                 sample_time += sampleT
+                t2 = torch.cuda.memory_allocated()
 
                 # update params
                 loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
                 update_time += updateT
+                t3 = torch.cuda.memory_allocated()
+
+                print(f"Memory increase before: {(t2 - t1) / (1024**2):.2f} MB")
+                print(f"Memory increase at train_op: {(t3 - t2) / (1024**2):.2f} MB")
 
                 # Logging further info
                 loss_dict[self.prefix + "_sample_time"] = sample_time
