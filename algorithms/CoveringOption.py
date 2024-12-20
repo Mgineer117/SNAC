@@ -155,7 +155,6 @@ class CoveringOption:
             self.train_op_network(vec_idx=0)
 
             for idx in range(1, int(self.args.num_vector / 2)):
-                print(torch.cuda.memory_summary(device="cuda", abbreviated=False))
                 vec_idx = idx * 2
                 new_batch1 = self.collect_batch(
                     self.op_network, app_trj_num=app_trj_num, idx=vec_idx
@@ -167,17 +166,14 @@ class CoveringOption:
                 del new_batch1, new_batch2
                 with torch.no_grad():
                     S, V = self.get_vector(batch)
-                print(torch.cuda.memory_summary(device="cuda", abbreviated=False))
                 self.option_vals[vec_idx : vec_idx + 2] = S
                 self.options[vec_idx : vec_idx + 2, :] = V
                 self.op_network._option_vals = self.option_vals.clone()
                 self.op_network._options = nn.Parameter(
                     self.options.clone().to(torch.float32).to(self.args.device)
                 )
-                print(torch.cuda.memory_summary(device="cuda", abbreviated=False))
 
                 self.train_op_network(vec_idx=vec_idx)
-                print(torch.cuda.memory_summary(device="cuda", abbreviated=False))
 
             if self.evaluator_params["gridPlot"]:
                 grid_tensor, coords, agent_pos = get_grid_tensor(
@@ -194,7 +190,6 @@ class CoveringOption:
                     agent_pos=agent_pos,
                     dir=self.plotter.log_dir,
                 )
-                print(torch.cuda.memory_summary(device="cuda", abbreviated=False))
         else:
             final_epoch = self.curr_epoch + self.args.num_vector * self.args.OP_epoch
             self.curr_epoch += final_epoch

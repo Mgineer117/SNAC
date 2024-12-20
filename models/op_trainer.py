@@ -331,7 +331,7 @@ class OPTrainer2:
                 loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
                 update_time += updateT
                 t3 = torch.cuda.memory_allocated()
-                print(f"Memory increase before: {t3 / (1024**2):.2f} MB")
+                print(f"WHILE: {t3 / (1024**2):.2f} MB")
 
                 # Logging further info
                 loss_dict[self.prefix + "_sample_time"] = sample_time
@@ -372,7 +372,7 @@ class OPTrainer2:
             print(f"Memory increase at train_op: {(t4 - t3) / (1024**2):.2f} MB")
 
             self.save_model(e)
-            torch.cuda.empty_cache()
+            # torch.cuda.empty_cache()
 
         self.logger.print(
             "total OP2 training time: {:.2f} hours".format(
