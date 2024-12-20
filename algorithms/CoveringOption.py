@@ -164,6 +164,7 @@ class CoveringOption:
                 )
                 batch = self.cat_batch(batch, new_batch1, new_batch2)
                 del new_batch1, new_batch2
+
                 with torch.no_grad():
                     S, V = self.get_vector(batch)
                 self.option_vals[vec_idx : vec_idx + 2] = S
