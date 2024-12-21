@@ -263,6 +263,29 @@ class SF_Split(BasePolicy):
         reconstructed_state = self.feaNet.decode(features, actions, conv_dict)
         return reconstructed_state
 
+    def plot_rewards(self, reward_pred, rewards):
+        """
+        Plot predicted and true rewards as a stem plot with logarithmic y-axis.
+        """
+        # Detach tensors and convert to NumPy for plotting
+        reward_pred_np = reward_pred.detach().cpu().numpy().flatten()
+        rewards_np = rewards.detach().cpu().numpy().flatten()
+
+        # Plot stem
+        x = range(len(rewards_np))
+        plt.figure(figsize=(10, 6))
+        plt.stem(x, rewards_np, linefmt='r-', markerfmt='ro', basefmt='k-', label='True Rewards')
+        plt.stem(x, reward_pred_np, linefmt='b-', markerfmt='bo', basefmt='k-', label='Predicted Rewards')
+
+        # Set logarithmic y-scale
+        # plt.yscale('log')
+        plt.xlabel('Reward Index')
+        plt.ylabel('Reward (Log Scale)')
+        plt.title('Predicted vs True Rewards')
+        plt.legend()
+        plt.grid(True, which="both", ls="--", linewidth=0.5)
+        plt.savefig(f"{self._forward_steps}_reward.png")
+
     def _phi_Loss(self, states, actions, next_states, agent_pos, rewards):
         """
         Training target: phi_r (reward), phi_s (state)  -->  (Critic: feaNet)
@@ -276,6 +299,9 @@ class SF_Split(BasePolicy):
 
         reward_pred = torch.sum(phi_r * self._options, axis=-1, keepdim=True)
         phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(reward_pred, rewards)
+
+        # Plot predicted vs true rewards
+        self.plot_rewards(reward_pred, rewards)
 
         state_pred = self.decode(phi_s, actions, conv_dict)
         if isinstance(self.feaNet, VAE):

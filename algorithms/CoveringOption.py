@@ -153,33 +153,50 @@ class CoveringOption:
 
             self.train_op_network(vec_idx=0)
             for idx in range(1, int(self.args.num_vector / 2)):
-                m1 = torch.cuda.memory_reserved()
                 vec_idx = idx * 2
-                new_batch1 = self.collect_batch(
-                    self.op_network, app_trj_num=app_trj_num, idx=vec_idx
-                )
-                new_batch2 = self.collect_batch(
-                    self.op_network, app_trj_num=app_trj_num, idx=vec_idx + 1
-                )
+
+                # Collect first batch
+                new_batch1 = self.collect_batch(self.op_network, app_trj_num=app_trj_num, idx=vec_idx)
+                print(f"After collect_batch (vec_idx={vec_idx}): "
+                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+
+                # Collect second batch
+                new_batch2 = self.collect_batch(self.op_network, app_trj_num=app_trj_num, idx=vec_idx + 1)
+                print(f"After collect_batch (vec_idx+1={vec_idx + 1}): "
+                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+
+                # Concatenate batches
                 batch = self.cat_batch(batch, new_batch1, new_batch2)
-                m2 = torch.cuda.memory_reserved()
+                print(f"After cat_batch: "
+                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+
+                # Compute S and V
                 with torch.no_grad():
                     S, V = self.get_vector(batch)
-                m3 = torch.cuda.memory_reserved()
+                print(f"After get_vector: "
+                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+
+                # Update option values and options
                 self.option_vals[vec_idx : vec_idx + 2] = S
                 self.options[vec_idx : vec_idx + 2, :] = V
                 self.op_network._option_vals = self.option_vals
                 self.op_network._options = nn.Parameter(
                     self.options.to(torch.float32).to(self.args.device)
                 )
-                m4 = torch.cuda.memory_reserved()
-                self.train_op_network(vec_idx=vec_idx)
-                m5 = torch.cuda.memory_reserved()
+                print(f"After updating op_network: "
+                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
 
-                print(f"Memory increase: {(m2 - m1) / (1024**2):.2f} MB")
-                print(f"Memory increase: {(m3 - m2) / (1024**2):.2f} MB")
-                print(f"Memory increase: {(m4 - m3) / (1024**2):.2f} MB")
-                print(f"Memory increase: {(m5 - m4) / (1024**2):.2f} MB")
+                # Train the op_network
+                self.train_op_network(vec_idx=vec_idx)
+                print(f"After train_op_network (vec_idx={vec_idx}): "
+                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+
                 
 
             if self.evaluator_params["gridPlot"]:
@@ -265,20 +282,14 @@ class CoveringOption:
         This discovers vectors from the feature set given batch.
         Additionally, we use both (+/-) of vectors (top 1 vector => 2 vectors)
         """
-        states = (
-            torch.from_numpy(batch["states"]).to(torch.float32).to(self.args.device)
-        )
-        agent_pos = (
-            torch.from_numpy(batch["agent_pos"]).to(torch.float32).to(self.args.device)
-        )
+        self.sf_network = self.sf_network.cpu()
+        states = (torch.from_numpy(batch["states"]).to(torch.float32))
+        agent_pos = (torch.from_numpy(batch["agent_pos"]).to(torch.float32))
         features, _ = self.sf_network.feaNet(states, agent_pos, deterministic=True)
 
-        features = features.cpu()
-        terminals = (
-            torch.from_numpy(batch["terminals"]).to(torch.float32)
-        ) 
+        terminals = (torch.from_numpy(batch["terminals"]).to(torch.float32)) 
         del states, agent_pos
-        torch.cuda.empty_cache()
+        self.sf_network = self.sf_network.to(self.args.device)
 
         with torch.no_grad():
             psi = estimate_psi(features, terminals, self.args.gamma
