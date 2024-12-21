@@ -192,7 +192,7 @@ class OC_Learner(BasePolicy):
 
         actor_loss = torch.mean(termination_loss + policy_loss - entropy_loss)
 
-        del states, next_states, option_action, rewards, terminals
+        del states, next_states, option_actions, rewards, terminals, logprobs, entropys
         torch.cuda.empty_cache()
 
         return actor_loss, {
@@ -234,6 +234,10 @@ class OC_Learner(BasePolicy):
 
         # to update Q we want to use the actual network, not the prime
         td_err = (Q_by_option - gt.detach()).pow(2).mul(0.5).mean()
+
+        del states, next_states, option_actions, rewards, terminals
+        torch.cuda.empty_cache()
+
         return td_err, {}
 
     def learn_policy(self, batch):

@@ -133,7 +133,6 @@ class CoveringOption:
             self.options,
         )
         print_model_summary(self.op_network, model_name="OP model")
-
         if not self.args.import_op_model:
             app_trj_num = int(self.args.num_traj_decomp / self.args.num_vector)
 
@@ -153,8 +152,8 @@ class CoveringOption:
             )
 
             self.train_op_network(vec_idx=0)
-
             for idx in range(1, int(self.args.num_vector / 2)):
+                m1 = torch.cuda.memory_reserved()
                 vec_idx = idx * 2
                 new_batch1 = self.collect_batch(
                     self.op_network, app_trj_num=app_trj_num, idx=vec_idx
@@ -163,19 +162,25 @@ class CoveringOption:
                     self.op_network, app_trj_num=app_trj_num, idx=vec_idx + 1
                 )
                 batch = self.cat_batch(batch, new_batch1, new_batch2)
-                del new_batch1, new_batch2
-
+                m2 = torch.cuda.memory_reserved()
                 with torch.no_grad():
                     S, V = self.get_vector(batch)
-
+                m3 = torch.cuda.memory_reserved()
                 self.option_vals[vec_idx : vec_idx + 2] = S
                 self.options[vec_idx : vec_idx + 2, :] = V
-                self.op_network._option_vals = self.option_vals.clone()
+                self.op_network._option_vals = self.option_vals
                 self.op_network._options = nn.Parameter(
-                    self.options.clone().to(torch.float32).to(self.args.device)
+                    self.options.to(torch.float32).to(self.args.device)
                 )
-
+                m4 = torch.cuda.memory_reserved()
                 self.train_op_network(vec_idx=vec_idx)
+                m5 = torch.cuda.memory_reserved()
+
+                print(f"Memory increase: {(m2 - m1) / (1024**2):.2f} MB")
+                print(f"Memory increase: {(m3 - m2) / (1024**2):.2f} MB")
+                print(f"Memory increase: {(m4 - m3) / (1024**2):.2f} MB")
+                print(f"Memory increase: {(m5 - m4) / (1024**2):.2f} MB")
+                
 
             if self.evaluator_params["gridPlot"]:
                 grid_tensor, coords, agent_pos = get_grid_tensor(
@@ -239,7 +244,7 @@ class CoveringOption:
                 - To concat the batch to improve the diffusion SF matrix
         """
         option_buffer = TrajectoryBuffer(
-            min_num_trj=app_trj_num, max_num_trj=1001, device=self.args.device
+            min_num_trj=app_trj_num, max_num_trj=200, device=self.args.device
         )
 
         while option_buffer.num_trj < option_buffer.min_num_trj:
@@ -267,19 +272,19 @@ class CoveringOption:
             torch.from_numpy(batch["agent_pos"]).to(torch.float32).to(self.args.device)
         )
         features, _ = self.sf_network.feaNet(states, agent_pos, deterministic=True)
+
+        features = features.cpu()
         terminals = (
-            torch.from_numpy(batch["terminals"]).to(torch.float32).to(self.args.device)
-        )
+            torch.from_numpy(batch["terminals"]).to(torch.float32)
+        ) 
+        del states, agent_pos
+        torch.cuda.empty_cache()
 
         with torch.no_grad():
-            psi = estimate_psi(
-                features, terminals, self.args.gamma, device=self.args.device
+            psi = estimate_psi(features, terminals, self.args.gamma
             )
 
             _, S, V = torch.svd(psi)  # S: max - min
-
-        del states, agent_pos, features, terminals
-        torch.cuda.empty_cache()
 
         S = S[0].unsqueeze(0)
         V = V[0, :].unsqueeze(0)
