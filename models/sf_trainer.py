@@ -165,9 +165,9 @@ class SFTrainer:
             self.buffer.push(batch, post_process=self.post_process)
             sample_time += sampleT
             total_sample_time += sampleT
-            if count % 100 == 0:
+            if count % 25 == 0:
                 print(
-                    f"\nWarming buffer with nonzero reward {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                    f"\nWarming buffer with {self.post_process} {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
                     end="",
                 )
                 sample_time = 0
