@@ -35,6 +35,7 @@ class SFTrainer:
         step_per_epoch: int = 1000,
         eval_episodes: int = 10,
         log_interval: int = 2,
+        post_process: str = "nonzero_rewards",
         grid_type: int = 0,
     ) -> None:
         self.policy = policy
@@ -61,6 +62,7 @@ class SFTrainer:
         self.num_env_steps = 0
 
         self.log_interval = log_interval
+        self.post_process = post_process
         self.grid_type = grid_type
 
     def train(self) -> Dict[str, float]:
@@ -152,11 +154,6 @@ class SFTrainer:
         # make sure there is nothing there
         self.buffer.wipe()
 
-        if isinstance(self.policy, SF_Split):
-            post_process = "nonzero_rewards"
-        else:
-            post_process = None
-
         # collect enough batch
         count = 0
         total_sample_time = 0
@@ -165,7 +162,7 @@ class SFTrainer:
             batch, sampleT = self.sampler.collect_samples(
                 self.policy, grid_type=self.grid_type
             )
-            self.buffer.push(batch, post_process=post_process)
+            self.buffer.push(batch, post_process=self.post_process)
             sample_time += sampleT
             total_sample_time += sampleT
             if count % 100 == 0:

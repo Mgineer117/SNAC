@@ -87,12 +87,33 @@ class TrajectoryBuffer:
             trajs = self.decompose(batch)
 
             if post_process == "nonzero_rewards":
-                temp_trajs = []
+                traj_holder = []
                 for trj in trajs:
-                    if np.any(trj["rewards"] != 0):
-                        temp_trajs.append(trj)
+                    nonzero_indices = np.nonzero(trj["rewards"])[0]
+                    if np.any(nonzero_indices):
+                        traj_holder.append(trj)
 
-                trajs = temp_trajs
+                trajs = traj_holder
+            elif post_process == "nonzero_rewards_only":
+                # Initialize a dictionary to hold the results
+                result_dict = {
+                    key: [] for key in trajs[0].keys()
+                }  # Assuming all trajs have the same keys
+
+                for trj in trajs:
+                    # Find indices where rewards are non-zero
+                    nonzero_indices = np.nonzero(trj["rewards"])[0]
+
+                    # Append values at the non-zero indices to the result_dict
+                    for idx in nonzero_indices:
+                        for key in trj.keys():
+                            result_dict[key].append(trj[key][idx])
+
+                # Convert lists in result_dict to numpy arrays for consistency
+                result_dict = {
+                    key: np.array(value) for key, value in result_dict.items()
+                }
+                trajs = [result_dict]
 
             for traj in trajs:
                 if self.num_trj < self.max_num_trj:

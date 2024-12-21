@@ -215,6 +215,12 @@ def get_args(verbose=True):
         default=None,
         help="number of episodes for evaluation; mean of those is returned as eval performance",
     )
+    parser.add_argument(
+        "--post-process",
+        type=str,
+        default=None,
+        help="number of episodes for evaluation; mean of those is returned as eval performance",
+    )
 
     # some params
     parser.add_argument(

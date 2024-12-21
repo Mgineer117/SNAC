@@ -273,18 +273,33 @@ class SF_Split(BasePolicy):
 
         # Plot stem
         x = range(len(rewards_np))
-        plt.figure(figsize=(10, 6))
-        plt.stem(x, rewards_np, linefmt='r-', markerfmt='ro', basefmt='k-', label='True Rewards')
-        plt.stem(x, reward_pred_np, linefmt='b-', markerfmt='bo', basefmt='k-', label='Predicted Rewards')
+        plt.figure(figsize=(12, 6))
+        plt.stem(
+            x,
+            rewards_np,
+            linefmt="r-",
+            markerfmt="ro",
+            basefmt="k-",
+            label="True Rewards",
+        )
+        plt.stem(
+            x,
+            reward_pred_np,
+            linefmt="b-",
+            markerfmt="bo",
+            basefmt="k-",
+            label="Predicted Rewards",
+        )
 
         # Set logarithmic y-scale
         # plt.yscale('log')
-        plt.xlabel('Reward Index')
-        plt.ylabel('Reward (Log Scale)')
-        plt.title('Predicted vs True Rewards')
+        plt.xlabel("Reward Index")
+        plt.ylabel("Reward (Log Scale)")
+        plt.title("Predicted vs True Rewards")
         plt.legend()
         plt.grid(True, which="both", ls="--", linewidth=0.5)
         plt.savefig(f"{self._forward_steps}_reward.png")
+        plt.close()
 
     def _phi_Loss(self, states, actions, next_states, agent_pos, rewards):
         """
