@@ -82,6 +82,7 @@ def call_env(args):
                 num_blue_agents=1,
                 num_red_agents=red_agents,
                 observation_option=observation_option,
+                max_steps=args.episode_len,
                 step_penalty_ratio=0.0,
             )
         else:
