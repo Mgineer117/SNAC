@@ -63,6 +63,12 @@ def get_args(verbose=True):
         help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
     )
     parser.add_argument(
+        "--ctf-map",
+        type=str,
+        default=None,
+        help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
+    )
+    parser.add_argument(
         "--algo-name",
         type=str,
         default="PPO",
