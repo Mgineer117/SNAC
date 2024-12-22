@@ -319,7 +319,7 @@ class SF_Split(BasePolicy):
         phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(reward_pred, rewards)
 
         # Plot predicted vs true rewards
-        if self._forward_steps % 100:
+        if self._forward_steps % 100 == 0:
             self.plot_rewards(reward_pred, rewards)
 
         state_pred = self.decode(phi_s, actions, conv_dict)
