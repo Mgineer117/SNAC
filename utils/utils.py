@@ -317,13 +317,6 @@ def setup_logger(args, unique_id, seed):
         args.project = args.env_name
     args.logdir = os.path.join(args.logdir, args.group)
 
-    if args.env_name == "FourRooms":
-        args.grid_size = 13
-    elif args.env_name == "LavaRooms":
-        args.grid_size = 13
-    elif args.env_name == "CtF1v1" or args.env_name == "CtF1v2":
-        args.grid_size = 12
-
     default_cfg = vars(args)
     logger = WandbLogger(default_cfg, args.project, args.group, args.name, args.logdir)
     logger.save_config(default_cfg, verbose=args.verbose)
