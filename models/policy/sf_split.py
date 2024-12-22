@@ -116,6 +116,7 @@ class SF_Split(BasePolicy):
         psi_loss_l2_scaler: float = 1e-6,
         q_loss_scaler: float = 0.0,
         is_discrete: bool = False,
+        sf_path: str | None = None,
         device: str = "cpu",
     ):
         super(SF_Split, self).__init__()
@@ -142,6 +143,8 @@ class SF_Split(BasePolicy):
         # trainable networks
         self.feaNet = feaNet
         self.psiNet = psiNet
+
+        self.sf_path = sf_path
 
         if options is not None:
             self._options = options
@@ -298,7 +301,7 @@ class SF_Split(BasePolicy):
         plt.title("Predicted vs True Rewards")
         plt.legend()
         plt.grid(True, which="both", ls="--", linewidth=0.5)
-        plt.savefig(f"{self._forward_steps}_reward.png")
+        plt.savefig(f"{self.sf_path}/{self._forward_steps}_reward.png")
         plt.close()
 
     def _phi_Loss(self, states, actions, next_states, agent_pos, rewards):

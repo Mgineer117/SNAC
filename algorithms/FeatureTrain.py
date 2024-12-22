@@ -106,7 +106,7 @@ class FeatureTrain:
             - None
         """
         ### Call network param and run
-        sf_network = call_sfNetwork(self.args)
+        sf_network = call_sfNetwork(self.args, self.sf_path)
         lr_step_size = self.args.SF_epoch // 10
         scheduler = torch.optim.lr_scheduler.StepLR(
             sf_network.feature_optims, step_size=lr_step_size, gamma=0.9

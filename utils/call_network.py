@@ -253,7 +253,7 @@ def call_ocNetwork(args):
     return policy
 
 
-def call_sfNetwork(args):
+def call_sfNetwork(args, sf_path):
     from models.policy import SF_Combined, SF_Split
 
     if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
@@ -324,6 +324,7 @@ def call_sfNetwork(args):
             trj_per_iter=args.trj_per_iter,
             a_dim=args.a_dim,
             is_discrete=args.is_discrete,
+            sf_path=sf_path,
             device=args.device,
         )
     else:

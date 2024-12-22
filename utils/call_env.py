@@ -84,6 +84,31 @@ def call_env(args):
         disc_or_cont(env, args)
         args.agent_num = len(env.agents)
         return CtFWrapper(env, tile_size=args.tile_size)
+    elif args.env_name in (
+        "SparseCtF1v1",
+        "SparseCtF1v2",
+        "SparseCtF1v3",
+        "SparseCtF1v4",
+    ):
+        map_path: str = "assets/sparse_ctf.txt"
+        observation_option: str = "tensor"
+        env_name = args.env_name
+        red_agents = int(
+            env_name.split("v")[1]
+        )  # Extract the number of red agents from the env name
+        if env_name.startswith("CtF1v"):
+            env = CtF(
+                map_path=map_path,
+                num_blue_agents=1,
+                num_red_agents=red_agents,
+                observation_option=observation_option,
+                step_penalty_ratio=0.0,
+            )
+        else:
+            raise NotImplementedError(f"{args.env_name} not implemented")
+        disc_or_cont(env, args)
+        args.agent_num = len(env.agents)
+        return CtFWrapper(env, tile_size=args.tile_size)
     elif args.env_name == "PointNavigation":
         config = {"agent_name": "Point"}
         env_id = "PointNavigation"
