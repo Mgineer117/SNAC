@@ -96,7 +96,7 @@ def call_env(args):
         red_agents = int(
             env_name.split("v")[1]
         )  # Extract the number of red agents from the env name
-        if env_name.startswith("CtF1v"):
+        if env_name.startswith("SparseCtF1v"):
             env = CtF(
                 map_path=map_path,
                 num_blue_agents=1,
