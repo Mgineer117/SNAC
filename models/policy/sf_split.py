@@ -297,7 +297,7 @@ class SF_Split(BasePolicy):
         # Set logarithmic y-scale
         # plt.yscale('log')
         plt.xlabel("Reward Index")
-        plt.ylabel("Reward (Log Scale)")
+        plt.ylabel("Reward")
         plt.title("Predicted vs True Rewards")
         plt.legend()
         plt.grid(True, which="both", ls="--", linewidth=0.5)
