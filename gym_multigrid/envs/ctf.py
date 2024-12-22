@@ -1101,7 +1101,7 @@ class CtF(CtfMvNEnv):
         map_path: str,
         num_blue_agents: int,
         num_red_agents: str,
-        enemy_policy: Type[CtfPolicyT] | str = RwPolicy,
+        enemy_policy: Type[CtfPolicyT] | str = RoombaPolicy,
         enemy_policy_kwarg: dict[str, Any] = {},
         battle_range: float = 1,
         territory_adv_rate: float = 0.75,
