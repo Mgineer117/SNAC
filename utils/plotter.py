@@ -13,8 +13,6 @@ import seaborn as sns
 from sklearn.manifold import TSNE
 from typing import Optional, Dict, List
 
-sns.set_theme()
-
 
 class Plotter:
     def __init__(
@@ -318,6 +316,7 @@ class Plotter:
         cv2.destroyAllWindows()
 
     def plotOptionIndices(self, option_indices: list, dir: str, epoch: int):
+        sns.set_theme()
         plt.figure(figsize=(8, 6))
         option_figure_path = os.path.join(dir, "option_figure")
         if not os.path.exists(option_figure_path):
@@ -327,6 +326,7 @@ class Plotter:
         plt.close()
 
     def plotClusteredVectors(self, V_list, centroids, labels, names: List, dir: str):
+        sns.set_theme()
         for vector, centroid, label, name in zip(V_list, centroids, labels, names):
             vector = vector.cpu().numpy()
 
