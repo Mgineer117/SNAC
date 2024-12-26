@@ -125,7 +125,7 @@ class SNAC:
                 self.args,
                 draw_map=self.args.draw_map,
             )
-            print(self.options.shape)
+
             self.op_network = call_opNetwork(
                 self.sf_network, self.args, self.option_vals, self.options
             )
