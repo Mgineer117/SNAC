@@ -417,8 +417,8 @@ class SF_Split(BasePolicy):
             device=self.device,
         )
         norm_dict = self.compute_weight_norm(
-            [self.feaNet, self.psiNet, self._options],
-            ["feaNet", "psiNet", "options"],
+            [self.feaNet, self._options],
+            ["feaNet", "options"],
             dir="SF",
             device=self.device,
         )
