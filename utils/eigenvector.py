@@ -102,6 +102,8 @@ def discover_options(
         mix: all of the above
     """
     # since we want to sample (+/-) pairs
+    if num % 2 != 0:
+        raise ValueError(f"{num} must be even number (hint: increase num options)")
     num = int(num / 2)
 
     ### Collect batch to compute phi for psi

@@ -101,10 +101,10 @@
         "ppo_episode_num": 60,
         "oc_episode_num": 60,
         "eval_episodes": 10,
-        "num_traj_decomp": 100,
-        "max_num_traj": 100,
-        "min_num_traj": 50,
-        "trj_per_iter": 32,
+        "num_traj_decomp": 300,
+        "max_num_traj": 500,
+        "min_num_traj": 350,
+        "trj_per_iter": 64,
         "post_process": "nonzero_rewards_only",
         "feature_fc_dim": 512,
         "option_fc_dim": 256,
@@ -112,7 +112,7 @@
         "sf_dim": 256,
         "render_fps": 10,
         "gamma": 0.99,
-        "ctf_map": "regular"
+        "ctf_map": "sparse"
     },
     "CtF1v2": {
         "SF_epoch": 1500,
@@ -142,7 +142,7 @@
         "eval_episodes": 10,
         "num_traj_decomp": 200,
         "max_num_traj": 500,
-        "min_num_traj": 300,
+        "min_num_traj": 350,
         "trj_per_iter": 64,
         "post_process": "nonzero_rewards_only",
         "feature_fc_dim": 512,
@@ -151,7 +151,7 @@
         "sf_dim": 256,
         "render_fps": 10,
         "gamma": 0.99,
-        "ctf_map": "regular"
+        "ctf_map": "sparse"
     },
     "PointNavigation": {
         "SF_epoch": 200,

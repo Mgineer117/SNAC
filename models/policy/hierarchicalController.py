@@ -167,6 +167,7 @@ class HC_Controller(BasePolicy):
                 "entropy": self.dummy,
             }  # dummy
 
+        # print(z_argmax, self._num_options)
         is_option = True if z_argmax < self._num_options else False
 
         if is_option:
