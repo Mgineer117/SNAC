@@ -321,7 +321,7 @@ class Plotter:
         option_figure_path = os.path.join(dir, "option_figure")
         if not os.path.exists(option_figure_path):
             os.mkdir(option_figure_path)
-        plt.scatter(np.arange(len(option_indices)), option_indices)
+        plt.scatter(option_indices["x"], option_indices["y"])
         plt.savefig(f"{option_figure_path}/{epoch}.png")
         plt.close()
 
