@@ -49,8 +49,6 @@ class CtfMvNEnv(MultiGridEnv):
     def __init__(
         self,
         map_path: str,
-        num_blue_agents: int = 2,
-        num_red_agents: int = 2,
         enemy_policies: (
             list[Type[CtfPolicyT]] | Type[CtfPolicyT] | list[str] | str
         ) = RoombaPolicy,
@@ -111,8 +109,6 @@ class CtfMvNEnv(MultiGridEnv):
             Types of objects that should not be cached.
         """
 
-        assert num_blue_agents > 0
-        assert num_red_agents > 0
         assert battle_range > 0
         assert 0 <= territory_adv_rate <= 1
         assert flag_reward > 0
@@ -121,9 +117,6 @@ class CtfMvNEnv(MultiGridEnv):
         assert 0 <= step_penalty_ratio <= 1
         assert max_steps > 0
         assert observation_scaling > 0
-
-        self.num_blue_agents: Final[int] = num_blue_agents
-        self.num_red_agents: Final[int] = num_red_agents
 
         self.battle_range: Final[float] = battle_range
         self.randomness: Final[float] = territory_adv_rate
@@ -160,15 +153,45 @@ class CtfMvNEnv(MultiGridEnv):
             zip(*np.where(self._field_map == self.world.OBJECT_TO_IDX["red_flag"]))
         )[0]
 
-        self.blue_territory: Final[list[Position]] = list(
-            zip(
-                *np.where(self._field_map == self.world.OBJECT_TO_IDX["blue_territory"])
-            )
-        ) + [self.blue_flag]
+        self.blue_agent_pos: Final[list[Position]] = list(
+            zip(*np.where(self._field_map == self.world.OBJECT_TO_IDX["blue_agent"]))
+        )
 
-        self.red_territory: Final[list[Position]] = list(
-            zip(*np.where(self._field_map == self.world.OBJECT_TO_IDX["red_territory"]))
-        ) + [self.red_flag]
+        self.red_agent_pos: Final[Position] = list(
+            zip(*np.where(self._field_map == self.world.OBJECT_TO_IDX["red_agent"]))
+        )
+
+        self.blue_territory: Final[list[Position]] = (
+            list(
+                zip(
+                    *np.where(
+                        self._field_map == self.world.OBJECT_TO_IDX["blue_territory"]
+                    )
+                )
+            )
+            + [self.blue_flag]
+            + self.blue_agent_pos
+        )
+
+        self.red_territory: Final[list[Position]] = (
+            list(
+                zip(
+                    *np.where(
+                        self._field_map == self.world.OBJECT_TO_IDX["red_territory"]
+                    )
+                )
+            )
+            + [self.red_flag]
+            + self.red_agent_pos
+        )
+
+        self.num_blue_agents = len(self.blue_agent_pos)
+        self.num_red_agents = len(self.red_agent_pos)
+
+        if self.num_blue_agents == 0:
+            raise ValueError("***** Warning: No blue agents specified in the map *****")
+        if self.num_red_agents == 0:
+            print("***** Warning: No red agents specified in the map *****")
 
         blue_agents: list[AgentT] = [
             Agent(
@@ -180,20 +203,22 @@ class CtfMvNEnv(MultiGridEnv):
                 actions=self.actions_set,
                 type="blue_agent",
             )
-            for i in range(num_blue_agents)
+            for i in range(self.num_blue_agents)
         ]
 
         # Check if there is only one policy for all enemy agents.
         if type(enemy_policies) is not list:
-            enemy_policies = [enemy_policies for _ in range(num_red_agents)]
+            enemy_policies = [enemy_policies for _ in range(self.num_red_agents)]
         else:
             # Check if the number of policies is equal to the number of enemy agents.
-            assert len(enemy_policies) == num_red_agents
+            assert len(enemy_policies) == self.num_red_agents
 
         if enemy_policy_kwargs is not list:
-            enemy_policy_kwargs = [enemy_policy_kwargs for _ in range(num_red_agents)]
+            enemy_policy_kwargs = [
+                enemy_policy_kwargs for _ in range(self.num_red_agents)
+            ]
         else:
-            assert len(enemy_policy_kwargs) == num_red_agents
+            assert len(enemy_policy_kwargs) == self.num_red_agents
 
         # Initialize the enemy policies and set the random generator and field map.
         match enemy_policies[0]:
@@ -237,7 +262,7 @@ class CtfMvNEnv(MultiGridEnv):
                 actions=self.actions_set,
                 type="red_agent",
             )
-            for i in range(num_red_agents)
+            for i in range(self.num_red_agents)
         ]
 
         agents: list[AgentT] = blue_agents + red_agents
@@ -544,24 +569,18 @@ class CtfMvNEnv(MultiGridEnv):
         self.init_grid: Grid = self.grid.copy()
 
         # Choose non-overlapping indices for the blue agents and place them in the blue territory.
-        blue_indices: list[int] = self.np_random.choice(
-            len(self.blue_territory), self.num_blue_agents, replace=False
-        )
         for i in range(self.num_blue_agents):
             self.place_agent(
                 self.agents[i],
-                pos=self.blue_territory[blue_indices[i]],
+                pos=self.blue_agent_pos[i],
                 reset_agent_status=True,
             )
 
         # Choose non-overlapping indices for the red agents and place them in the red territory.
-        red_indices: list[int] = self.np_random.choice(
-            len(self.red_territory), self.num_red_agents, replace=False
-        )
         for i in range(self.num_red_agents):
             self.place_agent(
                 self.agents[self.num_blue_agents + i],
-                pos=self.red_territory[red_indices[i]],
+                pos=self.red_agent_pos[i],
                 reset_agent_status=True,
             )
 
@@ -1099,8 +1118,6 @@ class CtF(CtfMvNEnv):
     def __init__(
         self,
         map_path: str,
-        num_blue_agents: int,
-        num_red_agents: str,
         enemy_policy: Type[CtfPolicyT] | str = RoombaPolicy,
         enemy_policy_kwarg: dict[str, Any] = {},
         battle_range: float = 1,
@@ -1152,8 +1169,6 @@ class CtF(CtfMvNEnv):
         """
         super().__init__(
             map_path=map_path,
-            num_blue_agents=num_blue_agents,
-            num_red_agents=num_red_agents,
             enemy_policies=enemy_policy,
             enemy_policy_kwargs=enemy_policy_kwarg,
             battle_range=battle_range,

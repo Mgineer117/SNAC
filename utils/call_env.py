@@ -73,14 +73,9 @@ def call_env(args):
             raise NotImplementedError(f"{map_path} not implemented")
         observation_option: str = "tensor"
         env_name = args.env_name
-        red_agents = int(
-            env_name.split("v")[1]
-        )  # Extract the number of red agents from the env name
         if env_name.startswith("CtF1v"):
             env = CtF(
                 map_path=map_path,
-                num_blue_agents=1,
-                num_red_agents=red_agents,
                 observation_option=observation_option,
                 max_steps=args.episode_len,
                 step_penalty_ratio=0.0,
