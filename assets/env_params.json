@@ -109,7 +109,7 @@
         "feature_fc_dim": 512,
         "option_fc_dim": 256,
         "fc_dim": 512,
-        "sf_dim": 256,
+        "sf_dim": 128,
         "render_fps": 10,
         "gamma": 0.99,
         "ctf_map": "sparse"
@@ -148,7 +148,7 @@
         "feature_fc_dim": 512,
         "option_fc_dim": 256,
         "fc_dim": 512,
-        "sf_dim": 256,
+        "sf_dim": 128,
         "render_fps": 10,
         "gamma": 0.99,
         "ctf_map": "sparse"
