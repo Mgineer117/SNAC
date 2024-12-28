@@ -109,8 +109,6 @@ class SFTrainer:
             self.save_model(e + 1)
             torch.cuda.empty_cache()
 
-        self.buffer.wipe()
-
         second_init_epoch = self._epoch
         second_final_epoch = self._epoch + self._psi_epoch
         for e in trange(
@@ -121,19 +119,18 @@ class SFTrainer:
             self.save_model(e + 1)
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
-                batch, sample_time = self.sampler.collect_samples(
-                    self.policy, grid_type=self.grid_type
-                )
+                loss, update_time = self.policy.learnPsi(self.buffer)
 
-                loss, update_time = self.policy.learnPsi(batch)
-
-                loss["SF/sample_time"] = sample_time
+                loss["SF/sample_time"] = 0.0
                 loss["SF/update_time"] = update_time
                 loss["SF/train_rew_mean"] = np.mean(batch["rewards"])
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 
             torch.cuda.empty_cache()
+
+        self.buffer.wipe()
+        torch.cuda.empty_cache()
 
         self.policy.eval()
         self.logger.print(
