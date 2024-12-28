@@ -348,13 +348,15 @@ class SF_Combined(BasePolicy):
         self.eval()
         return loss_dict, t1 - t0
 
-    def learnPsi(self, batch):
+    def learnPsi(self, buffer):
         """
         deprecared
         """
 
         self.train()
         t0 = time.time()
+
+        batch = buffer.sample(self._trj_per_iter)
 
         ### Pull data from the batch
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
