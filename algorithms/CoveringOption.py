@@ -156,29 +156,41 @@ class CoveringOption:
                 vec_idx = idx * 2
 
                 # Collect first batch
-                new_batch1 = self.collect_batch(self.op_network, app_trj_num=app_trj_num, idx=vec_idx)
-                print(f"After collect_batch (vec_idx={vec_idx}): "
+                new_batch1 = self.collect_batch(
+                    self.op_network, app_trj_num=app_trj_num, idx=vec_idx
+                )
+                print(
+                    f"After collect_batch (vec_idx={vec_idx}): "
                     f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
+                )
 
                 # Collect second batch
-                new_batch2 = self.collect_batch(self.op_network, app_trj_num=app_trj_num, idx=vec_idx + 1)
-                print(f"After collect_batch (vec_idx+1={vec_idx + 1}): "
+                new_batch2 = self.collect_batch(
+                    self.op_network, app_trj_num=app_trj_num, idx=vec_idx + 1
+                )
+                print(
+                    f"After collect_batch (vec_idx+1={vec_idx + 1}): "
                     f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
+                )
 
                 # Concatenate batches
                 batch = self.cat_batch(batch, new_batch1, new_batch2)
-                print(f"After cat_batch: "
+                print(
+                    f"After cat_batch: "
                     f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
+                )
 
                 # Compute S and V
                 with torch.no_grad():
                     S, V = self.get_vector(batch)
-                print(f"After get_vector: "
+                print(
+                    f"After get_vector: "
                     f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
+                )
 
                 # Update option values and options
                 self.option_vals[vec_idx : vec_idx + 2] = S
@@ -187,17 +199,19 @@ class CoveringOption:
                 self.op_network._options = nn.Parameter(
                     self.options.to(torch.float32).to(self.args.device)
                 )
-                print(f"After updating op_network: "
+                print(
+                    f"After updating op_network: "
                     f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
+                )
 
                 # Train the op_network
                 self.train_op_network(vec_idx=vec_idx)
-                print(f"After train_op_network (vec_idx={vec_idx}): "
+                print(
+                    f"After train_op_network (vec_idx={vec_idx}): "
                     f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB")
-
-                
+                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
+                )
 
             if self.evaluator_params["gridPlot"]:
                 grid_tensor, coords, agent_pos = get_grid_tensor(
@@ -283,17 +297,16 @@ class CoveringOption:
         Additionally, we use both (+/-) of vectors (top 1 vector => 2 vectors)
         """
         self.sf_network = self.sf_network.cpu()
-        states = (torch.from_numpy(batch["states"]).to(torch.float32))
-        agent_pos = (torch.from_numpy(batch["agent_pos"]).to(torch.float32))
+        states = torch.from_numpy(batch["states"]).to(torch.float32)
+        agent_pos = torch.from_numpy(batch["agent_pos"]).to(torch.float32)
         features, _ = self.sf_network.feaNet(states, agent_pos, deterministic=True)
 
-        terminals = (torch.from_numpy(batch["terminals"]).to(torch.float32)) 
+        terminals = torch.from_numpy(batch["terminals"]).to(torch.float32)
         del states, agent_pos
         self.sf_network = self.sf_network.to(self.args.device)
 
         with torch.no_grad():
-            psi = estimate_psi(features, terminals, self.args.gamma
-            )
+            psi = estimate_psi(features, terminals, self.args.gamma)
 
             _, S, V = torch.svd(psi)  # S: max - min
 
@@ -350,7 +363,7 @@ class CoveringOption:
             )
 
             if self.args.Psi_epoch > 0:
-                eval_epoch = 3
+                eval_epoch = 1
                 op_trainer.evaluate(z=z, epoch=eval_epoch)
                 self.curr_epoch += eval_epoch
             else:

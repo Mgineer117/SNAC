@@ -141,7 +141,7 @@ class EigenOption:
             )
 
             if self.args.Psi_epoch > 0:
-                final_epoch = op_trainer.evaluate(epoch=3)
+                final_epoch = op_trainer.evaluate(epoch=1)
                 print(
                     f"\n+++++Psi-Network exists, so no OP training takes place+++++ \n"
                 )
