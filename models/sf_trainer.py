@@ -68,21 +68,38 @@ class SFTrainer:
     def train(self) -> Dict[str, float]:
         start_time = time.time()
 
-        # train loop
+        # Calculate the total number of iterations for both training phases
+        total_iterations = (
+            self._init_epoch - self._epoch
+        ) * self._step_per_epoch + self._psi_epoch * self._step_per_epoch
+        current_iteration = 0
+
+        # Warm buffer
         sample_time = self.warm_buffer()
 
         first_init_epoch = self._init_epoch
         first_final_epoch = self._epoch
 
-        for e in trange(first_init_epoch, first_final_epoch, desc=f"SF Phi Epoch"):
-            ### training loop
+        for e in trange(first_init_epoch, first_final_epoch, desc="SF Phi Epoch"):
+            ### Training loop
             self.policy.train()
-            for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
-                loss, update_time = self.policy.learn(self.buffer)
+            for it in trange(self._step_per_epoch, desc="Training", leave=False):
+                # Track iteration progress
+                current_iteration += 1
+                elapsed_time = time.time() - start_time
+                avg_time_per_iter = elapsed_time / current_iteration
+                remaining_time = avg_time_per_iter * (
+                    total_iterations - current_iteration
+                )
 
+                # Training step
+                loss, update_time = self.policy.learn(self.buffer)
                 loss["SF/sample_time"] = sample_time
                 loss["SF/update_time"] = update_time
                 loss["SF/lr"] = self.policy.feature_optims.param_groups[0]["lr"]
+                loss["SF/remaining_time (hr)"] = (
+                    remaining_time / 3600
+                )  # Log remaining time
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
                 sample_time = 0
@@ -98,7 +115,7 @@ class SFTrainer:
                 self.buffer.push(batch)
 
             ### Eval
-            self.policy.eval()  # policy only has to be train_mode in policy_learn, since sampling needs eval_mode as well.
+            self.policy.eval()
             self.evaluator(
                 self.policy,
                 epoch=e,
@@ -117,19 +134,24 @@ class SFTrainer:
 
         second_init_epoch = self._epoch
         second_final_epoch = self._epoch + self._psi_epoch
-        for e in trange(
-            second_init_epoch,
-            second_final_epoch,
-            desc=f"SF Psi Epoch",
-        ):
+        for e in trange(second_init_epoch, second_final_epoch, desc="SF Psi Epoch"):
             self.save_model(e + 1)
             self.policy.train()
-            for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
-                loss, update_time = self.policy.learnPsi(self.buffer)
+            for it in trange(self._step_per_epoch, desc="Training", leave=False):
+                # Track iteration progress
+                current_iteration += 1
+                elapsed_time = time.time() - start_time
+                avg_time_per_iter = elapsed_time / current_iteration
+                remaining_time = avg_time_per_iter * (
+                    total_iterations - current_iteration
+                )
 
+                # Training step
+                loss, update_time = self.policy.learnPsi(self.buffer)
                 loss["SF/sample_time"] = sample_time
                 loss["SF/update_time"] = update_time
                 loss["SF/train_rew_mean"] = np.mean(batch["rewards"])
+                loss["SF/remaining_time"] = remaining_time  # Log remaining time
 
                 sample_time = 0.0
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))

@@ -73,42 +73,56 @@ class OPTrainer:
 
     def train(self) -> Dict[str, float]:
         start_time = time.time()
-
         self.last_reward_mean = deque(maxlen=3)
         self.last_reward_std = deque(maxlen=3)
 
-        # train loop
+        # Train loop
         self.policy.train()
         first_init_epoch = self._init_epoch
         first_final_epoch = self._epoch
+
+        total_iterations = (first_final_epoch - first_init_epoch) * self._step_per_epoch
+        completed_iterations = 0
+
         for e in trange(first_init_epoch, first_final_epoch, desc=f"OP PPO Epoch"):
-            ### training loop
+            ### Training loop
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 sample_time = 0
                 update_time = 0
                 policy_loss = []
                 avgRewDictList = []
+
                 for z in trange(
                     self.policy._num_options, desc=f"Updating Option", leave=False
                 ):
-                    # sample batch
+                    # Sample batch
                     batch, sampleT = self.sampler.collect_samples(
                         self.policy, idx=z, grid_type=self.grid_type
                     )
                     sample_time += sampleT
 
-                    # update params
+                    # Update params
                     loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
                     policy_loss.append(loss_dict)
                     avgRewDictList.append(avgRewDict)
                     update_time += updateT
                     torch.cuda.empty_cache()
 
-                loss = self.average_dict_values(policy_loss)
+                # Calculate expected remaining time
+                completed_iterations += 1
+                elapsed_time = time.time() - start_time
+                avg_time_per_iter = elapsed_time / completed_iterations
+                remaining_time = avg_time_per_iter * (
+                    total_iterations - completed_iterations
+                )
 
                 # Logging further info
+                loss = self.average_dict_values(policy_loss)
                 loss["OP/sample_time"] = sample_time
                 loss["OP/update_time"] = update_time
+                loss["OP/remaining_time (hr)"] = (
+                    remaining_time / 3600
+                )  # Convert to hours
                 for each_dict in avgRewDictList:
                     loss.update(each_dict)
 
@@ -120,6 +134,7 @@ class OPTrainer:
             rew_std = np.zeros((self.policy._num_options,))
             ln_mean = np.zeros((self.policy._num_options,))
             ln_std = np.zeros((self.policy._num_options,))
+
             for z in trange(self.policy._num_options, desc=f"Evaluation", leave=False):
                 eval_dict = self.evaluator(
                     self.policy,
@@ -141,7 +156,7 @@ class OPTrainer:
             ln_mean = np.mean(ln_mean)
             ln_std = np.mean(ln_std)
 
-            # manual logging
+            # Manual logging
             eval_dict = {
                 "OP/eval_rew_mean": rew_mean,
                 "OP/eval_rew_std": rew_std,

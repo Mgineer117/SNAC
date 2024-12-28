@@ -65,13 +65,16 @@ class HCTrainer:
 
     def train(self) -> Dict[str, float]:
         start_time = time.time()
-
         self.last_reward_mean = deque(maxlen=3)
         self.last_reward_std = deque(maxlen=3)
 
-        # train loop
+        # Total iterations tracking
+        total_iterations = (self._epoch - self._init_epoch) * self._step_per_epoch
+        completed_iterations = 0
+
+        # Train loop
         for e in trange(self._init_epoch, self._epoch, desc=f"HC Epoch"):
-            ### training loop
+            ### Training loop
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
@@ -79,10 +82,21 @@ class HCTrainer:
                 )
                 loss, update_time = self.policy.learn(batch, prefix=self._prefix)
 
-                # Logging further info
+                # Calculate expected remaining time
+                completed_iterations += 1
+                elapsed_time = time.time() - start_time
+                avg_time_per_iter = elapsed_time / completed_iterations
+                remaining_time = avg_time_per_iter * (
+                    total_iterations - completed_iterations
+                )
+
+                # Update environment steps and calculate time metrics
                 self.num_env_steps += len(batch["rewards"])
                 loss[self._prefix + "/sample_time"] = sample_time
                 loss[self._prefix + "/update_time"] = update_time
+                loss[self._prefix + "/remaining_time (hr)"] = (
+                    remaining_time / 3600
+                )  # Convert to hours
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
                 torch.cuda.empty_cache()
