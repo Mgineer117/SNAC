@@ -146,7 +146,8 @@ class SF_Split(BasePolicy):
 
         if sf_path is None:
             sf_path = "phi_prediction"
-            os.mkdir(sf_path)
+            if not os.path.exists(sf_path):
+                os.mkdir(sf_path)
         self.sf_path = sf_path
 
         if options is not None:

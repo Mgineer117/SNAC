@@ -117,6 +117,9 @@ def run_loop(env, option_vals, options, args):
             agent_pos = np.full((2 * args.agent_num,), np.nan, dtype=np.float32)
             agent_pos[2] = x
             agent_pos[3] = y
+            if args.env_name == "CtF1v2":
+                agent_pos[4] = x
+                agent_pos[5] = y
 
             # prepare the path
             save_path = f"RewardMap/CtF/{str(x)}_{str(y)}"
@@ -146,13 +149,9 @@ if __name__ == "__main__":
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.env_name = "CtF1v1"
     args.algo_name = "SNAC"
     args.num_vector = 16
-    if args.env_name == "FourRooms":
-        args.grid_size = 13
-    else:
-        args.grid_size = 12
+    args.num_traj_decomp = 300
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")

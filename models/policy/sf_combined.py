@@ -107,6 +107,12 @@ class SF_Combined(BasePolicy):
         self.feaNet = feaNet
         self.psiNet = psiNet
 
+        if sf_path is None:
+            sf_path = "phi_prediction"
+            if not os.path.exists(sf_path):
+                os.mkdir(sf_path)
+        self.sf_path = sf_path
+
         if options is not None:
             self._options = options
         else:
