@@ -527,7 +527,7 @@ class PsiAdvantage(nn.Module):
             self.models.append(self.create_sequential_model(fc_dim, sf_dim))
 
     def create_sequential_model(self, fc_dim, sf_dim):
-        return MLP(sf_dim, (fc_dim, fc_dim), sf_dim, activation=self.act)
+        return MLP(sf_dim, (fc_dim, fc_dim, fc_dim), sf_dim, activation=self.act)
 
     def forward(self, x: torch.Tensor):
         X = []
@@ -554,7 +554,7 @@ class PsiCritic(nn.Module):
         self.psi_advantage = PsiAdvantage(fc_dim, sf_dim, a_dim, self.act)
         self.psi_state = MLP(
             input_dim=sf_dim,
-            hidden_dims=(fc_dim, fc_dim),
+            hidden_dims=(fc_dim, fc_dim, fc_dim),
             output_dim=sf_dim,
             activation=self.act,
         )
