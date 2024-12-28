@@ -115,12 +115,14 @@ class OP_Controller(BasePolicy):
             psi_logits = self._intrinsicValue(psi, z)
             probs = F.softmax(psi_logits, dim=-1)
             logprobs = F.log_softmax(psi_logits, dim=-1)
+            entropy = -torch.sum(probs * logprobs, dim=-1)
 
             a_argmax = torch.argmax(probs, dim=-1)
             a = F.one_hot(a_argmax.long(), num_classes=self._a_dim)
             probs = torch.argmax(probs, dim=-1)
             logprobs = torch.argmax(logprobs, dim=-1)
-            metaData = {"probs": probs, "logprobs": logprobs}
+
+            metaData = {"probs": probs, "logprobs": logprobs, "entropy": entropy}
         else:
             a, metaData = self.optionPolicy(
                 obs["observation"], z=z, deterministic=deterministic
@@ -143,7 +145,7 @@ class OP_Controller(BasePolicy):
     def _intrinsicValue(self, psi, z):
         option = self._options[z, :]
 
-        if self._algo_name in ("SNAC", "SNAC+", "SNAC++"):
+        if self._algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
             # divide phi in half
             psi_r, psi_s = self.split(psi)
             if z < int(self._num_options / 2):
