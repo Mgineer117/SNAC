@@ -599,7 +599,7 @@ class CtfMvNEnv(MultiGridEnv):
             red_agent_pos = [self.red_territory[i] for i in indices]
         else:
             red_agent_pos = self.red_agent_pos
-        print(blue_agent_pos, red_agent_pos)
+
         for i in range(self.num_red_agents):
             self.place_agent(
                 self.agents[self.num_blue_agents + i],
