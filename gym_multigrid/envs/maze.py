@@ -5,6 +5,7 @@ from typing import Any, Iterable, SupportsFloat, TypeVar
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType
 import numpy as np
+import random
 from numpy.typing import NDArray
 
 from gym_multigrid.core.constants import *
@@ -62,28 +63,8 @@ class Maze(MultiGridEnv):
 
         self.grids = {}
         self.grid_imgs = {}
-
-        super().__init__(
-            width=self.width,
-            height=self.height,
-            max_steps=max_steps,
-            see_through_walls=see_through_walls,
-            agents=self.agents,
-            agent_view_size=agent_view_size,
-            actions_set=self.actions_set,
-            partial_obs=partial_observability,
-            world=self.world,
-            render_mode=render_mode,
-            highlight_visible_cells=highlight_visible_cells,
-            tile_size=tile_size,
-        )
-
-    def _gen_grid(self, width, height):
-        # Create the grid
-        self.grid = Grid(width, height, self.world)
-
         # Explicit maze structure based on the image
-        maze_structure = [
+        self.maze_structure = [
             "####################",
             "#                  #",
             "#                  #",
@@ -106,8 +87,27 @@ class Maze(MultiGridEnv):
             "####################",
         ]
 
+        super().__init__(
+            width=self.width,
+            height=self.height,
+            max_steps=max_steps,
+            see_through_walls=see_through_walls,
+            agents=self.agents,
+            agent_view_size=agent_view_size,
+            actions_set=self.actions_set,
+            partial_obs=partial_observability,
+            world=self.world,
+            render_mode=render_mode,
+            highlight_visible_cells=highlight_visible_cells,
+            tile_size=tile_size,
+        )
+
+    def _gen_grid(self, width, height, options):
+        # Create the grid
+        self.grid = Grid(width, height, self.world)
+
         # Translate the maze structure into the grid
-        for y, row in enumerate(maze_structure):
+        for y, row in enumerate(self.maze_structure):
             for x, cell in enumerate(row):
                 if cell == "#":
                     self.grid.set(x, y, Wall(self.world))
@@ -119,9 +119,29 @@ class Maze(MultiGridEnv):
         self.put_obj(goal, *self.goal_positions[self.grid_type])
         goal.init_pos, goal.cur_pos = self.goal_positions[self.grid_type]
 
-        # Place the agent
+        # place agent
+        if options["random_init_pos"]:
+            coords = self.find_obj_coordinates(None)
+            agent_positions = random.sample(coords)
+        else:
+            agent_positions = self.agent_positions[self.grid_type]
+
         for agent in self.agents:
-            self.place_agent(agent, pos=self.agent_positions[self.grid_type])
+            self.place_agent(agent, pos=agent_positions)
+
+    def find_obj_coordinates(self, obj) -> tuple[int, int] | None:
+        """
+        Finds the coordinates (i, j) of the first occurrence of None in the grid.
+        Returns None if no None value is found.
+        """
+        coord_list = []
+        for index, value in enumerate(self.grid.grid):
+            if value is obj:
+                # Calculate the (i, j) coordinates from the 1D index
+                i = index % self.width
+                j = index // self.width
+                coord_list.append((i, j))
+        return coord_list
 
     def reset(
         self,
