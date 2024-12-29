@@ -147,6 +147,7 @@ class Base:
         policy,
         idx: int = None,
         grid_type: int = 0,
+        random_init_pos: bool = False,
         deterministic: bool = False,
         is_option: bool = False,
         is_covering_option: bool = False,
@@ -198,6 +199,7 @@ class Base:
                             self.episodes_per_worker,
                             idx,
                             grid_type,
+                            random_init_pos,
                             i,
                             deterministic,
                         )
@@ -213,6 +215,7 @@ class Base:
                             self.episodes_per_worker,
                             idx,
                             grid_type,
+                            random_init_pos,
                             i,
                             deterministic,
                         )
@@ -367,6 +370,7 @@ class OnlineSampler(Base):
         episode_num: int,
         idx: int | None = None,
         grid_type: int = 0,
+        random_init_pos: bool = False,
         seed: int | None = None,
         deterministic: bool = False,
     ):
@@ -384,7 +388,15 @@ class OnlineSampler(Base):
         current_step = 0
         for iter in range(episode_num):
             # env initialization
-            obs, _ = env.reset(seed=grid_type)
+            if random_init_pos:
+                options = {"random_init_pos": True}
+            else:
+                options = {"random_init_pos": False}
+
+            obs, _ = env.reset(
+                seed=grid_type,
+                options=options,
+            )
 
             for t in range(episode_len):
                 with torch.no_grad():
@@ -462,7 +474,9 @@ class OnlineSampler(Base):
         current_step = 0
         for iter in range(episode_num):
             # env initialization
-            obs, _ = env.reset(seed=grid_type)
+            options = {"random_init_pos": False}
+
+            obs, _ = env.reset(seed=grid_type, options=options)
 
             self.external_t = 0
             for t in range(episode_len):
@@ -592,7 +606,8 @@ class OnlineSampler(Base):
         current_step = 0
         for iter in range(episode_num):
             # env initialization
-            obs, _ = env.reset(seed=grid_type)
+            options = {"random_init_pos": False}
+            obs, _ = env.reset(seed=grid_type, options=options)
 
             is_first_iter = True
             self.external_t = 0

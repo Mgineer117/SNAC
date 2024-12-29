@@ -1,6 +1,5 @@
 import cv2
 import os
-import random
 import torch
 import gymnasium as gym
 import torch.nn as nn
@@ -86,7 +85,8 @@ class PPO_Evaluator(Evaluator):
             ep_reward, ep_length = 0, 0
 
             # env initialization
-            s, _ = env.reset(seed=grid_type)
+            options = {"random_init_pos": False}
+            s, _ = env.reset(seed=grid_type, options=options)
 
             if self.gridCriteria:
                 self.init_grid(env)

@@ -77,8 +77,7 @@ class PPOTrainer:
             self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 batch, sample_time = self.sampler.collect_samples(
-                    self.policy,
-                    grid_type=self.grid_type,
+                    self.policy, grid_type=self.grid_type
                 )
                 loss_dict, update_time = self.policy.learn(batch)
 

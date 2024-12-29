@@ -5,7 +5,6 @@ from typing import Any, Iterable, SupportsFloat, TypeVar
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType
 import numpy as np
-import random
 from numpy.typing import NDArray
 
 from gym_multigrid.core.constants import *

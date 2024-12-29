@@ -1,6 +1,5 @@
 import cv2
 import os
-import random
 import torch
 import torch.nn as nn
 import numpy as np
@@ -112,7 +111,8 @@ class HC_Evaluator(Evaluator):
             ep_reward, ep_length = 0, 0
 
             # env initialization
-            obs, _ = env.reset(seed=grid_type)
+            options = {"random_init_pos": False}
+            obs, _ = env.reset(seed=grid_type, options=options)
 
             if self.gridCriteria:
                 self.init_grid(env)

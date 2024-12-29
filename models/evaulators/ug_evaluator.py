@@ -1,6 +1,5 @@
 import cv2
 import os
-import random
 import torch
 import torch.nn as nn
 import numpy as np
@@ -87,7 +86,8 @@ class UG_Evaluator(Evaluator):
             ep_reward, ep_length = 0, 0
 
             # env initialization
-            s, _ = env.reset(seed=env_seed)
+            options = {"random_init_pos": False}
+            s, _ = env.reset(seed=env_seed, options=options)
 
             if self.gridCriteria:
                 self.init_grid(env)

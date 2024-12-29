@@ -8,7 +8,7 @@ import random
 
 def set_seed(seed: int = 42) -> None:
     np.random.seed(seed)
-    random.seed(seed)
+    # random.seed(seed) # free random from fixing seed since we sometimes want some randomness in some parts
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     # When running on the CuDNN backend, two further options must be set

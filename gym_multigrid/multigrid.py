@@ -1,5 +1,4 @@
 import math
-import random
 from typing import Literal, Type, TypeVar, Callable
 import numpy as np
 import gymnasium as gym
@@ -132,7 +131,7 @@ class MultiGridEnv(gym.Env):
         # Generate a new random grid at the start of each episode
         # To keep the same grid for each episode, call env.seed() with
         # the same seed before calling env.reset()
-        self._gen_grid(self.width, self.height)
+        self._gen_grid(self.width, self.height, options)
 
         # These fields should be defined by _gen_grid
         for a in self.agents:
@@ -202,7 +201,7 @@ class MultiGridEnv(gym.Env):
 
         return str
 
-    def _gen_grid(self, width, height) -> None:
+    def _gen_grid(self, width, height, options) -> None:
         self.grid = Grid(width, height, self.world)
         assert False, "_gen_grid needs to be implemented by each environment"
 

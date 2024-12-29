@@ -1,5 +1,4 @@
 import time
-import random
 import math
 import os
 import wandb
@@ -97,7 +96,10 @@ class OPTrainer:
                 ):
                     # Sample batch
                     batch, sampleT = self.sampler.collect_samples(
-                        self.policy, idx=z, grid_type=self.grid_type
+                        self.policy,
+                        idx=z,
+                        grid_type=self.grid_type,
+                        random_init_pos=True,
                     )
                     sample_time += sampleT
 
@@ -337,7 +339,7 @@ class OPTrainer2:
 
                 # sample batch
                 batch, sampleT = self.sampler.collect_samples(
-                    self.policy, idx=z, grid_type=self.grid_type
+                    self.policy, idx=z, grid_type=self.grid_type, random_init_pos=True
                 )
                 sample_time += sampleT
 

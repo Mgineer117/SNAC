@@ -2,6 +2,7 @@ from typing import Final, Literal, TypeAlias, TypedDict, Any, Type
 
 from gymnasium import spaces
 import numpy as np
+import random
 from numpy.typing import NDArray
 
 from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, MazeActions
@@ -533,7 +534,7 @@ class CtfMvNEnv(MultiGridEnv):
 
         return observation_space
 
-    def _gen_grid(self, width, height):
+    def _gen_grid(self, width, height, options):
         self.grid = Grid(width, height, self.world)
 
         for i, j in self.blue_territory:
@@ -569,18 +570,40 @@ class CtfMvNEnv(MultiGridEnv):
         self.init_grid: Grid = self.grid.copy()
 
         # Choose non-overlapping indices for the blue agents and place them in the blue territory.
+        if options["random_init_pos"]:
+            combined_territory = self.blue_territory + self.red_territory
+            indices = random.sample(
+                range(len(combined_territory)),
+                self.num_blue_agents + self.num_red_agents,
+            )
+            blue_agent_pos = [
+                combined_territory[i] for i in indices[: self.num_blue_agents]
+            ]
+            red_agent_pos = [
+                combined_territory[i] for i in indices[self.num_blue_agents :]
+            ]
+        else:
+            blue_agent_pos = self.blue_agent_pos
+            red_agent_pos = self.red_agent_pos
+
         for i in range(self.num_blue_agents):
             self.place_agent(
                 self.agents[i],
-                pos=self.blue_agent_pos[i],
+                pos=blue_agent_pos[i],
                 reset_agent_status=True,
             )
 
         # Choose non-overlapping indices for the red agents and place them in the red territory.
+        if options["random_init_pos"]:
+            indices = random.sample(range(len(self.red_territory)), self.num_red_agents)
+            red_agent_pos = [self.red_territory[i] for i in indices]
+        else:
+            red_agent_pos = self.red_agent_pos
+        print(blue_agent_pos, red_agent_pos)
         for i in range(self.num_red_agents):
             self.place_agent(
                 self.agents[self.num_blue_agents + i],
-                pos=self.red_agent_pos[i],
+                pos=red_agent_pos[i],
                 reset_agent_status=True,
             )
 

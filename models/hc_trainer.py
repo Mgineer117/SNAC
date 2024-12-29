@@ -1,5 +1,4 @@
 import time
-import random
 import math
 import os
 import wandb
