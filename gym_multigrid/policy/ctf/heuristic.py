@@ -636,7 +636,7 @@ class RoombaPolicy(CtfPolicy):
         field_map: NDArray | None = None,
         action_set: ActionsT = MazeActions,
         random_generator: Generator | None = None,
-        randomness: float = 0.15,
+        randomness: float = 0.25,
         ego_agent: Literal["red", "blue"] = "red",
         world: WorldT = CtfWorld,
         avoided_objects: list[str] = ["obstacle", "red_agent", "blue_agent"],
@@ -646,9 +646,9 @@ class RoombaPolicy(CtfPolicy):
 
         Parameters
         ----------
-        enemy_range : int = 4
+        enemy_range : int = 2
             Range to detect the enemy.
-        flag_range : int = 5
+        flag_range : int = 3
             Range to detect the flag.
         field_map : numpy.typing.NDArray | None = None
             Field map of the environment.
@@ -658,7 +658,7 @@ class RoombaPolicy(CtfPolicy):
         random_generator : numpy.random.Generator | None = None
             Random number generator.
             Replace it with the environment's random number generator if needed.
-        randomness : float = 0.15
+        randomness : float = 0.25
             Probability of taking a random action instead of an optimal action.
         ego_agent : Literal["red", "blue"] = "red"
             Controlled agent.

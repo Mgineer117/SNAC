@@ -52,7 +52,7 @@ class CtfMvNEnv(MultiGridEnv):
         map_path: str,
         enemy_policies: (
             list[Type[CtfPolicyT]] | Type[CtfPolicyT] | list[str] | str
-        ) = RoombaPolicy,
+        ) = RoombaPolicy(),
         enemy_policy_kwargs: list[dict[str, Any]] | dict[str, Any] = {},
         battle_range: float = 1,
         territory_adv_rate: float = 0.75,
