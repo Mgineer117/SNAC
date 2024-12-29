@@ -70,8 +70,8 @@ class SFTrainer:
 
         # Calculate the total number of iterations for both training phases
         total_iterations = (
-            self._init_epoch - self._epoch
-        ) * self._step_per_epoch + self._psi_epoch * self._step_per_epoch
+            self._epoch - self._init_epoch + self._psi_epoch
+        ) * self._step_per_epoch
         current_iteration = 0
 
         # Warm buffer

@@ -67,6 +67,10 @@ class OCTrainer:
         self.last_reward_mean = deque(maxlen=3)
         self.last_reward_std = deque(maxlen=3)
 
+        # Total iterations tracking
+        total_iterations = (self._epoch - self._init_epoch) * self._step_per_epoch
+        completed_iterations = 0
+
         # train loop
         for e in trange(self._init_epoch, self._epoch, desc=f"OC Epoch"):
             ### training loop
@@ -77,7 +81,6 @@ class OCTrainer:
                 )
 
                 update_time = 0
-
                 loss_dict, uTime = self.policy.learn_policy(batch)
                 update_time += uTime
                 if (it + 1) % 5 == 0:  # for lower time scaler learning
@@ -87,10 +90,19 @@ class OCTrainer:
                     )
                     update_time += uTime
 
+                # Calculate expected remaining time
+                completed_iterations += 1
+                elapsed_time = time.time() - start_time
+                avg_time_per_iter = elapsed_time / completed_iterations
+                remaining_time = avg_time_per_iter * (
+                    total_iterations - completed_iterations
+                )
+
                 # Logging further info
                 self.num_env_steps += len(batch["rewards"])
                 loss_dict["OC/sample_time"] = sample_time
                 loss_dict["OC/update_time"] = update_time
+                loss_dict["OC/remaining_time (hr)"] = remaining_time / 3600
 
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
                 torch.cuda.empty_cache()
