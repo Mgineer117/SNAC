@@ -49,6 +49,10 @@ class GridWrapper(gym.Wrapper):
         return agent_pos
 
     def reset(self, **kwargs):
+        if not "options" in kwargs:
+            options = {"random_init_pos": False}
+            kwargs["options"] = options
+
         observation, info = self.env.reset(**kwargs)
         observation = observation["image"]
         observation = np.repeat(
@@ -86,6 +90,10 @@ class CtFWrapper(gym.Wrapper):
         return agent_pos
 
     def reset(self, **kwargs):
+        if not "options" in kwargs:
+            options = {"random_init_pos": False}
+            kwargs["options"] = options
+
         observation, _ = self.env.reset(**kwargs)
         observation = np.repeat(
             np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1

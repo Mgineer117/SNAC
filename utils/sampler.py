@@ -448,6 +448,7 @@ class OnlineSampler(Base):
         episode_num: int,
         idx: int = None,
         grid_type: int = 0,
+        random_init_pos: bool = False,
         seed: int | None = None,
         deterministic: bool = False,
     ):
@@ -474,9 +475,7 @@ class OnlineSampler(Base):
         current_step = 0
         for iter in range(episode_num):
             # env initialization
-            options = {"random_init_pos": False}
-
-            obs, _ = env.reset(seed=grid_type, options=options)
+            obs, _ = env.reset(seed=grid_type)
 
             self.external_t = 0
             for t in range(episode_len):
@@ -572,6 +571,7 @@ class OnlineSampler(Base):
         episode_num: int,
         idx: int = None,
         grid_type: int = 0,
+        random_init_pos: bool = False,
         seed: int | None = None,
         deterministic: bool = False,
     ):
@@ -606,8 +606,7 @@ class OnlineSampler(Base):
         current_step = 0
         for iter in range(episode_num):
             # env initialization
-            options = {"random_init_pos": False}
-            obs, _ = env.reset(seed=grid_type, options=options)
+            obs, _ = env.reset(seed=grid_type)
 
             is_first_iter = True
             self.external_t = 0
