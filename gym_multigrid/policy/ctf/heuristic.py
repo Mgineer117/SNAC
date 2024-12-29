@@ -631,8 +631,8 @@ class RoombaPolicy(CtfPolicy):
 
     def __init__(
         self,
-        enemy_range: int = 4,
-        flag_range: int = 5,
+        enemy_range: int = 2,
+        flag_range: int = 3,
         field_map: NDArray | None = None,
         action_set: ActionsT = MazeActions,
         random_generator: Generator | None = None,

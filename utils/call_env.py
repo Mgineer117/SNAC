@@ -66,7 +66,10 @@ def call_env(args):
 
     elif args.env_name in ("CtF1v1", "CtF1v2", "CtF1v3", "CtF1v4"):
         if args.ctf_map == "sparse":
-            map_path: str = "assets/sparse_ctf.txt"
+            if args.env_name == "CtF1v1":
+                map_path: str = "assets/sparse_ctf_1v1.txt"
+            elif args.env_name == "CtF1v2":
+                map_path: str = "assets/sparse_ctf_1v2.txt"
         elif args.ctf_map == "regular":
             map_path: str = "assets/ctf_avoid_obj.txt"
         else:
