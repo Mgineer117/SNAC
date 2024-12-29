@@ -38,7 +38,7 @@
         "gamma": 0.99
     },
     "Maze": {
-        "SF_epoch": 1500,
+        "SF_epoch": 2000,
         "Psi_epoch": 0,
         "OP_epoch": 10,
         "HC_epoch": 1000,
