@@ -110,7 +110,7 @@ class SFTrainer:
 
             if not self.buffer.full:
                 batch, sample_time = self.sampler.collect_samples(
-                    self.policy, grid_type=self.grid_type
+                    self.policy, grid_type=self.grid_type, random_init_pos=True
                 )
                 self.buffer.push(batch)
 
@@ -159,7 +159,7 @@ class SFTrainer:
 
             if not self.buffer.full:
                 batch, sample_time = self.sampler.collect_samples(
-                    self.policy, grid_type=self.grid_type
+                    self.policy, grid_type=self.grid_type, random_init_pos=True
                 )
                 self.buffer.push(batch)
 
@@ -191,7 +191,7 @@ class SFTrainer:
         sample_time = 0
         while self.buffer.num_trj < self.buffer.min_num_trj:
             batch, sampleT = self.sampler.collect_samples(
-                self.policy, grid_type=self.grid_type
+                self.policy, grid_type=self.grid_type, random_init_pos=True
             )
             self.buffer.push(batch, post_process=self.post_process)
             sample_time += sampleT

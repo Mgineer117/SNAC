@@ -48,17 +48,23 @@ class GridWrapper(gym.Wrapper):
         )
 
         # Initialize the normalizer by running the environment
+        if args.obs_norm != "none":
+            self.fix_running_avg()
+
+    def fix_running_avg(self):
+        # Initialize the normalizer by running the environment
         print("***** Fixing Running Average *****")
-        observation, _ = env.reset()
+        options = {"random_init_pos": True}
+        observation, _ = self.env.reset(options=options)
         self.obs_normalizer.normalize(observation)
         for _ in range(self.obs_normalizer.max_updates):
             # Sample a random action from the environment's action space
-            action = env.action_space.sample()
-            observation, _, done, _, _ = env.step(action)
+            action = self.env.action_space.sample()
+            observation, _, done, _, _ = self.env.step(action)
             self.obs_normalizer.normalize(observation)
 
             if done:
-                observation, _ = env.reset()
+                observation, _ = self.env.reset(options=options)
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
@@ -97,7 +103,7 @@ class GridWrapper(gym.Wrapper):
 
 
 class CtFWrapper(gym.Wrapper):
-    def __init__(self, env: gym.Env, args, num_init_steps=100):
+    def __init__(self, env: gym.Env, args):
         super(CtFWrapper, self).__init__(env)
         save_dim_to_args(env, args)  # given env, save its state and action dim
         self.agent_num = args.agent_num
@@ -106,17 +112,23 @@ class CtFWrapper(gym.Wrapper):
         )
 
         # Initialize the normalizer by running the environment
+        if args.obs_norm != "none":
+            self.fix_running_avg()
+
+    def fix_running_avg(self):
+        # Initialize the normalizer by running the environment
         print("***** Fixing Running Average *****")
-        observation, _ = env.reset()
+        options = {"random_init_pos": True}
+        observation, _ = self.env.reset(options=options)
         self.obs_normalizer.normalize(observation)
         for _ in range(self.obs_normalizer.max_updates):
             # Sample a random action from the environment's action space
-            action = env.action_space.sample()
-            observation, _, done, _, _ = env.step(action)
+            action = self.env.action_space.sample()
+            observation, _, done, _, _ = self.env.step(action)
             self.obs_normalizer.normalize(observation)
 
             if done:
-                observation, _ = env.reset()
+                observation, _ = self.env.reset(options=options)
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
