@@ -122,7 +122,7 @@ class Maze(MultiGridEnv):
         # place agent
         if options["random_init_pos"]:
             coords = self.find_obj_coordinates(None)
-            agent_positions = random.sample(coords)
+            agent_positions = random.sample(coords, 1)[0]
         else:
             agent_positions = self.agent_positions[self.grid_type]
 
