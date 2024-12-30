@@ -65,6 +65,7 @@ class GridWrapper(gym.Wrapper):
 
             if done:
                 observation, _ = self.env.reset(options=options)
+        print("***** Done!!! *****")
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
@@ -129,6 +130,7 @@ class CtFWrapper(gym.Wrapper):
 
             if done:
                 observation, _ = self.env.reset(options=options)
+        print("***** Done!!! *****")
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
