@@ -7,7 +7,7 @@ from algorithms.OptionCritic import OptionCritic
 from algorithms.FeatureTrain import FeatureTrain
 
 from utils.call_env import call_env
-from utils.utils import save_dim_to_args, setup_logger, seed_all, load_hyperparams
+from utils.utils import setup_logger, seed_all, load_hyperparams
 from utils.get_args import get_args
 
 import wandb
@@ -31,7 +31,6 @@ def train(args, seed, unique_id):
     """
     # # call logger
     env = call_env(args)
-    save_dim_to_args(env, args)  # given env, save its state and action dim
     logger, writer = setup_logger(args, unique_id, seed)
 
     if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):

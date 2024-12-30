@@ -10,7 +10,7 @@ from scipy.optimize import fmin_l_bfgs_b as bfgs
 
 from copy import deepcopy
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
-from utils.utils import estimate_advantages
+from utils import estimate_advantages
 from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
 from models.layers.ppo_networks import PPO_Policy, PPO_Critic
@@ -36,7 +36,6 @@ class PPO_Learner(BasePolicy):
         # constants
         self.device = device
 
-        self._a_dim = policy._a_dim
         self._entropy_scaler = entropy_scaler
         self._eps = eps
         self._gamma = gamma
@@ -51,10 +50,10 @@ class PPO_Learner(BasePolicy):
         self.critic = critic
 
         if critic_lr is None:
-            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
+            self.optimizer = torch.optim.AdamW(self.policy.parameters(), lr=policy_lr)
             self.is_bfgs = True
         else:
-            self.optimizer = torch.optim.Adam(
+            self.optimizer = torch.optim.AdamW(
                 [
                     {"params": self.policy.parameters(), "lr": policy_lr},
                     {"params": self.critic.parameters(), "lr": critic_lr},

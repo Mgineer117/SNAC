@@ -62,7 +62,7 @@ def call_env(args):
         )
         disc_or_cont(env, args)
         args.agent_num = len(env.agents)
-        return GridWrapper(env, tile_size=args.tile_size)
+        return GridWrapper(env, args)
 
     elif args.env_name in ("CtF1v1", "CtF1v2", "CtF1v3", "CtF1v4"):
         if args.ctf_map == "sparse":
@@ -88,7 +88,7 @@ def call_env(args):
             raise NotImplementedError(f"{args.env_name} not implemented")
         disc_or_cont(env, args)
         args.agent_num = len(env.agents)
-        return CtFWrapper(env, tile_size=args.tile_size)
+        return CtFWrapper(env, args)
     elif args.env_name == "PointNavigation":
         config = {"agent_name": "Point"}
         env_id = "PointNavigation"

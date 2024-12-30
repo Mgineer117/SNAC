@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.typing import NDArray
 import gymnasium as gym
+from utils.normalizer import ObservationNormalizer
+from utils.utils import save_dim_to_args
 
 
 class StateImageWrapper(gym.Wrapper):
@@ -37,16 +39,31 @@ class StateImageWrapper(gym.Wrapper):
 
 
 class GridWrapper(gym.Wrapper):
-    def __init__(self, env: gym.Env, tile_size: int = 1):
+    def __init__(self, env: gym.Env, args):
         super(GridWrapper, self).__init__(env)
-        self.tile_size = tile_size
-        self.agent_num = len(self.env.agents)
+        save_dim_to_args(env, args)  # given env, save its state and action dim
+        self.agent_num = args.agent_num
+        self.obs_normalizer = ObservationNormalizer(
+            mode=args.obs_norm, state_dim=args.s_dim
+        )
+        self.pos_normalizer = ObservationNormalizer(
+            mode=args.obs_norm, state_dim=(2 * self.agent_num,)
+        )
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
         for i in range(self.agent_num):
             agent_pos[2 * i : 2 * i + 2] = self.env.agents[i].pos
+        agent_pos = self.pos_normalizer.normalize(agent_pos)
         return agent_pos
+
+    def get_step(self, action):
+        action = np.argmax(action)
+        # Call the original step method
+        observation, reward, termination, truncation, info = self.env.step(action)
+        observation = observation["image"]
+        observation = self.obs_normalizer.normalize(observation)
+        return observation, reward, termination, truncation, info
 
     def reset(self, **kwargs):
         if not "options" in kwargs:
@@ -55,39 +72,46 @@ class GridWrapper(gym.Wrapper):
 
         observation, info = self.env.reset(**kwargs)
         observation = observation["image"]
-        observation = np.repeat(
-            np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
-        )
+        observation = self.obs_normalizer.normalize(observation)
+
         obs = {}
         obs["observation"] = observation
         obs["agent_pos"] = self.get_agent_pos()
         return obs, info
 
     def step(self, action):
-        action = np.argmax(action)
-        # Call the original step method
-        observation, reward, termination, truncation, info = self.env.step(action)
-        observation = observation["image"]
-        observation = np.repeat(
-            np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
-        )
+        observation, reward, term, trunc, info = self.get_step(action)
         obs = {}
         obs["observation"] = observation
         obs["agent_pos"] = self.get_agent_pos()
-        return obs, reward, termination, truncation, info
+        return obs, reward, term, trunc, info
 
 
 class CtFWrapper(gym.Wrapper):
-    def __init__(self, env: gym.Env, tile_size: int = 1):
+    def __init__(self, env: gym.Env, args):
         super(CtFWrapper, self).__init__(env)
-        self.tile_size = tile_size
-        self.agent_num = len(self.env.agents)
+        save_dim_to_args(env, args)  # given env, save its state and action dim
+        self.agent_num = args.agent_num
+        self.obs_normalizer = ObservationNormalizer(
+            mode=args.obs_norm, state_dim=args.s_dim
+        )
+        self.pos_normalizer = ObservationNormalizer(
+            mode=args.obs_norm, state_dim=(2 * self.agent_num,)
+        )
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
         for i in range(self.agent_num):
             agent_pos[2 * i : 2 * i + 2] = self.env.agents[i].pos
+        agent_pos = self.pos_normalizer.normalize(agent_pos)
         return agent_pos
+
+    def get_step(self, action):
+        action = np.argmax(action)
+        # Call the original step method
+        observation, reward, termination, truncation, info = self.env.step(action)
+        observation = self.obs_normalizer.normalize(observation)
+        return observation, reward, termination, truncation, info
 
     def reset(self, **kwargs):
         if not "options" in kwargs:
@@ -95,26 +119,19 @@ class CtFWrapper(gym.Wrapper):
             kwargs["options"] = options
 
         observation, _ = self.env.reset(**kwargs)
-        observation = np.repeat(
-            np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
-        )
+        observation = self.obs_normalizer.normalize(observation)
+
         obs = {}
         obs["observation"] = observation
         obs["agent_pos"] = self.get_agent_pos()
         return obs, {}
 
     def step(self, action):
-        action = np.argmax(action)
-        # Call the original step method
-        observation, reward, termination, truncation, info = self.env.step(action)
-        observation = np.repeat(
-            np.repeat(observation, self.tile_size, axis=0), self.tile_size, axis=1
-        )
+        observation, reward, term, trunc, info = self.get_step(action)
         obs = {}
         obs["observation"] = observation
         obs["agent_pos"] = self.get_agent_pos()
-
-        return obs, reward, termination, truncation, info
+        return obs, reward, term, trunc, info
 
 
 class NavigationWrapper(gym.Wrapper):
