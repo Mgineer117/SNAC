@@ -56,11 +56,13 @@ class GridWrapper(gym.Wrapper):
         print("***** Fixing Running Average *****")
         options = {"random_init_pos": True}
         observation, _ = self.env.reset(options=options)
+        observation = observation["image"]
         self.obs_normalizer.normalize(observation)
         for _ in range(self.obs_normalizer.max_updates):
             # Sample a random action from the environment's action space
             action = self.env.action_space.sample()
             observation, _, done, _, _ = self.env.step(action)
+            observation = observation["image"]
             self.obs_normalizer.normalize(observation)
 
             if done:
