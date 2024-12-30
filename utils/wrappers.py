@@ -47,6 +47,19 @@ class GridWrapper(gym.Wrapper):
             mode=args.obs_norm, state_dim=args.s_dim
         )
 
+        # Initialize the normalizer by running the environment
+        print("***** Fixing Running Average *****")
+        observation, _ = env.reset()
+        self.obs_normalizer.normalize(observation)
+        for _ in range(self.obs_normalizer.max_updates):
+            # Sample a random action from the environment's action space
+            action = env.action_space.sample()
+            observation, _, done, _, _ = env.step(action)
+            self.obs_normalizer.normalize(observation)
+
+            if done:
+                observation, _ = env.reset()
+
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
         for i in range(self.agent_num):
@@ -93,9 +106,9 @@ class CtFWrapper(gym.Wrapper):
         )
 
         # Initialize the normalizer by running the environment
+        print("***** Fixing Running Average *****")
         observation, _ = env.reset()
         self.obs_normalizer.normalize(observation)
-
         for _ in range(self.obs_normalizer.max_updates):
             # Sample a random action from the environment's action space
             action = env.action_space.sample()
