@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import cv2
+import random
 import json
 import os
 import numpy as np
@@ -100,11 +101,15 @@ def run_loop(env, option_vals, options, args):
             & (grid_tensor[:, :, 1] != 4)
         )  # find idx where not wall
 
+        random_index = random.sample(range(len(x_coords)), 1)
         for x, y in zip(x_coords, y_coords):
             grid = grid_tensor.copy()
             # enemy assignment
             grid[x, y, 1] = 2
             grid[x, y, 2] = 2
+            if args.env_name == "CtF1v2":
+                grid[x_coords[random_index], y_coords[random_index], 1] = 2
+                grid[x_coords[random_index], y_coords[random_index], 2] = 2
 
             # find idx where not wall and red agent
             pos = np.where(
@@ -118,8 +123,8 @@ def run_loop(env, option_vals, options, args):
             agent_pos[2] = x
             agent_pos[3] = y
             if args.env_name == "CtF1v2":
-                agent_pos[4] = x
-                agent_pos[5] = y
+                agent_pos[4] = x_coords[random_index]
+                agent_pos[5] = y_coords[random_index]
 
             # prepare the path
             save_path = f"RewardMap/CtF/{str(x)}_{str(y)}"
@@ -150,8 +155,7 @@ if __name__ == "__main__":
         config = json.load(json_file)
     args = DotDict(config)
     args.algo_name = "SNAC"
-    args.num_vector = 16
-    args.num_traj_decomp = 300
+    args.num_vector = 12
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")
