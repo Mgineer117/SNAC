@@ -7,9 +7,7 @@ class ObservationNormalizer:
         state_dim,
         mode="ema",
         alpha=0.95,
-        window_size=500,
-        weights=None,
-        max_updates=1000,
+        max_updates=10000,
     ):
         """
         mode: Type of moving average ('ema', 'cma', or 'wma')
@@ -21,28 +19,24 @@ class ObservationNormalizer:
         """
         self.mode = mode
         self.alpha = alpha
-        self.window_size = window_size
         self.max_updates = max_updates  # Maximum number of updates allowed
         self.update_count = 0  # Track the number of updates
 
         # Initialize the statistics
         self.count = 0
+        self.eps = 1.0
 
         # Initialize based on the mode
         if mode == "ema":
             self.normalizer = EMA(alpha=self.alpha, state_dim=state_dim)
         elif mode == "cma":
             self.normalizer = CMA(state_dim=state_dim)
-        elif mode == "wma":
-            self.normalizer = WMA(
-                window_size=self.window_size, weights=weights, state_dim=state_dim
-            )
         elif mode == "none":
             self.normalizer = None
         else:
             raise NotImplementedError(f"Mode {mode} is not implemented.")
 
-    def normalize(self, observation):
+    def normalize(self, observation, update=False):
         """
         Normalize the observation using the selected moving average mode.
         If the observation is a batch, apply normalization per observation.
@@ -50,9 +44,10 @@ class ObservationNormalizer:
         if self.normalizer is not None:
             # Stop updating once the max updates are reached
             if self.update_count >= self.max_updates:
-                return (observation - self.mean) / (np.sqrt(self.var) + 1e-8)
+                return (observation - self.mean) / (np.sqrt(self.var) + self.eps)
             else:
-                self.normalizer.update(observation)
+                if update:
+                    self.normalizer.update(observation)
                 # Update the statistics based on the selected mode
                 self.mean = self.normalizer.mean
                 if self.mode == "ema":
@@ -60,14 +55,11 @@ class ObservationNormalizer:
                 elif self.mode == "cma":
                     # CMA doesn't maintain variance
                     self.var = np.zeros_like(self.mean)
-                elif self.mode == "wma":
-                    # WMA doesn't maintain variance for now
-                    self.var = np.zeros_like(self.mean)
 
                 self.update_count += 1
 
                 # Return the normalized observation after the update
-                return (observation - self.mean) / (np.sqrt(self.var) + 1e-8)
+                return (observation - self.mean) / (np.sqrt(self.var) + self.eps)
         else:
             return observation
 
@@ -119,32 +111,3 @@ class CMA:
         else:
             # Update cumulative mean using CMA formula
             self.mean = (self.mean * (self.count - 1) + observation) / self.count
-
-
-class WMA:
-    def __init__(self, window_size=100, weights=None, state_dim=None):
-        """
-        window_size: Size of the window for weighted moving average
-        weights: Custom weights for WMA.
-        state_dim: The state dimension (shape of the observation, e.g., (batch_size, height, width, channels))
-        """
-        self.window_size = window_size
-        self.weights = weights if weights is not None else np.ones(window_size)
-        self.state_dim = state_dim
-        self.window = []
-        self.count = 0
-        self.sum = np.zeros(state_dim)  # Initialize sum to state dimension
-
-    def update(self, observation):
-        """
-        Update the weighted moving average with the current observation.
-        """
-        self.window.append(observation)
-        if len(self.window) > self.window_size:
-            self.window.pop(0)
-
-        # Update weighted sum
-        weighted_sum = np.dot(self.weights[: len(self.window)], self.window)
-        self.sum = weighted_sum
-        self.count = len(self.window)
-        self.mean = self.sum / self.count  # Weighted mean for normalization
