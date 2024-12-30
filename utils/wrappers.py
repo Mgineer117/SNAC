@@ -46,15 +46,11 @@ class GridWrapper(gym.Wrapper):
         self.obs_normalizer = ObservationNormalizer(
             mode=args.obs_norm, state_dim=args.s_dim
         )
-        self.pos_normalizer = ObservationNormalizer(
-            mode=args.obs_norm, state_dim=(2 * self.agent_num,)
-        )
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
         for i in range(self.agent_num):
             agent_pos[2 * i : 2 * i + 2] = self.env.agents[i].pos
-        agent_pos = self.pos_normalizer.normalize(agent_pos)
         return agent_pos
 
     def get_step(self, action):
@@ -88,22 +84,31 @@ class GridWrapper(gym.Wrapper):
 
 
 class CtFWrapper(gym.Wrapper):
-    def __init__(self, env: gym.Env, args):
+    def __init__(self, env: gym.Env, args, num_init_steps=100):
         super(CtFWrapper, self).__init__(env)
         save_dim_to_args(env, args)  # given env, save its state and action dim
         self.agent_num = args.agent_num
         self.obs_normalizer = ObservationNormalizer(
             mode=args.obs_norm, state_dim=args.s_dim
         )
-        self.pos_normalizer = ObservationNormalizer(
-            mode=args.obs_norm, state_dim=(2 * self.agent_num,)
-        )
+
+        # Initialize the normalizer by running the environment
+        observation, _ = env.reset()
+        self.obs_normalizer.normalize(observation)
+
+        for _ in range(self.obs_normalizer.max_updates):
+            # Sample a random action from the environment's action space
+            action = env.action_space.sample()
+            observation, _, done, _, _ = env.step(action)
+            self.obs_normalizer.normalize(observation)
+
+            if done:
+                observation, _ = env.reset()
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
         for i in range(self.agent_num):
             agent_pos[2 * i : 2 * i + 2] = self.env.agents[i].pos
-        agent_pos = self.pos_normalizer.normalize(agent_pos)
         return agent_pos
 
     def get_step(self, action):

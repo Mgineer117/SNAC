@@ -10,7 +10,7 @@ from scipy.optimize import fmin_l_bfgs_b as bfgs
 
 from copy import deepcopy
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
-from utils import estimate_advantages
+from utils import estimate_advantages, ObservationNormalizer
 from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
 from models.layers.ppo_networks import PPO_Policy, PPO_Critic
@@ -75,7 +75,6 @@ class PPO_Learner(BasePolicy):
 
         # preprocessing
         observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
-
         if np.any(agent_pos != None):
             agent_pos = torch.from_numpy(agent_pos).to(self._dtype).to(self.device)
 

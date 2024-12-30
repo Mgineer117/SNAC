@@ -255,21 +255,6 @@ class SF_Split(BasePolicy):
             psi = psi.cpu().numpy()
         return psi, {}
 
-    def decode(self, features, actions, conv_dict):
-        # Does some dimensional and np <-> tensor work
-        # and pass it to feature decoder actions should be one-hot
-        if isinstance(features, np.ndarray):
-            features = torch.from_numpy(features).to(self.device).to(self._dtype)
-            if len(features.shape) == 1:
-                features = features.unsqueeze(0)
-        if isinstance(actions, np.ndarray):
-            actions = torch.from_numpy(actions).to(self.device).to(self._dtype)
-            if len(actions.shape) == 1:
-                actions = actions.unsqueeze(0)
-
-        reconstructed_state = self.feaNet.decode(features, actions, conv_dict)
-        return reconstructed_state
-
     def plot_rewards(self, reward_pred, rewards):
         """
         Plot predicted and true rewards as a stem plot with logarithmic y-axis.
@@ -307,6 +292,21 @@ class SF_Split(BasePolicy):
         plt.grid(True, which="both", ls="--", linewidth=0.5)
         plt.savefig(f"{self.sf_path}/{self._forward_steps}_reward.png")
         plt.close()
+
+    def decode(self, features, actions, conv_dict):
+        # Does some dimensional and np <-> tensor work
+        # and pass it to feature decoder actions should be one-hot
+        if isinstance(features, np.ndarray):
+            features = torch.from_numpy(features).to(self.device).to(self._dtype)
+            if len(features.shape) == 1:
+                features = features.unsqueeze(0)
+        if isinstance(actions, np.ndarray):
+            actions = torch.from_numpy(actions).to(self.device).to(self._dtype)
+            if len(actions.shape) == 1:
+                actions = actions.unsqueeze(0)
+
+        reconstructed_state = self.feaNet.decode(features, actions, conv_dict)
+        return reconstructed_state
 
     def _phi_Loss(self, states, actions, next_states, agent_pos, rewards):
         """
