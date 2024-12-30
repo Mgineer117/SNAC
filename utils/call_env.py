@@ -36,7 +36,7 @@ def call_env(args):
         )
         disc_or_cont(env, args)
         args.agent_num = len(env.agents)
-        return GridWrapper(env, tile_size=args.tile_size)
+        return GridWrapper(env, args)
     elif args.env_name == "Maze":
         # first call dummy env to find possible location for agent
         env = Maze(
@@ -49,7 +49,7 @@ def call_env(args):
         )
         disc_or_cont(env, args)
         args.agent_num = len(env.agents)
-        return GridWrapper(env, tile_size=args.tile_size)
+        return GridWrapper(env, args)
     elif args.env_name == "LavaRooms":
         # first call dummy env to find possible location for agent
         env = LavaRooms(
