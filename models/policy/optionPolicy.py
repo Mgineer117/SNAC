@@ -70,12 +70,12 @@ class OP_Controller(BasePolicy):
         self.optimizers = {}
 
         if critic_lr is None:
-            self.optimizers["ppo"] = torch.optim.Adam(
+            self.optimizers["ppo"] = torch.optim.AdamW(
                 self.optionPolicy.parameters(), lr=policy_lr
             )
             self.is_bfgs = True
         else:
-            self.optimizers["ppo"] = torch.optim.Adam(
+            self.optimizers["ppo"] = torch.optim.AdamW(
                 [
                     {"params": self.optionPolicy.parameters(), "lr": policy_lr},
                     {"params": self.optionCritic.parameters(), "lr": critic_lr},
