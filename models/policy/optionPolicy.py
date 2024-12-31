@@ -202,8 +202,6 @@ class OP_Controller(BasePolicy):
         self.train()
         t0 = time.time()
 
-        
-
         # normalization
         if self.normalizer is not None:
             batch["states"] = self.normalizer.normalize(batch["states"], update=False) 

@@ -139,6 +139,7 @@ class SNAC:
                 self.sf_network, self.args, self.option_vals, self.options
             )
             print_model_summary(self.op_network, model_name="OP model")
+
             op_trainer = OPTrainer(
                 policy=self.op_network,
                 sampler=self.sampler,

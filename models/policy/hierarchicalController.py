@@ -135,12 +135,16 @@ class HC_Controller(BasePolicy):
             phi, _ = self.sf_network.get_features(obs, deterministic=True)
         return phi
 
+    def normalize(self, obs):
+        observation = obs["observation"]
+        if self.normalizer is not None:
+            observation = self.normalizer.normalize(observation)
+        obs["observation"] = observation
+        return obs
+
     def preprocess_obs(self, obs):
         observation = obs["observation"]
         agent_pos = obs["agent_pos"]
-
-        if self.normalizer is not None:
-            observation = self.normalizer.normalize(observation)
 
         if not torch.is_tensor(observation):
             observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
@@ -155,12 +159,14 @@ class HC_Controller(BasePolicy):
         Flat tensor-based state dimension ~ [Batch, tensor] or [tensor]
         """
         self._forward_steps += 1
-        obs = self.preprocess_obs(obs)
+        
+        normalized_obs = self.preprocess_obs(obs)
 
         if idx is None:
+            
             # sample a from the Hierarchical Policy
             z, z_argmax, metaData = self.policy(
-                obs["observation"], deterministic=deterministic
+                normalized_obs["observation"], deterministic=deterministic
             )
         else:
             # keep using the given z
@@ -178,12 +184,12 @@ class HC_Controller(BasePolicy):
 
         if is_option:
             # option selection
+            # obs should be unnormalized
             with torch.no_grad():
                 a, _ = self.op_network(obs, z_argmax, deterministic=deterministic)
         else:
             # primitive action selection
-            # a = torch.rand((1, self._a_dim)).to(self.device)
-            a, _ = self.primitivePolicy(obs["observation"], deterministic=deterministic)
+            a, _ = self.primitivePolicy(normalized_obs["observation"], deterministic=deterministic)
 
         return a, {
             "z": z,

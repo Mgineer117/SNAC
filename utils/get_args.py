@@ -139,8 +139,8 @@ def get_args(verbose=True):
     parser.add_argument(
         "--OP-epoch",
         type=int,
-        default=None,  # 50
-        help="total number of epochs to train one each option policy; every epoch it does evaluation",
+        default=None,  # 500
+        help="For PPO alg. Total number of epochs; every epoch it does evaluation",
     )
     parser.add_argument(
         "--HC-epoch",
@@ -383,6 +383,14 @@ def get_args(verbose=True):
 
     parser.add_argument(
         "--obs-norm", type=str, default="ema", help="PPO update per one iter"
+    )
+
+    ### Algorithmic
+    parser.add_argument(
+        "--OP-PPO-params", type=dict, default=None, help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--OP-SAC-params", type=dict, default=None, help="PPO-actor learning rate"
     )
 
     # PPO parameters

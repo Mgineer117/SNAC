@@ -17,7 +17,7 @@ def print_option_info(option_vals, options, algo_name, desired_num):
         vec_num = int(len(option_vals) / 2)
 
         msg = colorize(
-            f"{algo_name} with R:{vec_num} S:{vec_num} / {desired_num} vectors with shape {options.shape}",
+            f"\n{algo_name} with R:{vec_num} S:{vec_num} / {desired_num} vectors with shape {options.shape}",
             "magenta",
             bold=True,
         )
@@ -31,7 +31,7 @@ def print_option_info(option_vals, options, algo_name, desired_num):
     ):
         vec_num = len(option_vals)
         msg = colorize(
-            f"{algo_name} with {vec_num} / {desired_num} vectors with shape {options.shape}",
+            f"\n{algo_name} with {vec_num} / {desired_num} vectors with shape {options.shape}",
             "magenta",
             bold=True,
         )
