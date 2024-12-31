@@ -115,7 +115,7 @@
         "ctf_map": "sparse"
     },
     "CtF1v2": {
-        "SF_epoch": 300,
+        "SF_epoch": 400,
         "Psi_epoch": 0,
         "OP_epoch": 10,
         "HC_epoch": 200,
@@ -128,8 +128,8 @@
         "ppo_log_interval": 10,
         "oc_log_interval": 25,
         "PM_policy": "PPO",
-        "feature_lr": 1e-4,
-        "option_lr": 1e-4,
+        "feature_lr": 5e-5,
+        "option_lr": 5e-5,
         "phi_loss_r_scaler": 10.0,
         "phi_loss_s_scaler": 0.1,
         "phi_loss_kl_scaler": 10.0,
