@@ -30,7 +30,7 @@ class SAC_Learner(BasePolicy):
         # Constants
         self.device = device
         self.log_alpha = nn.Parameter(torch.tensor(math.log(alpha), device=self.device))
-        self.alpha = alpha
+        self.alpha = torch.tensor(alpha)
         self.gamma = gamma
         self.tau = tau
         self.trj_per_iter = trj_per_iter
@@ -144,9 +144,10 @@ class SAC_Learner(BasePolicy):
             "SAC/critic_loss": critic_loss.item(),
             "SAC/policy_loss": policy_loss.item(),
             "SAC/alpha_loss": alpha_loss.item(),
-            "SAC/alpha": self.alpha,
+            "SAC/alpha": self.alpha.item(),
             "SAC/trainReward":(torch.sum(rewards) / torch.sum(terminals)).item(),
         }
+        
         update_time = time.time() - t0
         return loss_dict, update_time
 
