@@ -206,7 +206,7 @@
         "PPO_epoch": 200,
         "SAC_epoch": 2000,
         "step_per_epoch": 50,
-        "sac_step_per_epoch": 100,
+        "sac_step_per_epoch": 10,
         "sf_log_interval": 100,
         "op_log_interval": 5,
         "hc_log_interval": 50,

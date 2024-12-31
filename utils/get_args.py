@@ -382,7 +382,7 @@ def get_args(verbose=True):
     )
 
     parser.add_argument(
-        "--obs-norm", type=str, default="ema", help="PPO update per one iter"
+        "--obs-norm", type=str, default="none", help="PPO update per one iter"
     )
 
     # PPO parameters
@@ -430,7 +430,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-soft-update-rate",
         type=float,
-        default=0.005,
+        default=0.01,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
@@ -539,7 +539,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(
