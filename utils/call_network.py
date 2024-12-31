@@ -4,6 +4,7 @@ import torch.nn as nn
 import pickle
 from typing import Union
 
+from utils.normalizer import ObservationNormalizer
 from models.layers import (
     VAE,
     ConvNetwork,
@@ -184,7 +185,7 @@ def call_sacNetwork(args):
 
     if args.import_sac_model:
         print("Loading previous SAC parameters....")
-        policy, critic_twin, alpha = pickle.load(
+        policy, critic_twin, alpha, normalizer = pickle.load(
             open(f"log/eval_log/model_for_eval/{args.env_name}/sac_model.p", "rb")
         )
     else:
@@ -206,11 +207,17 @@ def call_sacNetwork(args):
 
         alpha = args.sac_init_alpha
 
+        if args.obs_norm != "none":
+            normalizer = ObservationNormalizer(state_dim=args.s_dim)
+        else:
+            normalizer = None
+        
     # Create the SAC Learner
     policy = SAC_Learner(
         policy=actor,
         critic_twin=critic_twin,
         alpha=alpha,
+        normalizer=normalizer,
         policy_lr=args.sac_policy_lr,
         critic_lr=args.sac_critic_lr,
         alpha_lr=args.sac_alpha_lr,
@@ -246,6 +253,11 @@ def call_ppoNetwork(args):
             activation=nn.Tanh(),
         )
 
+        if args.obs_norm != "none":
+            normalizer = ObservationNormalizer(state_dim=args.s_dim)
+        else:
+            normalizer = None
+
     policy = PPO_Learner(
         policy=actor,
         critic=critic,
@@ -268,7 +280,7 @@ def call_ocNetwork(args):
 
     if args.import_oc_model:
         print("Loading previous OC parameters....")
-        policy, critic = pickle.load(
+        policy, critic, normalizer = pickle.load(
             open(f"log/eval_log/model_for_eval/{args.env_name}/oc_model.p", "rb")
         )
     else:
@@ -289,9 +301,15 @@ def call_ocNetwork(args):
             activation=nn.Tanh(),
         )
 
+        if args.obs_norm != "none":
+            normalizer = ObservationNormalizer(state_dim=args.s_dim)
+        else:
+            normalizer = None
+
     policy = OC_Learner(
         policy=policy,
         critic=critic,
+        normalizer=normalizer,
         policy_lr=args.ppo_policy_lr,
         critic_lr=args.ppo_critic_lr,
         entropy_scaler=args.ppo_entropy_scaler,
@@ -462,11 +480,11 @@ def call_opNetwork(
         print("Loading previous OP parameters....")
         if args.op_mode == "sac":
             if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-                optionPolicy, optionCritic, option_vals, options, alpha = pickle.load(
+                optionPolicy, optionCritic, option_vals, options, alpha, normalizer = pickle.load(
                     open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
                 )
             else:
-                optionPolicy, optionCritic, option_vals, options, alpha = pickle.load(
+                optionPolicy, optionCritic, option_vals, options, alpha, normalizer = pickle.load(
                     open(
                         f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
                         "rb",
@@ -475,11 +493,11 @@ def call_opNetwork(
         elif args.op_mode == "ppo":
             alpha = None
             if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-                optionPolicy, optionCritic, option_vals, options = pickle.load(
+                optionPolicy, optionCritic, option_vals, options, normalizer = pickle.load(
                     open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
                 )
             else:
-                optionPolicy, optionCritic, option_vals, options = pickle.load(
+                optionPolicy, optionCritic, option_vals, options, normalizer = pickle.load(
                     open(
                         f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
                         "rb",
@@ -518,6 +536,10 @@ def call_opNetwork(
                 num_options=options.shape[0],
                 activation=nn.Tanh(),
             )
+        if args.obs_norm != "none":
+            normalizer = ObservationNormalizer(state_dim=args.s_dim)
+        else:
+            normalizer = None
 
     optimizers = {}
     if args.op_mode == "sac":
@@ -551,6 +573,7 @@ def call_opNetwork(
         optionPolicy=optionPolicy,
         optionCritic=optionCritic,
         alpha=alpha,
+        normalizer=normalizer,
         optimizers=optimizers,
         options=options,
         option_vals=option_vals,
@@ -567,7 +590,7 @@ def call_hcNetwork(sf_network, op_network, args):
 
     if args.import_hc_model:
         print("Loading previous HC parameters....")
-        policy, primitivePolicy, critic = pickle.load(
+        policy, primitivePolicy, critic, normalizer = pickle.load(
             open("log/eval_log/model_for_eval/hc_model.p", "rb")
         )
     else:
@@ -598,12 +621,18 @@ def call_hcNetwork(sf_network, op_network, args):
             activation=nn.Tanh(),
         )
 
+        if args.obs_norm != "none":
+            normalizer = ObservationNormalizer(state_dim=args.s_dim)
+        else:
+            normalizer = None
+
     policy = HC_Controller(
         sf_network=sf_network,
         op_network=op_network,
         policy=policy,
         primitivePolicy=primitivePolicy,
         critic=critic,
+        normalizer=normalizer,
         a_dim=args.a_dim,
         policy_lr=args.hc_policy_lr,
         critic_lr=args.hc_critic_lr,

@@ -12,10 +12,10 @@ from copy import deepcopy
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils.utils import estimate_advantages
 from models.layers.building_blocks import MLP
-from models.layers.sf_networks import ConvNetwork, PsiCritic
 from models.policy.optionPolicy import OP_Controller
 from models.layers.hc_networks import HC_Policy, HC_PPO, HC_Critic
 from models.policy.base_policy import BasePolicy
+from utils.normalizer import ObservationNormalizer
 
 
 def check_all_devices(module):
@@ -65,6 +65,7 @@ class HC_Controller(BasePolicy):
         policy: HC_Policy,
         primitivePolicy: HC_PPO,
         critic: HC_Critic,
+        normalizer: ObservationNormalizer,
         a_dim: int,
         policy_lr: float = 5e-4,
         critic_lr: float = 1e-4,
@@ -90,6 +91,8 @@ class HC_Controller(BasePolicy):
         self._bfgs_iter = K
         self._forward_steps = 0
 
+        self.normalizer = normalizer 
+        
         # trainable networks
         self.policy = policy
         self.primitivePolicy = primitivePolicy
@@ -135,6 +138,9 @@ class HC_Controller(BasePolicy):
     def preprocess_obs(self, obs):
         observation = obs["observation"]
         agent_pos = obs["agent_pos"]
+
+        if self.normalizer is not None:
+            observation = self.normalizer.normalize(observation)
 
         if not torch.is_tensor(observation):
             observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
@@ -193,6 +199,10 @@ class HC_Controller(BasePolicy):
         self.train()
         t0 = time.time()
 
+        # normalization
+        if self.normalizer is not None:
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
+            
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         states = states.reshape(states.shape[0], -1)
@@ -339,7 +349,7 @@ class HC_Controller(BasePolicy):
         else:
             path = os.path.join(logdir, "model_" + str(epoch) + ".p")
         pickle.dump(
-            (self.policy, self.primitivePolicy, self.critic),
+            (self.policy, self.primitivePolicy, self.critic, self.normalizer),
             open(path, "wb"),
         )
         self.policy = self.policy.to(self.device)

@@ -382,7 +382,7 @@ def get_args(verbose=True):
     )
 
     parser.add_argument(
-        "--obs-norm", type=str, default="none", help="PPO update per one iter"
+        "--obs-norm", type=str, default="ema", help="PPO update per one iter"
     )
 
     # PPO parameters
@@ -539,7 +539,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=True,
+        default=False,
         help="it imports previously trained model",
     )
     parser.add_argument(

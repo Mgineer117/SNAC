@@ -15,13 +15,14 @@ from models.layers.building_blocks import MLP
 from models.layers.sf_networks import ConvNetwork, PsiCritic
 from models.layers.oc_networks import OC_Policy, OC_Critic
 from models.policy.base_policy import BasePolicy
-
+from utils.normalizer import ObservationNormalizer
 
 class OC_Learner(BasePolicy):
     def __init__(
         self,
         policy: OC_Policy,
         critic: OC_Critic,
+        normalizer: ObservationNormalizer,
         policy_lr: float = 3e-4,
         critic_lr: float = 5e-4,
         entropy_scaler: float = 1e-3,
@@ -43,6 +44,8 @@ class OC_Learner(BasePolicy):
         self._bfgs_iter = K
         self._forward_steps = 0
 
+        self.normalizer = normalizer 
+        
         # trainable networks
         self.policy = policy
         self.critic = critic
@@ -76,6 +79,9 @@ class OC_Learner(BasePolicy):
     def preprocess_obs(self, obs):
         observation = obs["observation"]
         agent_pos = obs["agent_pos"]
+
+        if self.normalizer is not None:
+            observation = self.normalizer.normalize(observation)
 
         # preprocessing
         observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
@@ -137,6 +143,11 @@ class OC_Learner(BasePolicy):
         Args:
             states (_type_): _description_
         """
+        # normalization
+        if self.normalizer is not None:
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
+            batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
+            
         states = self.to_tensor(batch["states"], self._dtype, self.device)
         next_states = self.to_tensor(batch["next_states"], self._dtype, self.device)
         option_actions = self.to_tensor(
@@ -205,6 +216,11 @@ class OC_Learner(BasePolicy):
         """
         Training Q
         """
+        # normalization
+        if self.normalizer is not None:
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
+            batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
+            
         states = self.to_tensor(batch["states"], self._dtype, self.device)
         next_states = self.to_tensor(batch["next_states"], self._dtype, self.device)
         option_actions = self.to_tensor(
@@ -391,7 +407,7 @@ class OC_Learner(BasePolicy):
         else:
             path = os.path.join(logdir, "model_" + str(epoch) + ".p")
         pickle.dump(
-            (self.policy, self.critic),
+            (self.policy, self.critic, self.normalizer),
             open(path, "wb"),
         )
         self.policy = self.policy.to(self.device)

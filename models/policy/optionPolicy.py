@@ -12,7 +12,7 @@ from scipy.optimize import fmin_l_bfgs_b as bfgs
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils.utils import estimate_advantages, estimate_psi
 from models.layers.building_blocks import MLP
-from models.layers.sf_networks import ConvNetwork, PsiCritic
+from utils.normalizer import ObservationNormalizer
 from models.layers.op_networks import OptionPolicy, OP_Critic, PsiCritic2
 from models.policy.base_policy import BasePolicy
 
@@ -29,6 +29,7 @@ class OP_Controller(BasePolicy):
         optionPolicy: OptionPolicy,
         optionCritic: OP_Critic,
         alpha: torch.Tensor | None,
+        normalizer: ObservationNormalizer,
         optimizers: dict,
         options: nn.Module,
         option_vals: torch.Tensor,
@@ -55,6 +56,8 @@ class OP_Controller(BasePolicy):
         self.l2_reg = 1e-6
         self.bfgs_iter = args.OP_K_epochs
         self.is_discrete = args.is_discrete
+
+        self.normalizer = normalizer
 
         # some sac params
         self.soft_update_rate = args.sac_soft_update_rate
@@ -86,6 +89,9 @@ class OP_Controller(BasePolicy):
     def preprocess_obs(self, obs):
         observation = obs["observation"]
         agent_pos = obs["agent_pos"]
+
+        if self.normalizer is not None:
+            observation = self.normalizer.normalize(observation)
 
         if not torch.is_tensor(observation):
             observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
@@ -184,6 +190,12 @@ class OP_Controller(BasePolicy):
                     + param.data * self.soft_update_rate
                 )
 
+        # normalization
+        if self.normalizer is not None:
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
+            batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
+        
+        # Ingredients
         states = torch.from_numpy(batch["states"]).to(torch.float32).to(self.device)
         states = states.reshape(states.shape[0], -1)
         actions = torch.from_numpy(batch["actions"]).to(torch.float32).to(self.device)
@@ -256,6 +268,11 @@ class OP_Controller(BasePolicy):
         self.train()
         t0 = time.time()
 
+        # normalization
+        if self.normalizer is not None:
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
+            batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
+            
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         agent_pos = torch.from_numpy(batch["agent_pos"]).to(self._dtype).to(self.device)
@@ -408,7 +425,7 @@ class OP_Controller(BasePolicy):
         if mode == "sac":
             alpha = nn.Parameter(self.alpha.clone().cpu())
             pickle.dump(
-                (self.optionPolicy, self.optionCritic, option_vals, options, alpha),
+                (self.optionPolicy, self.optionCritic, option_vals, options, alpha, self.normalizer),
                 open(path, "wb"),
             )
         elif mode == "ppo":

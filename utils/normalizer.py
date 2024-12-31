@@ -7,7 +7,7 @@ class ObservationNormalizer:
         state_dim,
         mode="ema",
         alpha=0.95,
-        max_updates=10000,
+        max_updates=500000,
     ):
         """
         mode: Type of moving average ('ema', 'cma', or 'wma')
@@ -24,7 +24,7 @@ class ObservationNormalizer:
 
         # Initialize the statistics
         self.count = 0
-        self.eps = 1.0
+        self.eps = 1e-5
 
         # Initialize based on the mode
         if mode == "ema":
@@ -36,32 +36,29 @@ class ObservationNormalizer:
         else:
             raise NotImplementedError(f"Mode {mode} is not implemented.")
 
-    def normalize(self, observation, update=False):
+    def normalize(self, observation, update=True):
         """
         Normalize the observation using the selected moving average mode.
         If the observation is a batch, apply normalization per observation.
         """
-        if self.normalizer is not None:
-            # Stop updating once the max updates are reached
-            if self.update_count >= self.max_updates:
-                return (observation - self.mean) / (np.sqrt(self.var) + self.eps)
-            else:
-                if update:
-                    self.normalizer.update(observation)
-                # Update the statistics based on the selected mode
-                self.mean = self.normalizer.mean
-                if self.mode == "ema":
-                    self.var = self.normalizer.variance
-                elif self.mode == "cma":
-                    # CMA doesn't maintain variance
-                    self.var = np.zeros_like(self.mean)
-
-                self.update_count += 1
-
-                # Return the normalized observation after the update
-                return (observation - self.mean) / (np.sqrt(self.var) + self.eps)
+        # Stop updating once the max updates are reached
+        if self.update_count >= self.max_updates:
+            return (observation - self.mean) / (np.sqrt(self.var) + self.eps)
         else:
-            return observation
+            if update:
+                self.normalizer.update(observation)
+            # Update the statistics based on the selected mode
+            self.mean = self.normalizer.mean
+            if self.mode == "ema":
+                self.var = self.normalizer.variance
+            elif self.mode == "cma":
+                # CMA doesn't maintain variance
+                self.var = np.zeros_like(self.mean)
+
+            self.update_count += 1
+
+            # Return the normalized observation after the update
+            return (observation - self.mean) / (np.sqrt(self.var) + self.eps)
 
 
 class EMA:

@@ -108,6 +108,10 @@ class PPO_Learner(BasePolicy):
         self.train()
         t0 = time.time()
 
+        # normalization
+        if self.normalizer is not None:
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
+
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         states = states.reshape(states.shape[0], -1)

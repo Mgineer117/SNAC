@@ -8,13 +8,14 @@ from utils.torch import get_flat_params_from, set_flat_params_to
 from copy import deepcopy
 from models.policy.base_policy import BasePolicy
 from models.layers.sac_networks import SAC_Policy, SAC_CriticTwin
-
+from utils.normalizer import ObservationNormalizer
 
 class SAC_Learner(BasePolicy):
     def __init__(
         self,
         policy: SAC_Policy,
         critic_twin: SAC_CriticTwin,
+        normalizer: ObservationNormalizer,
         alpha: float = 0.2,
         policy_lr: float = 3e-4,
         critic_lr: float = 3e-4,
@@ -38,6 +39,8 @@ class SAC_Learner(BasePolicy):
         self.target_entropy = -policy._a_dim
         self.tune_alpha = True
         self.num_update = 1
+
+        self.normalizer = normalizer
 
         # Networks
         self.policy = policy
@@ -68,6 +71,8 @@ class SAC_Learner(BasePolicy):
 
     def preprocess_obs(self, obs):
         observation = obs["observation"]
+        if self.normalizer is not None:
+            observation = self.normalizer.normalize(observation)
         observation = torch.from_numpy(observation).to(torch.float32).to(self.device)
         return {"observation": observation}
 
@@ -80,6 +85,11 @@ class SAC_Learner(BasePolicy):
         self.train()
         t0 = time.time()
 
+        # normalization
+        if self.normalizer is not None:
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
+            batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
+            
         states = torch.from_numpy(batch["states"]).to(torch.float32).to(self.device)
         states = states.reshape(states.shape[0], -1)
         actions = torch.from_numpy(batch["actions"]).to(torch.float32).to(self.device)
