@@ -74,11 +74,13 @@ class OPTrainer:
 
     def train(self, mode="sac") -> Dict[str, float]:
         if mode == "ppo":
-            self.ppo_train()
+            first_final_epoch = self.ppo_train()
         elif mode == "sac":
-            self.sac_train()
+            first_final_epoch = self.sac_train()
         else:
             raise NotImplementedError(f"{mode} is not implemented")
+        
+        return first_final_epoch
 
     def sac_train(self) -> Dict[str, float]:
         return None
