@@ -45,7 +45,7 @@
         "PPO_epoch": 100,
         "OC_epoch": 100,
         "step_per_epoch": 50,
-        "sf_log_interval": 500,
+        "sf_log_interval": 100,
         "op_log_interval": 2,
         "hc_log_interval": 20,
         "ppo_log_interval": 10,
