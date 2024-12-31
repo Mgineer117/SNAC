@@ -74,7 +74,7 @@ class OptionPolicy(nn.Module):
             a_argmax = torch.argmax(probs, dim=-1) if deterministic else dist.sample()
             a = F.one_hot(a_argmax.long(), num_classes=self._a_dim)
 
-            logprobs = dist.log_prob(a_argmax)
+            logprobs = dist.log_prob(a_argmax).unsqueeze(-1)
             probs = torch.sum(probs * a, dim=-1)
         else:
             ### Shape the output as desired
@@ -91,7 +91,7 @@ class OptionPolicy(nn.Module):
 
             a = mu if deterministic else dist.rsample()
 
-            logprobs = dist.log_prob(a)
+            logprobs = dist.log_prob(a).unsqueeze(-1)
             probs = torch.exp(logprobs)
 
         entropy = dist.entropy()

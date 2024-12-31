@@ -191,11 +191,12 @@ class OP_Controller(BasePolicy):
             
     def learn(self, batch, z, mode="sac"):
         if mode == "ppo":
-            self.ppo_learn(batch, z)
+            loss_dict, update_time = self.ppo_learn(batch, z)
         elif mode == "sac":
-            self.sac_learn(batch, z)
+            loss_dict, update_time = self.sac_learn(batch, z)
         else:
             raise NotImplementedError(f"{mode} is not implemented")
+        return loss_dict, update_time
 
     def sac_learn(self, batch, z):
         self.train()
@@ -274,7 +275,7 @@ class OP_Controller(BasePolicy):
         # Soft update of target networks
         if self.num_update % self.target_update_interval == 0:
             self.soft_update(self.targetOptionCritic, self.optionCritic)
-            
+
         self.num_update += 1
 
         # Log losses
