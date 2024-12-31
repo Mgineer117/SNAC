@@ -57,7 +57,7 @@ class OP_Controller(BasePolicy):
         self.is_discrete = args.is_discrete
 
         # some sac params
-        self.soft_update_rate = args.soft_update_rate
+        self.soft_update_rate = args.sac_soft_update_rate
         self.target_update_interval = args.target_update_interval
 
         # trainable networks

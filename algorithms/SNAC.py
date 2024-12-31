@@ -141,7 +141,7 @@ class SNAC:
                 logger=self.logger,
                 writer=self.writer,
                 evaluator=self.op_evaluator,
-                val_options=self.op_network._option_vals,
+                val_options=self.op_network.option_vals,
                 epoch=self.curr_epoch + self.args.OP_epoch,
                 init_epoch=self.curr_epoch,
                 step_per_epoch=self.args.step_per_epoch,

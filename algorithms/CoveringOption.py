@@ -151,8 +151,8 @@ class CoveringOption:
             # update option in op network
             self.option_vals[0:2] = S
             self.options[0:2, :] = V
-            self.op_network._option_vals = self.option_vals
-            self.op_network._options = nn.Parameter(
+            self.op_network.option_vals = self.option_vals
+            self.op_network.options = nn.Parameter(
                 self.options.to(torch.float32).to(self.args.device)
             )
 
@@ -200,8 +200,8 @@ class CoveringOption:
                 # Update option values and options
                 self.option_vals[vec_idx : vec_idx + 2] = S
                 self.options[vec_idx : vec_idx + 2, :] = V
-                self.op_network._option_vals = self.option_vals
-                self.op_network._options = nn.Parameter(
+                self.op_network.option_vals = self.option_vals
+                self.op_network.options = nn.Parameter(
                     self.options.to(torch.float32).to(self.args.device)
                 )
                 print(
@@ -357,7 +357,7 @@ class CoveringOption:
                 logger=self.logger,
                 writer=self.writer,
                 evaluator=self.op_evaluator,
-                val_options=self.op_network._option_vals,
+                val_options=self.op_network.option_vals,
                 epoch=self.curr_epoch + self.args.OP_epoch,
                 init_epoch=self.curr_epoch,
                 step_per_epoch=self.args.step_per_epoch,
