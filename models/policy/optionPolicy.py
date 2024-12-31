@@ -48,7 +48,7 @@ class OP_Controller(BasePolicy):
         self.is_bfgs = is_bfgs
         self.a_dim = args.a_dim
         self.entropy_scaler = args.op_entropy_scaler
-        self.eps = args.eps
+        self.eps = args.eps_clip
         self.gamma = args.gamma
         self.tau = args.tau
         self.K = args.OP_K_epochs

@@ -36,7 +36,7 @@ class SAC_Learner(BasePolicy):
         self.trj_per_iter = trj_per_iter
         self.target_update_interval = target_update_interval
         self.target_entropy = -policy._a_dim
-        self.tune_alpha = False
+        self.tune_alpha = True
         self.num_update = 1
 
         # Networks
@@ -108,6 +108,7 @@ class SAC_Learner(BasePolicy):
 
         # Policy Loss
         new_actions, new_meta = self.policy(states)
+        #with torch.no_grad:
         q1_new, q2_new = self.critic_twin(states, new_actions)
         q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
             

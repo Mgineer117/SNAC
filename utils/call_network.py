@@ -193,7 +193,7 @@ def call_sacNetwork(args):
             input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             a_dim=args.a_dim,
-            activation=nn.Tanh(),
+            activation=nn.ReLU(),
             is_discrete=args.is_discrete,
         )
 
@@ -201,7 +201,7 @@ def call_sacNetwork(args):
         critic_twin = SAC_CriticTwin(
             input_dim=args.s_flat_dim + args.a_dim,
             fc_dim=args.fc_dim,
-            activation=nn.Tanh(),
+            activation=nn.ReLU(),
         )
 
         alpha = args.sac_init_alpha

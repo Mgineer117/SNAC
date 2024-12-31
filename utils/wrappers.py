@@ -200,8 +200,9 @@ class NavigationWrapper(gym.Wrapper):
 
 
 class GymWrapper(gym.Wrapper):
-    def __init__(self, env: gym.Env):
+    def __init__(self, env: gym.Env, args):
         super(GymWrapper, self).__init__(env)
+        save_dim_to_args(env, args)  # given env, save its state and action dim
 
     def get_agent_pos(self):
         return np.array([0, 0])

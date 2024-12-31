@@ -117,7 +117,7 @@ def call_env(args):
         )
         disc_or_cont(env, args)
         args.agent_num = 1
-        return GymWrapper(env)
+        return GymWrapper(env, args)
     elif args.env_name == "Hopper":
         env = gym.make(
             "Hopper-v4",
@@ -125,6 +125,6 @@ def call_env(args):
         )
         disc_or_cont(env, args)
         args.agent_num = 1
-        return GymWrapper(env)
+        return GymWrapper(env, args)
     else:
         raise ValueError(f"Invalid environment key: {args.env_name}")
