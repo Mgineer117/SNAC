@@ -161,7 +161,7 @@ class SNAC:
                     f"\n+++++Psi-Network exists, so no OP training takes place+++++ \n"
                 )
             else:
-                final_epoch = op_trainer.train()
+                final_epoch = op_trainer.train(mode=self.args.op_mode)
 
         else:
             self.op_network = call_opNetwork(self.sf_network, self.args)
