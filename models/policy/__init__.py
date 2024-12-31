@@ -1,6 +1,7 @@
 from models.policy.sf_combined import SF_Combined
 from models.policy.sf_split import SF_Split
 from models.policy.ppoPolicy import PPO_Learner
+from models.policy.sacPolicy import SAC_Learner
 from models.policy.ocPolicy import OC_Learner
 from models.policy.optionPolicy import OP_Controller
 from models.policy.randomWalk import RandomWalk
@@ -10,6 +11,7 @@ __all__ = [
     "SF_Combined",
     "SF_Split",
     "PPO_Learner",
+    "SAC_Learner",
     "OC_Learner",
     "OP_Controller",
     "RandomWalk",

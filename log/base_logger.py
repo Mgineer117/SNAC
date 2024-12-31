@@ -38,6 +38,7 @@ class BaseLogger(ABC):
             "HC",
             "OC",
             "PPO",
+            "SAC",
         ]  # successor feature, option policy, hierarchical controller
 
         self.log_dirs = []

@@ -67,9 +67,14 @@ class FeatureTrain:
         self.curr_epoch = 0
 
         # SF checkpoint b/c plotter will only be used
-        self.sf_path, self.op_path, self.hc_path, self.oc_path, self.ppo_path = (
-            self.logger.checkpoint_dirs
-        )
+        (
+            self.sf_path,
+            self.op_path,
+            self.hc_path,
+            self.oc_path,
+            self.ppo_path,
+            self.sac_path,
+        ) = self.logger.checkpoint_dirs
 
         self.plotter = Plotter(
             grid_size=args.grid_size,
@@ -78,6 +83,7 @@ class FeatureTrain:
             op_path=self.op_path,
             hc_path=self.hc_path,
             oc_path=self.oc_path,
+            sac_path=self.sac_path,
             ppo_path=self.ppo_path,
             log_dir=logger.log_dir,
             device=args.device,

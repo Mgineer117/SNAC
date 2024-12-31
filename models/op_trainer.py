@@ -33,6 +33,7 @@ class OPTrainer:
         self,
         policy: OP_Controller,
         sampler: OnlineSampler,
+        buffer: TrajectoryBuffer,
         logger: WandbLogger,
         writer: SummaryWriter,
         evaluator: Evaluator,
@@ -47,6 +48,7 @@ class OPTrainer:
     ) -> None:
         self.policy = policy
         self.sampler = sampler
+        self.buffer = buffer
         self.evaluator = evaluator
 
         self.logger = logger
@@ -70,7 +72,18 @@ class OPTrainer:
         self.log_interval = log_interval
         self.grid_type = grid_type
 
-    def train(self) -> Dict[str, float]:
+    def train(self, mode="sac") -> Dict[str, float]:
+        if mode == "ppo":
+            self.ppo_train()
+        elif mode == "sac":
+            self.sac_train()
+        else:
+            raise NotImplementedError(f"{mode} is not implemented")
+
+    def sac_train(self) -> Dict[str, float]:
+        return None
+
+    def ppo_train(self) -> Dict[str, float]:
         start_time = time.time()
         self.last_reward_mean = deque(maxlen=3)
         self.last_reward_std = deque(maxlen=3)
@@ -443,6 +456,39 @@ class OPTrainer2:
         )
 
         return epoch
+
+    def warm_buffer(self):
+        t0 = time.time()
+        # make sure there is nothing there
+        self.buffer.wipe()
+
+        # collect enough batch
+        count = 0
+        total_sample_time = 0
+        sample_time = 0
+        while self.buffer.num_trj < self.buffer.min_num_trj:
+            batch, sampleT = self.sampler.collect_samples(
+                self.policy, grid_type=self.grid_type, random_init_pos=True
+            )
+            self.num_env_steps += len(batch["rewards"])
+            self.buffer.push(batch)
+            sample_time += sampleT
+            total_sample_time += sampleT
+            if count % 25 == 0:
+                print(
+                    f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                    end="",
+                )
+                sample_time = 0
+            count += 1
+        print(
+            f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+            end="",
+        )
+        print()
+        t1 = time.time()
+        sample_time = t1 - t0
+        return sample_time
 
     def save_model(self, e):
         # save checkpoint

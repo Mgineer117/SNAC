@@ -156,6 +156,66 @@ class OP_Critic(nn.Module):
         return value, {"z": z}
 
 
+class OP_Q_Critic(nn.Module):
+    """
+    Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        fc_dim: int,
+        num_options: int,
+        activation: nn.Module = nn.ReLU(),
+    ):
+        super(OP_Critic, self).__init__()
+
+        # |A| duplicate networks
+        self.act = activation
+
+        self._dtype = torch.float32
+
+        # ex_layer = self.create_sequential_model(sf_dim, fc_dim, 1)
+
+        self.models = nn.ModuleList()
+        for _ in range(num_options):
+            self.models.append(self.create_model(input_dim, fc_dim, 1))
+
+    def create_model(self, input_dim, fc_dim, output_dim):
+        return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
+
+    def forward(self, states: torch.Tensor, actions: torch.Tensor, z: int):
+        x = torch.cat([states, actions], dim=-1)
+        value = self.models[z](x)
+        return value, {"z": z}
+
+
+class OP_CriticTwin(nn.Module):
+    """
+    Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        fc_dim: int,
+        num_options: int,
+        activation: nn.Module = nn.ReLU(),
+    ):
+        super(OP_CriticTwin, self).__init__()
+
+        # |A| duplicate networks
+        self._dtype = torch.float32
+
+        self.critic1 = OP_Q_Critic(input_dim, fc_dim, num_options, activation)
+        self.critic2 = OP_Q_Critic(input_dim, fc_dim, num_options, activation)
+
+    def forward(self, states: torch.Tensor, actions: torch.Tensor, z: int):
+        value1 = self.critic1(states, actions, z)
+        value2 = self.critic2(states, actions, z)
+        return value1, value2, {"z": z}
+
+
 class PsiAdvantage2(nn.Module):
     """
     Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')

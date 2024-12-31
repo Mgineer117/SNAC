@@ -7,9 +7,9 @@ from torch.distributions import MultivariateNormal, Categorical
 from models.layers.building_blocks import MLP, Conv, DeConv
 
 
-class PPO_Policy(nn.Module):
+class SAC_Policy(nn.Module):
     """
-    Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
+    Soft Actor-Critic (SAC) Policy Network
     """
 
     def __init__(
@@ -17,14 +17,12 @@ class PPO_Policy(nn.Module):
         input_dim: int,
         fc_dim: int,
         a_dim: int,
-        activation: nn.Module = nn.Tanh(),
+        activation: nn.Module = nn.ReLU(),
         is_discrete: bool = False,
     ):
-        super(PPO_Policy, self).__init__()
+        super(SAC_Policy, self).__init__()
 
-        # |A| duplicate networks
         self.act = activation
-
         self._a_dim = a_dim
         self._dtype = torch.float32
 
@@ -32,6 +30,7 @@ class PPO_Policy(nn.Module):
 
         self.is_discrete = is_discrete
 
+        # Actor network
         if self.is_discrete:
             self.model = MLP(input_dim, (fc_dim, fc_dim), a_dim, activation=self.act)
         else:
@@ -82,45 +81,63 @@ class PPO_Policy(nn.Module):
 
         return a, {
             "dist": dist,
-            "probs": probs,
             "logprobs": logprobs,
             "entropy": entropy,
         }
 
     def log_prob(self, dist: torch.distributions, actions: torch.Tensor):
         """
-        Actions must be tensor
+        Compute log-probabilities of given actions.
         """
-        actions = actions.squeeze() if actions.shape[-1] > 1 else actions
-
-        if self.is_discrete:
-            logprobs = dist.log_prob(torch.argmax(actions, dim=-1)).unsqueeze(-1)
-        else:
-            logprobs = dist.log_prob(actions).unsqueeze(-1)
-        return logprobs
+        return dist.log_prob(actions).unsqueeze(-1)
 
     def entropy(self, dist: torch.distributions):
         """
-        For code consistency
+        Compute entropy of the distribution.
         """
         return dist.entropy().unsqueeze(-1)
 
 
-class PPO_Critic(nn.Module):
+class SAC_Critic(nn.Module):
     """
-    Psi Advantage Function: Psi(s,a) - (1/|A|)SUM_a' Psi(s, a')
+    Soft Actor-Critic (SAC) Critic Network
+    Approximates Q-value function Q(s, a).
     """
 
-    def __init__(self, input_dim: int, fc_dim: int, activation: nn.Module = nn.Tanh()):
-        super(PPO_Critic, self).__init__()
+    def __init__(
+        self,
+        input_dim: int,
+        fc_dim: int,
+        activation: nn.Module = nn.ReLU(),
+    ):
+        super(SAC_Critic, self).__init__()
 
-        # |A| duplicate networks
-        self.act = activation
+        self.model = MLP(input_dim, (fc_dim, fc_dim), 1, activation=activation)
 
-        self._dtype = torch.float32
-
-        self.model = MLP(input_dim, (fc_dim, fc_dim, fc_dim), 1, activation=self.act)
-
-    def forward(self, x: torch.Tensor):
+    def forward(self, state: torch.Tensor, action: torch.Tensor):
+        # Concatenate state and action along the feature dimension
+        x = torch.cat([state, action], dim=-1)
         value = self.model(x)
         return value
+
+
+class SAC_CriticTwin(nn.Module):
+    """
+    Twin Critic Network for SAC to mitigate value overestimation.
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        fc_dim: int,
+        activation: nn.Module = nn.ReLU(),
+    ):
+        super(SAC_CriticTwin, self).__init__()
+
+        self.critic1 = SAC_Critic(input_dim, fc_dim, activation)
+        self.critic2 = SAC_Critic(input_dim, fc_dim, activation)
+
+    def forward(self, state: torch.Tensor, action: torch.Tensor):
+        value1 = self.critic1(state, action)
+        value2 = self.critic2(state, action)
+        return value1, value2

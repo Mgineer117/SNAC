@@ -7,20 +7,24 @@ import gymnasium as gym
 from gym_multigrid.envs.fourrooms import FourRooms
 
 from models.evaulators import SF_Evaluator, PPO_Evaluator
-from models import SFTrainer, PPOTrainer
+from models import SFTrainer, SACTrainer
 from utils import *
 from utils.call_env import call_env
 
 
-class PPO:
+class SAC:
     def __init__(self, env: gym.Env, logger, writer, args):
         """
-        This is a naive PPO wrapper that includes all necessary training pipelines for HRL.
-        This trains SF network and train PPO according to the extracted features by SF network
+        This is a naive SAC wrapper that includes all necessary training pipelines for HRL.
+        This trains the SF network and then trains SAC according to the extracted features by the SF network.
         """
         self.env = env
 
-        # define buffers and sampler for Monte-Carlo sampling
+        # Define buffers and sampler for Monte-Carlo sampling
+        self.buffer = TrajectoryBuffer(
+            min_num_trj=args.sac_min_num_traj,
+            max_num_trj=args.sac_max_num_traj,
+        )
         self.sampler = OnlineSampler(
             training_envs=self.env,
             state_dim=args.s_dim,
@@ -36,15 +40,15 @@ class PPO:
             gamma=args.gamma,
         )
 
-        # object initialization
+        # Object initialization
         self.logger = logger
         self.writer = writer
         self.args = args
 
-        # param initialization
+        # Parameter initialization
         self.curr_epoch = 0
 
-        # SF checkpoint b/c plotter will only be used
+        # SF checkpoint because plotter will only be used
         (
             self.sf_path,
             self.op_path,
@@ -67,46 +71,46 @@ class PPO:
             device=args.device,
         )
 
-        ### Define evaulators tailored for each process
-        # each evaluator has slight deviations
-        self.ppo_evaluator = PPO_Evaluator(
+        ### Define evaluators tailored for each process
+        self.sac_evaluator = PPO_Evaluator(
             logger=logger,
             writer=writer,
             training_env=self.env,
             plotter=self.plotter,
             renderPlot=args.rendering,
             render_fps=args.render_fps,
-            dir=self.ppo_path,
-            log_interval=args.ppo_log_interval,
+            dir=self.sac_path,
+            log_interval=args.sac_log_interval,
             eval_ep_num=10,
         )
 
     def run(self):
-        self.train_ppo()
+        self.train_sac()
         torch.cuda.empty_cache()
 
-    def train_ppo(self):
-        self.sampler.initialize(episode_num=self.args.ppo_episode_num)
+    def train_sac(self):
+        self.sampler.initialize(episode_num=self.args.sac_episode_num)
 
-        ### Call network param and run
-        self.ppo_network = call_ppoNetwork(self.args)
-        print_model_summary(self.ppo_network, model_name="PPO model")
-        if not self.args.import_ppo_model:
-            ppo_trainer = PPOTrainer(
-                policy=self.ppo_network,
+        ### Call network parameters and run
+        self.sac_network = call_sacNetwork(self.args)
+        print_model_summary(self.sac_network, model_name="SAC model")
+        if not self.args.import_sac_model:
+            sac_trainer = SACTrainer(
+                policy=self.sac_network,
                 sampler=self.sampler,
+                buffer=self.buffer,
                 logger=self.logger,
                 writer=self.writer,
-                evaluator=self.ppo_evaluator,
-                epoch=self.curr_epoch + self.args.PPO_epoch,
+                evaluator=self.sac_evaluator,
+                epoch=self.curr_epoch + self.args.SAC_epoch,
                 init_epoch=self.curr_epoch,
-                step_per_epoch=self.args.step_per_epoch,
+                step_per_epoch=self.args.sac_step_per_epoch,
                 eval_episodes=self.args.eval_episodes,
-                log_interval=self.args.ppo_log_interval,
+                log_interval=self.args.sac_log_interval,
                 grid_type=self.args.grid_type,
             )
-            final_epoch = ppo_trainer.train()
+            final_epoch = sac_trainer.train()
         else:
-            final_epoch = self.curr_epoch + self.args.PPO_epoch
+            final_epoch = self.curr_epoch + self.args.SAC_epoch
 
         self.curr_epoch += final_epoch

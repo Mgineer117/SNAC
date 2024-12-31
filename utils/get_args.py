@@ -105,6 +105,12 @@ def get_args(verbose=True):
         help="logging interval; epoch-based",
     )
     parser.add_argument(
+        "--sac-log-interval",
+        type=int,
+        default=None,
+        help="logging interval; epoch-based",
+    )
+    parser.add_argument(
         "--grid-type",
         type=int,
         default=0,
@@ -150,6 +156,12 @@ def get_args(verbose=True):
     )
     parser.add_argument(
         "--PPO-epoch",
+        type=int,
+        default=None,  # 500
+        help="For PPO alg. Total number of epochs; every epoch it does evaluation",
+    )
+    parser.add_argument(
+        "--SAC-epoch",
         type=int,
         default=None,  # 500
         help="For PPO alg. Total number of epochs; every epoch it does evaluation",
@@ -205,6 +217,12 @@ def get_args(verbose=True):
     )
     parser.add_argument(
         "--ppo-episode-num",
+        type=int,
+        default=None,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--sac-episode-num",
         type=int,
         default=None,
         help="number of episodes to collect for one env",
@@ -363,10 +381,11 @@ def get_args(verbose=True):
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
 
-    # PPO parameters
     parser.add_argument(
         "--obs-norm", type=str, default="ema", help="PPO update per one iter"
     )
+
+    # PPO parameters
     parser.add_argument(
         "--K-epochs", type=int, default=10, help="PPO update per one iter"
     )
@@ -376,6 +395,75 @@ def get_args(verbose=True):
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"
     )
+    parser.add_argument(
+        "--tau",
+        type=float,
+        default=0.95,
+        help="Used in advantage estimation for numerical stability",
+    )
+
+    # SAC parameters
+    parser.add_argument(
+        "--op-mode", type=str, default="sac", help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--sac-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--sac-critic-lr",
+        type=float,
+        default=3e-4,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
+    parser.add_argument(
+        "--sac-alpha-lr",
+        type=float,
+        default=3e-4,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
+    parser.add_argument(
+        "--sac-init-alpha",
+        type=float,
+        default=0.2,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
+    parser.add_argument(
+        "--sac-soft-update-rate",
+        type=float,
+        default=0.005,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
+    parser.add_argument(
+        "--target-update-interval",
+        type=int,
+        default=1,
+        help="PPO-critic learning rate. If none, BFGS is used.",
+    )
+    parser.add_argument(
+        "--sac-max-num-traj",
+        type=int,
+        default=1500,
+        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
+    )
+    parser.add_argument(
+        "--sac-min-num-traj",
+        type=int,
+        default=1024,
+        help="For buffer learing, this sets the sub-iterations",
+    )
+    parser.add_argument(
+        "--sac-trj-per-iter",
+        type=int,
+        default=256,
+        help="This sets the number of trajectories to use for one sub-iteration",
+    )
+    parser.add_argument(
+        "--sac-step-per-epoch",
+        type=int,
+        default=None,
+        help="This sets the number of trajectories to use for one sub-iteration",
+    )
+
     parser.add_argument(
         "--op-entropy-scaler",
         type=float,
@@ -395,11 +483,12 @@ def get_args(verbose=True):
         help="entropy scaler from PPO action-distribution",
     )
     parser.add_argument(
-        "--tau",
+        "--sac-entropy-scaler",
         type=float,
-        default=0.95,
-        help="Used in advantage estimation for numerical stability",
+        default=5e-2,
+        help="entropy scaler from PPO action-distribution",
     )
+
     parser.add_argument("--gamma", type=float, default=None, help="discount parameters")
 
     # Training parameters
@@ -467,6 +556,12 @@ def get_args(verbose=True):
     )
     parser.add_argument(
         "--import-ppo-model",
+        type=bool,
+        default=False,
+        help="it imports previously trained model",
+    )
+    parser.add_argument(
+        "--import-sac-model",
         type=bool,
         default=False,
         help="it imports previously trained model",

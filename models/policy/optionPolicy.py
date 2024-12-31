@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pickle
 import numpy as np
 import torch
+from copy import deepcopy
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.optimize import fmin_l_bfgs_b as bfgs
@@ -27,61 +28,53 @@ class OP_Controller(BasePolicy):
         sf_network: BasePolicy,
         optionPolicy: OptionPolicy,
         optionCritic: OP_Critic,
-        algo_name: str,
+        alpha: torch.Tensor | None,
+        optimizers: dict,
         options: nn.Module,
         option_vals: torch.Tensor,
+        is_bfgs: bool,
         use_psi_action: bool,
-        a_dim: int,
-        policy_lr: float = 1e-4,
-        critic_lr: float | None = None,
-        eps: float = 0.2,
-        entropy_scaler: float = 1e-3,
-        gamma: float = 0.9,
-        tau: float = 0.95,
-        K: int = 5,
-        is_discrete: bool = False,
-        device: str = "cpu",
+        args,
     ):
         super(OP_Controller, self).__init__()
 
         # constants
-        self.device = device
-        self._algo_name = algo_name
-        self._options = nn.Parameter(options.to(self._dtype).to(self.device))
-        self._option_vals = option_vals.to(self._dtype).to(self.device)
-        self._num_options = options.shape[0]
-        self._use_psi_action = use_psi_action
-        self._a_dim = a_dim
-        self._entropy_scaler = entropy_scaler
-        self._eps = eps
-        self._gamma = gamma
-        self._tau = tau
-        self._K = K
-        self._l2_reg = 1e-6
-        self._bfgs_iter = K
-        self._forward_steps = 0
-        self.is_discrete = is_discrete
+        self.device = args.device
+        self.algo_name = args.algo_name
+        self.options = nn.Parameter(options.to(self._dtype).to(self.device))
+        self.option_vals = option_vals.to(self._dtype).to(self.device)
+        self.num_options = options.shape[0]
+        self.use_psi_action = use_psi_action
+        self.is_bfgs = is_bfgs
+        self.a_dim = args.a_dim
+        self.entropy_scaler = args.op_entropy_scaler
+        self.eps = args.eps
+        self.gamma = args.gamma
+        self.tau = args.tau
+        self.K = args.OP_K_epochs
+        self.l2_reg = 1e-6
+        self.bfgs_iter = args.OP_K_epochs
+        self.is_discrete = args.is_discrete
+
+        # some sac params
+        self.soft_update_rate = args.soft_update_rate
+        self.target_update_interval = args.target_update_interval
 
         # trainable networks
         self.sf_network = sf_network
         self.optionPolicy = optionPolicy
         self.optionCritic = optionCritic
+        if args.op_mode == "sac":
+            self.alpha = alpha
+            self.targetOptionCritic = deepcopy(optionCritic)
 
-        self.optimizers = {}
+            self.num_update = 1
 
-        if critic_lr is None:
-            self.optimizers["ppo"] = torch.optim.AdamW(
-                self.optionPolicy.parameters(), lr=policy_lr
-            )
-            self.is_bfgs = True
-        else:
-            self.optimizers["ppo"] = torch.optim.AdamW(
-                [
-                    {"params": self.optionPolicy.parameters(), "lr": policy_lr},
-                    {"params": self.optionCritic.parameters(), "lr": critic_lr},
-                ]
-            )
-            self.is_bfgs = False
+        self.optimizers = optimizers
+
+        # inherent variable
+        self._forward_steps = 0
+
         #
         self.to(self.device)
 
@@ -109,7 +102,7 @@ class OP_Controller(BasePolicy):
         self._forward_steps += 1
         obs = self.preprocess_obs(obs)
 
-        if self._use_psi_action:
+        if self.use_psi_action:
             with torch.no_grad():
                 psi, _ = self.sf_network.get_cumulative_features(obs)
             psi_logits = self._intrinsicValue(psi, z)
@@ -118,7 +111,7 @@ class OP_Controller(BasePolicy):
             entropy = -torch.sum(probs * logprobs, dim=-1)
 
             a_argmax = torch.argmax(probs, dim=-1)
-            a = F.one_hot(a_argmax.long(), num_classes=self._a_dim)
+            a = F.one_hot(a_argmax.long(), num_classes=self.a_dim)
             probs = torch.argmax(probs, dim=-1)
             logprobs = torch.argmax(logprobs, dim=-1)
 
@@ -136,19 +129,19 @@ class OP_Controller(BasePolicy):
 
     def random_walk(self, obs):
         if self.is_discrete:
-            a = torch.randint(0, self._a_dim, (1,))
-            a = F.one_hot(a, num_classes=self._a_dim)
+            a = torch.randint(0, self.a_dim, (1,))
+            a = F.one_hot(a, num_classes=self.a_dim)
         else:
-            a = torch.rand((self._a_dim,))
+            a = torch.rand((self.a_dim,))
         return a, {}
 
     def _intrinsicValue(self, psi, z):
-        option = self._options[z, :]
+        option = self.options[z, :]
 
-        if self._algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
+        if self.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
             # divide phi in half
             psi_r, psi_s = self.split(psi)
-            if z < int(self._num_options / 2):
+            if z < int(self.num_options / 2):
                 psi = psi_r
             else:
                 psi = psi_s
@@ -157,25 +150,109 @@ class OP_Controller(BasePolicy):
         return value
 
     def _intricsicReward(self, phi, next_phi, z):
-        option = self._options[z, :]
+        option = self.options[z, :]
 
-        if self._algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
+        if self.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
             # divide phi in half
             phi_r, phi_s = self.split(phi)
             next_phi_r, next_phi_s = self.split(next_phi)
-            if z < int(self._num_options / 2):
+            if z < int(self.num_options / 2):
                 deltaPhi = next_phi_r - phi_r  # N x F/2
-                # deltaPhi = phi_r  # - phi_r  # N x F/2
             else:
                 deltaPhi = next_phi_s - phi_s  # N x F/2
-                # deltaPhi = phi_s  # - phi_s  # N x F/2
         else:
             deltaPhi = next_phi - phi  # N x F
-            # deltaPhi = phi  # - phi  # N x F
         rew = self.multiply_options(deltaPhi, option)
         return rew
 
-    def learn(self, batch, z):
+    def learn(self, batch, z, mode="sac"):
+        if mode == "ppo":
+            self.ppo_learn(batch, z)
+        elif mode == "sac":
+            self.sac_learn(batch, z)
+        else:
+            raise NotImplementedError(f"{mode} is not implemented")
+
+    def sac_learn(self, batch, z):
+        self.train()
+        t0 = time.time()
+
+        def soft_update(self, target, source):
+            for target_param, param in zip(target.parameters(), source.parameters()):
+                target_param.data.copy_(
+                    target_param.data * (1.0 - self.soft_update_rate)
+                    + param.data * self.soft_update_rate
+                )
+
+        states = torch.from_numpy(batch["states"]).to(torch.float32).to(self.device)
+        states = states.reshape(states.shape[0], -1)
+        actions = torch.from_numpy(batch["actions"]).to(torch.float32).to(self.device)
+        rewards = torch.from_numpy(batch["rewards"]).to(torch.float32).to(self.device)
+        next_states = (
+            torch.from_numpy(batch["next_states"]).to(torch.float32).to(self.device)
+        )
+        next_states = next_states.reshape(next_states.shape[0], -1)
+        terminals = (
+            torch.from_numpy(batch["terminals"]).to(torch.float32).to(self.device)
+        )
+
+        # Critic Loss
+        with torch.no_grad():
+            next_actions, next_meta = self.optionPolicy(next_states, z)
+            next_q1, next_q2, _ = self.optionCritic(next_states, next_actions, z)
+            next_q = torch.min(next_q1, next_q2) - self.alpha * next_meta["logprobs"]
+            target_q = rewards + (1 - terminals) * self.gamma * next_q
+
+        q1, q2, _ = self.optionCritic(states, actions, z)
+
+        critic_loss = nn.MSELoss()(q1, target_q) + nn.MSELoss()(q2, target_q)
+
+        # Policy Loss
+        new_actions, new_meta = self.optionPolicy(states, z)
+        with torch.no_grad():
+            q1_new, q2_new, _ = self.optionCritic(states, new_actions, z)
+            q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
+        policy_loss = (self.alpha * new_meta["logprobs"] - q_new).mean()
+
+        # Alpha Loss
+        alpha_loss = -(
+            (
+                self.alpha * (new_meta["logprobs"] + self.optionPolicy._a_dim).detach()
+            ).mean()
+        )
+
+        # Update networks
+        self.optimizers["critic"].zero_grad()
+        critic_loss.backward()
+        self.optimizers["critic"].step()
+
+        self.optimizers["policy"].zero_grad()
+        self.optimizers["alpha"].zero_grad()
+        policy_loss.backward()
+        alpha_loss.backward()
+        self.optimizers["policy"].step()
+        self.optimizers["alpha"].step()
+
+        # Soft update of target networks
+        if self.num_update % self.target_update_interval == 0:
+            self.num_update = 1
+            soft_update(self.targetOptionCritic, self.optionCritic)
+        else:
+            self.num_update += 1
+
+        # Log losses
+        loss_dict = {
+            "OP_SAC/critic_loss": critic_loss.item(),
+            "OP_SAC/policy_loss": policy_loss.item(),
+            "OP_SAC/alpha_loss": alpha_loss.item(),
+            "OP_SAC/alpha": self.alpha.item(),
+            f"OP_SAC/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
+        }
+
+        update_time = time.time() - t0
+        return loss_dict, update_time
+
+    def ppo_learn(self, batch, z):
         self.train()
         t0 = time.time()
 
@@ -210,8 +287,8 @@ class OP_Controller(BasePolicy):
                 rewards,
                 terminals,
                 values,
-                gamma=self._gamma,
-                tau=self._tau,
+                gamma=self.gamma,
+                tau=self.tau,
                 device=self.device,
             )
             valueLoss = self.mse_loss(returns, values)
@@ -226,7 +303,7 @@ class OP_Controller(BasePolicy):
                 values, _ = self.optionCritic(states, z)
                 valueLoss = self.mse_loss(values, returns)
                 for param in self.optionCritic.parameters():
-                    valueLoss += param.pow(2).sum() * self._l2_reg
+                    valueLoss += param.pow(2).sum() * self.l2_reg
                 valueLoss.backward()
                 torch.nn.utils.clip_grad_norm_(
                     self.optionCritic.parameters(), max_norm=1.0
@@ -240,7 +317,7 @@ class OP_Controller(BasePolicy):
             flat_params, _, opt_info = bfgs(
                 closure,
                 get_flat_params_from(self.optionCritic).detach().cpu().numpy(),
-                maxiter=self._bfgs_iter,
+                maxiter=self.bfgs_iter,
             )
             set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
 
@@ -258,10 +335,10 @@ class OP_Controller(BasePolicy):
             ratios = torch.exp(logprobs - old_logprobs)
 
             surr1 = ratios * advantages
-            surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * advantages
+            surr2 = torch.clamp(ratios, 1 - self.eps, 1 + self.eps) * advantages
 
             actorLoss = -torch.min(surr1, surr2)
-            entropyLoss = self._entropy_scaler * entropy
+            entropyLoss = self.entropy_scaler * entropy
 
             loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
 
@@ -284,16 +361,16 @@ class OP_Controller(BasePolicy):
         )
 
         loss_dict = {
-            "OP/loss": loss.item(),
-            "OP/actorLoss": torch.mean(actorLoss).item(),
-            "OP/valueLoss": torch.mean(valueLoss).item(),
-            "OP/entropyLoss": torch.mean(entropyLoss).item(),
+            "OP_PPO/loss": loss.item(),
+            "OP_PPO/actorLoss": torch.mean(actorLoss).item(),
+            "OP_PPO/valueLoss": torch.mean(valueLoss).item(),
+            "OP_PPO/entropyLoss": torch.mean(entropyLoss).item(),
         }
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
 
         avgRewDict = {
-            f"OP/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
+            f"OP_PPO/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
 
         del (
@@ -316,27 +393,34 @@ class OP_Controller(BasePolicy):
             t1 - t0,
         )
 
-    def save_model(self, logdir, epoch=None, is_best=False):
+    def save_model(self, logdir, epoch=None, is_best=False, mode="sac"):
         self.optionPolicy = self.optionPolicy.cpu()
         self.optionCritic = self.optionCritic.cpu()
-        self._options = nn.Parameter(self._options.cpu())
-        self._option_vals = self._option_vals.cpu()
+        option_vals = self.option_vals.clone().cpu()
+        options = nn.Parameter(self.options.clone().cpu())
 
         # save checkpoint
         if is_best:
             path = os.path.join(logdir, "best_model.p")
         else:
             path = os.path.join(logdir, "model_" + str(epoch) + ".p")
-        pickle.dump(
-            (
-                self.optionPolicy,
-                self.optionCritic,
-                self._option_vals,
-                self._options,
-            ),
-            open(path, "wb"),
-        )
+
+        if mode == "sac":
+            alpha = nn.Parameter(self.alpha.clone().cpu())
+            pickle.dump(
+                (self.optionPolicy, self.optionCritic, option_vals, options, alpha),
+                open(path, "wb"),
+            )
+        elif mode == "ppo":
+            pickle.dump(
+                (
+                    self.optionPolicy,
+                    self.optionCritic,
+                    option_vals,
+                    options,
+                ),
+                open(path, "wb"),
+            )
+
         self.optionPolicy = self.optionPolicy.to(self.device)
         self.optionCritic = self.optionCritic.to(self.device)
-        self._options = nn.Parameter(self._options.to(self.device))
-        self._option_vals = self._option_vals.to(self.device)

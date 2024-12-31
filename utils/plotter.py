@@ -24,6 +24,7 @@ class Plotter:
         hc_path: str | None = None,
         oc_path: str | None = None,
         ppo_path: str | None = None,
+        sac_path: str | None = None,
         log_dir: str | None = None,
         device=torch.device("cpu"),
     ):
@@ -35,6 +36,7 @@ class Plotter:
 
         self.sf_path = sf_path
         self.ppo_path = ppo_path
+        self.sac_path = sac_path
         self.op_path = op_path
         self.oc_path = oc_path
         self.hc_path = hc_path

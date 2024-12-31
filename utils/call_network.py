@@ -15,6 +15,10 @@ from models.layers import (
     HC_PPO,
     HC_RW,
     HC_Critic,
+    SAC_Policy,
+    SAC_Critic,
+    SAC_CriticTwin,
+    OP_CriticTwin,
     PPO_Policy,
     PPO_Critic,
     OC_Policy,
@@ -175,6 +179,51 @@ def check_all_devices(module):
     return devices
 
 
+def call_sacNetwork(args):
+    from models.policy import SAC_Learner
+
+    if args.import_sac_model:
+        print("Loading previous SAC parameters....")
+        policy, critic_twin, alpha = pickle.load(
+            open(f"log/eval_log/model_for_eval/{args.env_name}/sac_model.p", "rb")
+        )
+    else:
+        # Define the Actor (Policy) network
+        actor = SAC_Policy(
+            input_dim=args.s_flat_dim,
+            fc_dim=args.fc_dim,
+            a_dim=args.a_dim,
+            activation=nn.Tanh(),
+            is_discrete=args.is_discrete,
+        )
+
+        # Define the Critic networks
+        critic_twin = SAC_CriticTwin(
+            input_dim=args.s_flat_dim + args.a_dim,
+            fc_dim=args.fc_dim,
+            activation=nn.Tanh(),
+        )
+
+        alpha = args.sac_init_alpha
+
+    # Create the SAC Learner
+    policy = SAC_Learner(
+        policy=actor,
+        critic_twin=critic_twin,
+        alpha=alpha,
+        policy_lr=args.sac_policy_lr,
+        critic_lr=args.sac_critic_lr,
+        alpha_lr=args.sac_alpha_lr,
+        tau=args.sac_soft_update_rate,
+        gamma=args.gamma,
+        trj_per_iter=args.sac_trj_per_iter,
+        target_update_interval=args.target_update_interval,
+        device=args.device,
+    )
+
+    return policy
+
+
 def call_ppoNetwork(args):
     from models.policy import PPO_Learner
 
@@ -184,7 +233,7 @@ def call_ppoNetwork(args):
             open(f"log/eval_log/model_for_eval/{args.env_name}/ppo_model.p", "rb")
         )
     else:
-        policy = PPO_Policy(
+        actor = PPO_Policy(
             input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             a_dim=args.a_dim,
@@ -198,7 +247,7 @@ def call_ppoNetwork(args):
         )
 
     policy = PPO_Learner(
-        policy=policy,
+        policy=actor,
         critic=critic,
         policy_lr=args.ppo_policy_lr,
         critic_lr=args.ppo_critic_lr,
@@ -410,14 +459,31 @@ def call_opNetwork(
 
     if args.import_op_model:
         print("Loading previous OP parameters....")
-        if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-            optionPolicy, optionCritic, option_vals, options = pickle.load(
-                open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
-            )
-        else:
-            optionPolicy, optionCritic, option_vals, options = pickle.load(
-                open(f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p", "rb")
-            )
+        if args.op_mode == "sac":
+            if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
+                optionPolicy, optionCritic, option_vals, options, alpha = pickle.load(
+                    open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
+                )
+            else:
+                optionPolicy, optionCritic, option_vals, options, alpha = pickle.load(
+                    open(
+                        f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
+                        "rb",
+                    )
+                )
+        elif args.op_mode == "ppo":
+            alpha = None
+            if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
+                optionPolicy, optionCritic, option_vals, options = pickle.load(
+                    open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
+                )
+            else:
+                optionPolicy, optionCritic, option_vals, options = pickle.load(
+                    open(
+                        f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
+                        "rb",
+                    )
+                )
     else:
         optionPolicy = OptionPolicy(
             input_dim=args.s_flat_dim,
@@ -427,12 +493,48 @@ def call_opNetwork(
             activation=nn.Tanh(),
             is_discrete=args.is_discrete,
         )
-        optionCritic = OP_Critic(
-            input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
-            num_options=options.shape[0],
-            activation=nn.Tanh(),
+
+        if args.op_mode == "sac":
+            alpha = nn.Parameter(torch.tensor(args.sac_init_alpha)).to(args.device)
+            optionCritic = OP_CriticTwin(
+                input_dim=args.s_flat_dim,
+                fc_dim=args.fc_dim,
+                num_options=options.shape[0],
+                activation=nn.Tanh(),
+            )
+        else:
+            alpha = None
+            optionCritic = OP_Critic(
+                input_dim=args.s_flat_dim,
+                fc_dim=args.fc_dim,
+                num_options=options.shape[0],
+                activation=nn.Tanh(),
+            )
+
+    optimizers = {}
+    if args.op_mode == "sac":
+        is_bfgs = False
+        optimizers["policy"] = torch.optim.AdamW(
+            optionPolicy.parameters(), lr=args.sac_policy_lr
         )
+        optimizers["critic"] = torch.optim.AdamW(
+            optionCritic.parameters(), lr=args.sac_critic_lr
+        )
+        optimizers["alpha"] = torch.optim.AdamW([alpha], lr=args.sac_alpha_lr)
+    elif args.op_mode == "ppo":
+        if args.op_critic_lr is None:
+            optimizers["ppo"] = torch.optim.AdamW(
+                optionPolicy.parameters(), lr=args.op_policy_lr
+            )
+            is_bfgs = True
+        else:
+            optimizers["ppo"] = torch.optim.AdamW(
+                [
+                    {"params": optionPolicy.parameters(), "lr": args.op_policy_lr},
+                    {"params": optionCritic.parameters(), "lr": args.op_critic_lr},
+                ]
+            )
+            is_bfgs = False
 
     use_psi_action = True if args.Psi_epoch > 0 else False
 
@@ -440,20 +542,13 @@ def call_opNetwork(
         sf_network=sf_network,
         optionPolicy=optionPolicy,
         optionCritic=optionCritic,
-        algo_name=args.algo_name,
+        alpha=alpha,
+        optimizers=optimizers,
         options=options,
         option_vals=option_vals,
+        is_bfgs=is_bfgs,
         use_psi_action=use_psi_action,
-        a_dim=args.a_dim,
-        policy_lr=args.op_policy_lr,
-        critic_lr=args.op_critic_lr,
-        entropy_scaler=args.op_entropy_scaler,
-        eps=args.eps_clip,
-        tau=args.tau,
-        gamma=args.gamma,
-        K=args.OP_K_epochs,
-        is_discrete=args.is_discrete,
-        device=args.device,
+        args=args,
     )
 
     return policy
