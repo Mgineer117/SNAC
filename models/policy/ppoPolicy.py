@@ -12,7 +12,7 @@ from copy import deepcopy
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils import estimate_advantages
 from models.layers.building_blocks import MLP
-from models.layers.sf_networks import ConvNetwork, PsiCritic
+from utils.normalizer import ObservationNormalizer
 from models.layers.ppo_networks import PPO_Policy, PPO_Critic
 from models.policy.base_policy import BasePolicy
 
@@ -22,6 +22,7 @@ class PPO_Learner(BasePolicy):
         self,
         policy: PPO_Policy,
         critic: PPO_Critic,
+        normalizer: ObservationNormalizer,
         policy_lr: float = 3e-4,
         critic_lr: float = 5e-4,
         eps: float = 0.2,
@@ -44,6 +45,8 @@ class PPO_Learner(BasePolicy):
         self._l2_reg = 1e-6
         self._bfgs_iter = K
         self._forward_steps = 0
+
+        self.normalizer = normalizer
 
         # trainable networks
         self.policy = policy
@@ -72,6 +75,9 @@ class PPO_Learner(BasePolicy):
     def preprocess_obs(self, obs):
         observation = obs["observation"]
         agent_pos = obs["agent_pos"]
+
+        if self.normalizer is not None:
+            observation = self.normalizer.normalize(observation)
 
         # preprocessing
         observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
@@ -224,7 +230,7 @@ class PPO_Learner(BasePolicy):
         else:
             path = os.path.join(logdir, "model_" + str(epoch) + ".p")
         pickle.dump(
-            (self.policy, self.critic),
+            (self.policy, self.critic, self.normalizer),
             open(path, "wb"),
         )
         self.policy = self.policy.to(self.device)

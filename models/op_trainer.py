@@ -74,18 +74,18 @@ class OPTrainer:
 
     def train(self, mode="sac") -> Dict[str, float]:
         if mode == "ppo":
-            first_final_epoch = self.ppo_train()
+            first_final_epoch = self.ppo_train(mode)
         elif mode == "sac":
-            first_final_epoch = self.sac_train()
+            first_final_epoch = self.sac_train(mode)
         else:
             raise NotImplementedError(f"{mode} is not implemented")
         
         return first_final_epoch
 
-    def sac_train(self) -> Dict[str, float]:
+    def sac_train(self, mode) -> Dict[str, float]:
         return None
 
-    def ppo_train(self) -> Dict[str, float]:
+    def ppo_train(self, mode) -> Dict[str, float]:
         start_time = time.time()
         self.last_reward_mean = deque(maxlen=3)
         self.last_reward_std = deque(maxlen=3)
@@ -107,7 +107,7 @@ class OPTrainer:
                 avgRewDictList = []
 
                 for z in trange(
-                    self.policy._num_options, desc=f"Updating Option", leave=False
+                    self.policy.num_options, desc=f"Updating Option", leave=False
                 ):
                     # Sample batch
                     batch, sampleT = self.sampler.collect_samples(
@@ -119,7 +119,7 @@ class OPTrainer:
                     sample_time += sampleT
 
                     # Update params
-                    loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
+                    loss_dict, avgRewDict, updateT = self.policy.learn(batch, z, mode=mode)
                     policy_loss.append(loss_dict)
                     avgRewDictList.append(avgRewDict)
                     update_time += updateT
@@ -147,12 +147,12 @@ class OPTrainer:
 
             ### Eval Loop
             self.policy.eval()
-            rew_mean = np.zeros((self.policy._num_options,))
-            rew_std = np.zeros((self.policy._num_options,))
-            ln_mean = np.zeros((self.policy._num_options,))
-            ln_std = np.zeros((self.policy._num_options,))
+            rew_mean = np.zeros((self.policy.num_options,))
+            rew_std = np.zeros((self.policy.num_options,))
+            ln_mean = np.zeros((self.policy.num_options,))
+            ln_std = np.zeros((self.policy.num_options,))
 
-            for z in trange(self.policy._num_options, desc=f"Evaluation", leave=False):
+            for z in trange(self.policy.num_options, desc=f"Evaluation", leave=False):
                 eval_dict = self.evaluator(
                     self.policy,
                     epoch=e + 1,
@@ -206,11 +206,11 @@ class OPTrainer:
         ### Eval Loop
         for e in trange(first_init_epoch, first_final_epoch, desc=f"OP Eval Epoch"):
             self.policy.eval()
-            rew_mean = np.zeros((self.policy._num_options,))
-            rew_std = np.zeros((self.policy._num_options,))
-            ln_mean = np.zeros((self.policy._num_options,))
-            ln_std = np.zeros((self.policy._num_options,))
-            for z in trange(self.policy._num_options, desc=f"Evaluation", leave=False):
+            rew_mean = np.zeros((self.policy.num_options,))
+            rew_std = np.zeros((self.policy.num_options,))
+            ln_mean = np.zeros((self.policy.num_options,))
+            ln_std = np.zeros((self.policy.num_options,))
+            for z in trange(self.policy.num_options, desc=f"Evaluation", leave=False):
                 eval_dict = self.evaluator(
                     self.policy,
                     epoch=e + 1,

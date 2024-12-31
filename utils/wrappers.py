@@ -1,7 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray
 import gymnasium as gym
-from utils.normalizer import ObservationNormalizer
 from utils.utils import save_dim_to_args
 
 
@@ -43,31 +42,6 @@ class GridWrapper(gym.Wrapper):
         super(GridWrapper, self).__init__(env)
         save_dim_to_args(env, args)  # given env, save its state and action dim
         self.agent_num = args.agent_num
-        self.obs_normalizer = ObservationNormalizer(
-            mode=args.obs_norm, state_dim=args.s_dim
-        )
-
-        # Initialize the normalizer by running the environment
-        if args.obs_norm != "none":
-            self.fix_running_avg()
-
-    def fix_running_avg(self):
-        # Initialize the normalizer by running the environment
-        print("***** Fixing Running Average *****")
-        options = {"random_init_pos": True}
-        observation, _ = self.env.reset(options=options)
-        observation = observation["image"]
-        self.obs_normalizer.normalize(observation)
-        for _ in range(self.obs_normalizer.max_updates):
-            # Sample a random action from the environment's action space
-            action = self.env.action_space.sample()
-            observation, _, done, _, _ = self.env.step(action)
-            observation = observation["image"]
-            self.obs_normalizer.normalize(observation)
-
-            if done:
-                observation, _ = self.env.reset(options=options)
-        print("*****         Done!!         *****")
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
@@ -80,7 +54,6 @@ class GridWrapper(gym.Wrapper):
         # Call the original step method
         observation, reward, termination, truncation, info = self.env.step(action)
         observation = observation["image"]
-        observation = self.obs_normalizer.normalize(observation)
         return observation, reward, termination, truncation, info
 
     def reset(self, **kwargs):
@@ -90,7 +63,6 @@ class GridWrapper(gym.Wrapper):
 
         observation, info = self.env.reset(**kwargs)
         observation = observation["image"]
-        observation = self.obs_normalizer.normalize(observation)
 
         obs = {}
         obs["observation"] = observation
@@ -110,29 +82,6 @@ class CtFWrapper(gym.Wrapper):
         super(CtFWrapper, self).__init__(env)
         save_dim_to_args(env, args)  # given env, save its state and action dim
         self.agent_num = args.agent_num
-        self.obs_normalizer = ObservationNormalizer(
-            mode=args.obs_norm, state_dim=args.s_dim
-        )
-
-        # Initialize the normalizer by running the environment
-        if args.obs_norm != "none":
-            self.fix_running_avg()
-
-    def fix_running_avg(self):
-        # Initialize the normalizer by running the environment
-        print("***** Fixing Running Average *****")
-        options = {"random_init_pos": True}
-        observation, _ = self.env.reset(options=options)
-        self.obs_normalizer.normalize(observation)
-        for _ in range(self.obs_normalizer.max_updates):
-            # Sample a random action from the environment's action space
-            action = self.env.action_space.sample()
-            observation, _, done, _, _ = self.env.step(action)
-            self.obs_normalizer.normalize(observation)
-
-            if done:
-                observation, _ = self.env.reset(options=options)
-        print("*****         Done!!         *****")
 
     def get_agent_pos(self):
         agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
@@ -144,7 +93,6 @@ class CtFWrapper(gym.Wrapper):
         action = np.argmax(action)
         # Call the original step method
         observation, reward, termination, truncation, info = self.env.step(action)
-        observation = self.obs_normalizer.normalize(observation)
         return observation, reward, termination, truncation, info
 
     def reset(self, **kwargs):
@@ -153,7 +101,6 @@ class CtFWrapper(gym.Wrapper):
             kwargs["options"] = options
 
         observation, _ = self.env.reset(**kwargs)
-        observation = self.obs_normalizer.normalize(observation)
 
         obs = {}
         obs["observation"] = observation

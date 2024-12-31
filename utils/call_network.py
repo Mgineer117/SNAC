@@ -229,7 +229,7 @@ def call_ppoNetwork(args):
 
     if args.import_ppo_model:
         print("Loading previous PPO parameters....")
-        policy, critic = pickle.load(
+        policy, critic, normalizer = pickle.load(
             open(f"log/eval_log/model_for_eval/{args.env_name}/ppo_model.p", "rb")
         )
     else:
@@ -249,6 +249,7 @@ def call_ppoNetwork(args):
     policy = PPO_Learner(
         policy=actor,
         critic=critic,
+        normalizer=normalizer,
         policy_lr=args.ppo_policy_lr,
         critic_lr=args.ppo_critic_lr,
         entropy_scaler=args.ppo_entropy_scaler,
