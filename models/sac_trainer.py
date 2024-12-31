@@ -128,7 +128,7 @@ class SACTrainer:
 
         return self._epoch
 
-    def warm_buffer(self):
+    def warm_buffer(self, verbose=True):
         t0 = time.time()
         # make sure there is nothing there
         self.buffer.wipe()
@@ -146,17 +146,20 @@ class SACTrainer:
             sample_time += sampleT
             total_sample_time += sampleT
             if count % 50 == 0:
-                print(
-                    f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.max_num_trj} | sample_time = {sample_time:.2f}s",
-                    end="",
-                )
+                if verbose:
+                    print(
+                        f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                        end="",
+                    )
                 sample_time = 0
             count += 1
-        print(
-            f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.max_num_trj} | total sample_time = {total_sample_time:.2f}s",
-            end="",
-        )
-        print()
+
+        if verbose:
+            print(
+                f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+                end="",
+            )
+            print()
         t1 = time.time()
         sample_time = t1 - t0
         return sample_time

@@ -404,7 +404,10 @@ def get_args(verbose=True):
 
     # SAC parameters
     parser.add_argument(
-        "--op-mode", type=str, default="ppo", help="PPO-actor learning rate"
+        "--op-mode", type=str, default="sac", help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--tune-alpha", type=bool, default=True, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--sac-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"

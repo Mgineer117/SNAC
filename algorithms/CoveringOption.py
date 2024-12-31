@@ -32,8 +32,8 @@ class CoveringOption:
 
         # define buffers and sampler for Monte-Carlo sampling
         self.buffer = TrajectoryBuffer(
-            min_num_trj=args.min_num_traj,
-            max_num_trj=args.max_num_traj,
+            min_num_trj=args.sac_min_num_traj,
+            max_num_trj=args.sac_max_num_traj,
         )
         self.sampler = OnlineSampler(
             training_envs=self.env,
@@ -168,38 +168,18 @@ class CoveringOption:
                 new_batch1 = self.collect_batch(
                     self.op_network, app_trj_num=app_trj_num, idx=vec_idx
                 )
-                print(
-                    f"After collect_batch (vec_idx={vec_idx}): "
-                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
-                )
 
                 # Collect second batch
                 new_batch2 = self.collect_batch(
                     self.op_network, app_trj_num=app_trj_num, idx=vec_idx + 1
                 )
-                print(
-                    f"After collect_batch (vec_idx+1={vec_idx + 1}): "
-                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
-                )
 
                 # Concatenate batches
                 batch = self.cat_batch(batch, new_batch1, new_batch2)
-                print(
-                    f"After cat_batch: "
-                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
-                )
 
                 # Compute S and V
                 with torch.no_grad():
                     S, V = self.get_vector(batch)
-                print(
-                    f"After get_vector: "
-                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
-                )
 
                 # Update option values and options
                 self.option_vals[vec_idx : vec_idx + 2] = S
@@ -208,19 +188,9 @@ class CoveringOption:
                 self.op_network.options = nn.Parameter(
                     self.options.to(torch.float32).to(self.args.device)
                 )
-                print(
-                    f"After updating op_network: "
-                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
-                )
 
                 # Train the op_network
                 self.train_op_network(vec_idx=vec_idx)
-                print(
-                    f"After train_op_network (vec_idx={vec_idx}): "
-                    f"Allocated: {torch.cuda.memory_allocated() / 1e6:.2f} MB, "
-                    f"Cached: {torch.cuda.memory_reserved() / 1e6:.2f} MB"
-                )
 
             if self.evaluator_params["gridPlot"]:
                 grid_tensor, coords, agent_pos = get_grid_tensor(

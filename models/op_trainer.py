@@ -41,6 +41,7 @@ class OPTrainer:
         epoch: int = 1000,
         init_epoch: int = 0,
         step_per_epoch: int = 1000,
+        trj_per_iter:int = 10,
         eval_episodes: int = 10,
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         log_interval: int = 2,
@@ -48,7 +49,7 @@ class OPTrainer:
     ) -> None:
         self.policy = policy
         self.sampler = sampler
-        self.buffer = buffer
+        self.buffers = [deepcopy(buffer) for _ in range(policy.num_options)]
         self.evaluator = evaluator
 
         self.logger = logger
@@ -58,6 +59,7 @@ class OPTrainer:
         self._epoch = epoch
         self._init_epoch = init_epoch
         self._step_per_epoch = step_per_epoch
+        self._trj_per_iter = trj_per_iter
 
         self._eval_episodes = eval_episodes
         self._scheduling_epoch = int(self._epoch // 10) if self._epoch >= 10 else None
@@ -83,6 +85,103 @@ class OPTrainer:
         return first_final_epoch
 
     def sac_train(self, mode) -> Dict[str, float]:
+        start_time = time.time()
+        self.last_reward_mean = deque(maxlen=3)
+        self.last_reward_std = deque(maxlen=3)
+
+        # Train loop
+        first_init_epoch = self._init_epoch
+        first_final_epoch = self._epoch
+
+        total_iterations = (first_final_epoch - first_init_epoch) * self._step_per_epoch
+        completed_iterations = 0
+
+        sample_time = self.warm_buffer()
+        for e in trange(first_init_epoch, first_final_epoch, desc=f"OP SAC Epoch"):
+            ### Training loop
+            self.policy.train()
+            for it in trange(self._step_per_epoch, desc="Training", leave=False):
+                sample_time = 0
+                update_time = 0
+                policy_loss = []
+                for z in trange(
+                    self.policy.num_options, desc=f"Updating Option", leave=False
+                ):
+                    batch = self.buffers[z].sample(self._trj_per_iter)
+                    loss_dict, updateT = self.policy.learn(batch, z, mode=mode)
+                    
+                    batch, sampleT = self.sampler.collect_samples(
+                        self.policy, idx=z, grid_type=self.grid_type, random_init_pos=True
+                    )
+                    self.buffers[z].push(batch)
+
+                    update_time += updateT
+                    sample_time += sampleT
+                    policy_loss.append(loss_dict)
+
+                # Calculate expected remaining time
+                completed_iterations += 1
+                elapsed_time = time.time() - start_time
+                avg_time_per_iter = elapsed_time / completed_iterations
+                remaining_time = avg_time_per_iter * (
+                    total_iterations - completed_iterations
+                )
+                # Logging further info
+                loss = self.average_dict_values(policy_loss)
+                loss["OP_SAC/sample_time"] = sample_time
+                loss["OP_SAC/update_time"] = update_time
+                loss["OP_SAC/remaining_time (hr)"] = (
+                    remaining_time / 3600
+                )  # Convert to hours
+
+                self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
+
+
+            if e % self.log_interval == 0:
+                ### Eval Loop
+                self.policy.eval()
+                rew_mean = np.zeros((self.policy.num_options,))
+                rew_std = np.zeros((self.policy.num_options,))
+                ln_mean = np.zeros((self.policy.num_options,))
+                ln_std = np.zeros((self.policy.num_options,))
+
+                for z in trange(self.policy.num_options, desc=f"Evaluation", leave=False):
+                    eval_dict = self.evaluator(
+                        self.policy,
+                        epoch=e + 1,
+                        iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                        idx=z,
+                        name1=self._val_options[z],
+                        dir_name="OP_SAC",
+                        write_log=False,  # since OP needs to write log of average of all options
+                        grid_type=self.grid_type,
+                    )
+                    rew_mean[z] = eval_dict["rew_mean"]
+                    rew_std[z] = eval_dict["rew_std"]
+                    ln_mean[z] = eval_dict["ln_mean"]
+                    ln_std[z] = eval_dict["ln_std"]
+
+                rew_mean = np.mean(rew_mean)
+                rew_std = np.mean(rew_std)
+                ln_mean = np.mean(ln_mean)
+                ln_std = np.mean(ln_std)
+
+                # Manual logging
+                eval_dict = {
+                    "OP_SAC/eval_rew_mean": rew_mean,
+                    "OP_SAC/eval_rew_std": rew_std,
+                    "OP_SAC/eval_ln_mean": ln_mean,
+                    "OP_SAC/eval_ln_std": ln_std,
+                }
+                self.evaluator.write_log(
+                    eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
+                )
+
+                self.last_reward_mean.append(rew_mean)
+                self.last_reward_std.append(rew_std)
+
+                self.save_model(e + 1)
+
         return None
 
     def ppo_train(self, mode) -> Dict[str, float]:
@@ -91,7 +190,6 @@ class OPTrainer:
         self.last_reward_std = deque(maxlen=3)
 
         # Train loop
-        self.policy.train()
         first_init_epoch = self._init_epoch
         first_final_epoch = self._epoch
 
@@ -100,11 +198,11 @@ class OPTrainer:
 
         for e in trange(first_init_epoch, first_final_epoch, desc=f"OP PPO Epoch"):
             ### Training loop
+            self.policy.train()
             for it in trange(self._step_per_epoch, desc=f"Training", leave=False):
                 sample_time = 0
                 update_time = 0
                 policy_loss = []
-                avgRewDictList = []
 
                 for z in trange(
                     self.policy.num_options, desc=f"Updating Option", leave=False
@@ -119,9 +217,8 @@ class OPTrainer:
                     sample_time += sampleT
 
                     # Update params
-                    loss_dict, avgRewDict, updateT = self.policy.learn(batch, z, mode=mode)
+                    loss_dict, updateT = self.policy.learn(batch, z, mode=mode)
                     policy_loss.append(loss_dict)
-                    avgRewDictList.append(avgRewDict)
                     update_time += updateT
                     torch.cuda.empty_cache()
 
@@ -135,59 +232,58 @@ class OPTrainer:
 
                 # Logging further info
                 loss = self.average_dict_values(policy_loss)
-                loss["OP/sample_time"] = sample_time
-                loss["OP/update_time"] = update_time
-                loss["OP/remaining_time (hr)"] = (
+                loss["OP_PPO/sample_time"] = sample_time
+                loss["OP_PPO/update_time"] = update_time
+                loss["OP_PPO/remaining_time (hr)"] = (
                     remaining_time / 3600
                 )  # Convert to hours
-                for each_dict in avgRewDictList:
-                    loss.update(each_dict)
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 
-            ### Eval Loop
-            self.policy.eval()
-            rew_mean = np.zeros((self.policy.num_options,))
-            rew_std = np.zeros((self.policy.num_options,))
-            ln_mean = np.zeros((self.policy.num_options,))
-            ln_std = np.zeros((self.policy.num_options,))
+            if e % self.log_interval == 0:
+                ### Eval Loop
+                self.policy.eval()
+                rew_mean = np.zeros((self.policy.num_options,))
+                rew_std = np.zeros((self.policy.num_options,))
+                ln_mean = np.zeros((self.policy.num_options,))
+                ln_std = np.zeros((self.policy.num_options,))
 
-            for z in trange(self.policy.num_options, desc=f"Evaluation", leave=False):
-                eval_dict = self.evaluator(
-                    self.policy,
-                    epoch=e + 1,
-                    iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
-                    idx=z,
-                    name1=self._val_options[z],
-                    dir_name="OP",
-                    write_log=False,  # since OP needs to write log of average of all options
-                    grid_type=self.grid_type,
+                for z in trange(self.policy.num_options, desc=f"Evaluation", leave=False):
+                    eval_dict = self.evaluator(
+                        self.policy,
+                        epoch=e + 1,
+                        iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                        idx=z,
+                        name1=self._val_options[z],
+                        dir_name="OP_PPO",
+                        write_log=False,  # since OP needs to write log of average of all options
+                        grid_type=self.grid_type,
+                    )
+                    rew_mean[z] = eval_dict["rew_mean"]
+                    rew_std[z] = eval_dict["rew_std"]
+                    ln_mean[z] = eval_dict["ln_mean"]
+                    ln_std[z] = eval_dict["ln_std"]
+
+                rew_mean = np.mean(rew_mean)
+                rew_std = np.mean(rew_std)
+                ln_mean = np.mean(ln_mean)
+                ln_std = np.mean(ln_std)
+
+                # Manual logging
+                eval_dict = {
+                    "OP_PPO/eval_rew_mean": rew_mean,
+                    "OP_PPO/eval_rew_std": rew_std,
+                    "OP_PPO/eval_ln_mean": ln_mean,
+                    "OP_PPO/eval_ln_std": ln_std,
+                }
+                self.evaluator.write_log(
+                    eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
                 )
-                rew_mean[z] = eval_dict["rew_mean"]
-                rew_std[z] = eval_dict["rew_std"]
-                ln_mean[z] = eval_dict["ln_mean"]
-                ln_std[z] = eval_dict["ln_std"]
 
-            rew_mean = np.mean(rew_mean)
-            rew_std = np.mean(rew_std)
-            ln_mean = np.mean(ln_mean)
-            ln_std = np.mean(ln_std)
+                self.last_reward_mean.append(rew_mean)
+                self.last_reward_std.append(rew_std)
 
-            # Manual logging
-            eval_dict = {
-                "OP/eval_rew_mean": rew_mean,
-                "OP/eval_rew_std": rew_std,
-                "OP/eval_ln_mean": ln_mean,
-                "OP/eval_ln_std": ln_std,
-            }
-            self.evaluator.write_log(
-                eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
-            )
-
-            self.last_reward_mean.append(rew_mean)
-            self.last_reward_std.append(rew_std)
-
-            self.save_model(e + 1)
+                self.save_model(e + 1)
             torch.cuda.empty_cache()
 
         self.policy.eval()
@@ -247,37 +343,42 @@ class OPTrainer:
 
         return epoch
 
-    def warm_buffer(self):
+    def warm_buffer(self, verbose=False):
         t0 = time.time()
-        # make sure there is nothing there
-        self.buffer.wipe()
+        for z, buffer in enumerate(self.buffers):
+            # make sure there is nothing there
+            buffer.wipe()
 
-        # collect enough batch
-        count = 0
-        total_sample_time = 0
-        sample_time = 0
-        self.num_env_steps += self.buffer.min_num_trj
-        while self.buffer.num_trj < self.buffer.min_num_trj:
-            batch, sampleT = self.sampler.collect_samples(
-                self.policy, grid_type=self.grid_type, random_init_pos=True
-            )
-            self.buffer.push(batch)
-            sample_time += sampleT
-            total_sample_time += sampleT
-            if count % 50 == 0:
+            # collect enough batch
+            count = 0
+            total_sample_time = 0
+            sample_time = 0
+            self.num_env_steps += buffer.min_num_trj
+            while buffer.num_trj < buffer.min_num_trj:
+                batch, sampleT = self.sampler.collect_samples(
+                    self.policy, idx=z, grid_type=self.grid_type, random_init_pos=True
+                )
+                buffer.push(batch)
+                sample_time += sampleT
+                total_sample_time += sampleT
+                if count % 50 == 0:
+                    if verbose:
+                        print(
+                            f"\nWarming buffer {buffer.num_trj}/{buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                            end="",
+                        )
+                    sample_time = 0
+                count += 1
+            if verbose:
                 print(
-                    f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                    f"\nWarming Complete! {buffer.num_trj}/{buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
                     end="",
                 )
-                sample_time = 0
-            count += 1
-        print(
-            f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
-            end="",
-        )
-        print()
+                print()
+        
         t1 = time.time()
         sample_time = t1 - t0
+
         return sample_time
     
     def save_model(self, e):

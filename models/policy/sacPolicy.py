@@ -24,6 +24,7 @@ class SAC_Learner(BasePolicy):
         tau: float = 0.005,
         trj_per_iter: int = 10,
         target_update_interval: int = 1,
+        tune_alpha: bool = True,
         device="cpu",
     ):
         super(SAC_Learner, self).__init__()
@@ -37,7 +38,7 @@ class SAC_Learner(BasePolicy):
         self.trj_per_iter = trj_per_iter
         self.target_update_interval = target_update_interval
         self.target_entropy = -policy._a_dim
-        self.tune_alpha = True
+        self.tune_alpha = tune_alpha
         self.num_update = 1
 
         self.normalizer = normalizer
@@ -89,7 +90,7 @@ class SAC_Learner(BasePolicy):
         if self.normalizer is not None:
             batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
             batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
-            
+
         states = torch.from_numpy(batch["states"]).to(torch.float32).to(self.device)
         states = states.reshape(states.shape[0], -1)
         actions = torch.from_numpy(batch["actions"]).to(torch.float32).to(self.device)

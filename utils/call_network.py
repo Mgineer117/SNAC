@@ -225,6 +225,7 @@ def call_sacNetwork(args):
         gamma=args.gamma,
         trj_per_iter=args.sac_trj_per_iter,
         target_update_interval=args.target_update_interval,
+        tune_alpha=args.tune_alpha,
         device=args.device,
     )
 
@@ -505,7 +506,6 @@ def call_opNetwork(
                 )
     else:
         if args.op_mode == "sac":
-            alpha = nn.Parameter(torch.full((args.num_vector,), args.sac_init_alpha, device=args.device))
             optionPolicy = OptionPolicy(
                 input_dim=args.s_flat_dim,
                 fc_dim=args.option_fc_dim,
@@ -515,13 +515,12 @@ def call_opNetwork(
                 is_discrete=args.is_discrete,
             )
             optionCritic = OP_CriticTwin(
-                input_dim=args.s_flat_dim,
+                input_dim=args.s_flat_dim + args.a_dim,
                 fc_dim=args.fc_dim,
                 num_options=options.shape[0],
                 activation=nn.ReLU(),
             )
         else:
-            alpha = None
             optionPolicy = OptionPolicy(
                 input_dim=args.s_flat_dim,
                 fc_dim=args.option_fc_dim,
@@ -536,6 +535,7 @@ def call_opNetwork(
                 num_options=options.shape[0],
                 activation=nn.Tanh(),
             )
+        alpha = None
         if args.obs_norm != "none":
             normalizer = ObservationNormalizer(state_dim=args.s_dim)
         else:
@@ -550,7 +550,6 @@ def call_opNetwork(
         optimizers["critic"] = torch.optim.AdamW(
             optionCritic.parameters(), lr=args.sac_critic_lr
         )
-        optimizers["alpha"] = torch.optim.AdamW([alpha], lr=args.sac_alpha_lr)
     elif args.op_mode == "ppo":
         if args.op_critic_lr is None:
             optimizers["ppo"] = torch.optim.AdamW(

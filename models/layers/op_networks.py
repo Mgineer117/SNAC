@@ -168,7 +168,7 @@ class OP_Q_Critic(nn.Module):
         num_options: int,
         activation: nn.Module = nn.ReLU(),
     ):
-        super(OP_Critic, self).__init__()
+        super(OP_Q_Critic, self).__init__()
 
         # |A| duplicate networks
         self.act = activation
@@ -187,7 +187,7 @@ class OP_Q_Critic(nn.Module):
     def forward(self, states: torch.Tensor, actions: torch.Tensor, z: int):
         x = torch.cat([states, actions], dim=-1)
         value = self.models[z](x)
-        return value, {"z": z}
+        return value
 
 
 class OP_CriticTwin(nn.Module):

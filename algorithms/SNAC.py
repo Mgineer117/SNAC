@@ -35,8 +35,8 @@ class SNAC:
 
         # define buffers and sampler for Monte-Carlo sampling
         self.buffer = TrajectoryBuffer(
-            min_num_trj=args.min_num_traj,
-            max_num_trj=args.max_num_traj,
+            min_num_trj=args.sac_min_num_traj,
+            max_num_trj=args.sac_max_num_traj,
         )
         self.sampler = OnlineSampler(
             training_envs=self.env,
@@ -150,6 +150,7 @@ class SNAC:
                 epoch=self.curr_epoch + self.args.OP_epoch,
                 init_epoch=self.curr_epoch,
                 step_per_epoch=self.args.step_per_epoch,
+                trj_per_iter=self.args.sac_trj_per_iter,
                 eval_episodes=self.args.eval_episodes,
                 log_interval=self.args.op_log_interval,
                 grid_type=self.args.grid_type,

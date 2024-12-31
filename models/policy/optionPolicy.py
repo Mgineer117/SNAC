@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pickle
 import numpy as np
 import torch
+import math
 from copy import deepcopy
 import torch.nn as nn
 import torch.nn.functional as F
@@ -60,15 +61,25 @@ class OP_Controller(BasePolicy):
         self.normalizer = normalizer
 
         # some sac params
+        self.tune_alpha = args.tune_alpha
         self.soft_update_rate = args.sac_soft_update_rate
         self.target_update_interval = args.target_update_interval
+        self.target_entropy = -args.a_dim
 
         # trainable networks
         self.sf_network = sf_network
         self.optionPolicy = optionPolicy
         self.optionCritic = optionCritic
         if args.op_mode == "sac":
-            self.alpha = alpha
+            if alpha is not None:
+                self.alpha = torch.tensor(alpha, device=args.device)
+            else:
+                self.alpha = torch.full((args.num_vector,), args.sac_init_alpha, device=args.device)
+
+            if self.tune_alpha:
+                self.log_alpha = nn.Parameter(torch.log(self.alpha))
+                optimizers["alpha"] = torch.optim.AdamW([self.log_alpha], lr=args.sac_alpha_lr)
+
             self.targetOptionCritic = deepcopy(optionCritic)
 
             self.num_update = 1
@@ -171,6 +182,13 @@ class OP_Controller(BasePolicy):
         rew = self.multiply_options(deltaPhi, option)
         return rew
 
+    def soft_update(self, target, source):
+        for target_param, param in zip(target.parameters(), source.parameters()):
+            target_param.data.copy_(
+                target_param.data * (1.0 - self.soft_update_rate)
+                + param.data * self.soft_update_rate
+            )
+            
     def learn(self, batch, z, mode="sac"):
         if mode == "ppo":
             self.ppo_learn(batch, z)
@@ -183,12 +201,7 @@ class OP_Controller(BasePolicy):
         self.train()
         t0 = time.time()
 
-        def soft_update(self, target, source):
-            for target_param, param in zip(target.parameters(), source.parameters()):
-                target_param.data.copy_(
-                    target_param.data * (1.0 - self.soft_update_rate)
-                    + param.data * self.soft_update_rate
-                )
+        
 
         # normalization
         if self.normalizer is not None:
@@ -216,41 +229,53 @@ class OP_Controller(BasePolicy):
             target_q = rewards + (1 - terminals) * self.gamma * next_q
 
         q1, q2, _ = self.optionCritic(states, actions, z)
-
         critic_loss = nn.MSELoss()(q1, target_q) + nn.MSELoss()(q2, target_q)
+
+        self.optimizers["critic"].zero_grad()
+        critic_loss.backward()
+        grad_dict1 = self.compute_gradient_norm(
+                [self.optionCritic],
+                ["optionCritic"],
+                dir="OP_SAC",
+                device=self.device,
+            )
+        self.optimizers["critic"].step()
 
         # Policy Loss
         new_actions, new_meta = self.optionPolicy(states, z)
-        with torch.no_grad():
-            q1_new, q2_new, _ = self.optionCritic(states, new_actions, z)
-            q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
+        q1_new, q2_new, _ = self.optionCritic(states, new_actions, z)
+        q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
         policy_loss = (self.alpha[z] * new_meta["logprobs"] - q_new).mean()
 
-        # Alpha Loss
-        alpha_loss = -(
-            (
-                self.alpha[z] * (new_meta["logprobs"] + self.optionPolicy._a_dim).detach()
-            ).mean()
-        )
-
-        # Update networks
-        self.optimizers["critic"].zero_grad()
-        critic_loss.backward()
-        self.optimizers["critic"].step()
-
-        self.optimizers["policy"].zero_grad()
-        self.optimizers["alpha"].zero_grad()
+        self.optimizers['policy'].zero_grad()
         policy_loss.backward()
-        alpha_loss.backward()
-        self.optimizers["policy"].step()
-        self.optimizers["alpha"].step()
+        grad_dict2 = self.compute_gradient_norm(
+                [self.optionPolicy],
+                ["optionPolicy"],
+                dir="OP_SAC",
+                device=self.device,
+            )
+        self.optimizers['policy'].step()
+        
+        # Alpha Loss
+        if self.tune_alpha:
+            alpha_loss = -(
+                (self.log_alpha[z] * (new_meta["logprobs"] + self.target_entropy).detach()).mean()
+            )
+
+            self.optimizers['alpha'].zero_grad()
+            alpha_loss.backward()
+            self.optimizers['alpha'].step()
+
+            self.alpha = self.log_alpha.exp()
+        else:
+            alpha_loss = torch.tensor(0.).to(self.device)
 
         # Soft update of target networks
         if self.num_update % self.target_update_interval == 0:
-            self.num_update = 1
-            soft_update(self.targetOptionCritic, self.optionCritic)
-        else:
-            self.num_update += 1
+            self.soft_update(self.targetOptionCritic, self.optionCritic)
+            
+        self.num_update += 1
 
         # Log losses
         loss_dict = {
@@ -260,6 +285,15 @@ class OP_Controller(BasePolicy):
             f"OP_SAC/alpha: {z}": self.alpha[z].item(),
             f"OP_SAC/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
+        norm_dict = self.compute_weight_norm(
+            [self.optionPolicy, self.optionCritic],
+            ["policy", "critic"],
+            dir="OP_SAC",
+            device=self.device,
+        )
+        loss_dict.update(norm_dict)
+        loss_dict.update(grad_dict1)
+        loss_dict.update(grad_dict2)
 
         update_time = time.time() - t0
         return loss_dict, update_time
@@ -339,7 +373,7 @@ class OP_Controller(BasePolicy):
             set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
 
         # K - Loop
-        for _ in range(self._K):
+        for _ in range(self.K):
             if not self.is_bfgs:
                 values, _ = self.optionCritic(states, z)
                 valueLoss = self.mse_loss(returns, values)
@@ -365,7 +399,7 @@ class OP_Controller(BasePolicy):
             grad_dict = self.compute_gradient_norm(
                 [self.optionPolicy, self.optionCritic],
                 ["optionPolicy", "optionCritic"],
-                dir="OP",
+                dir="OP_PPO",
                 device=self.device,
             )
             self.optimizers["ppo"].step()
@@ -373,7 +407,7 @@ class OP_Controller(BasePolicy):
         norm_dict = self.compute_weight_norm(
             [self.optionPolicy, self.optionCritic],
             ["policy", "critic"],
-            dir="OP",
+            dir="OP_PPO",
             device=self.device,
         )
 
@@ -382,13 +416,10 @@ class OP_Controller(BasePolicy):
             "OP_PPO/actorLoss": torch.mean(actorLoss).item(),
             "OP_PPO/valueLoss": torch.mean(valueLoss).item(),
             "OP_PPO/entropyLoss": torch.mean(entropyLoss).item(),
+            f"OP_PPO/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
-
-        avgRewDict = {
-            f"OP_PPO/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
-        }
 
         del (
             states,
@@ -406,7 +437,6 @@ class OP_Controller(BasePolicy):
         self.eval()
         return (
             loss_dict,
-            avgRewDict,
             t1 - t0,
         )
 
