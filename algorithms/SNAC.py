@@ -34,6 +34,10 @@ class SNAC:
         self.env = env
 
         # define buffers and sampler for Monte-Carlo sampling
+        self.buffer = TrajectoryBuffer(
+            min_num_trj=args.min_num_traj,
+            max_num_trj=args.max_num_traj,
+        )
         self.sampler = OnlineSampler(
             training_envs=self.env,
             state_dim=args.s_dim,
@@ -138,6 +142,7 @@ class SNAC:
             op_trainer = OPTrainer(
                 policy=self.op_network,
                 sampler=self.sampler,
+                buffer=self.buffer,
                 logger=self.logger,
                 writer=self.writer,
                 evaluator=self.op_evaluator,

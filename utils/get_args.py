@@ -442,7 +442,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-max-num-traj",
         type=int,
-        default=10000,
+        default=1000,
         help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
     parser.add_argument(
