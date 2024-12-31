@@ -454,7 +454,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-trj-per-iter",
         type=int,
-        default=256,
+        default=128,
         help="This sets the number of trajectories to use for one sub-iteration",
     )
     parser.add_argument(
