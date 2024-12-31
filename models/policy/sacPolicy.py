@@ -108,7 +108,6 @@ class SAC_Learner(BasePolicy):
 
         # Policy Loss
         new_actions, new_meta = self.policy(states)
-        #with torch.no_grad:
         q1_new, q2_new = self.critic_twin(states, new_actions)
         q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
             
