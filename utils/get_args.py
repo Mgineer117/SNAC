@@ -385,14 +385,6 @@ def get_args(verbose=True):
         "--obs-norm", type=str, default="ema", help="PPO update per one iter"
     )
 
-    ### Algorithmic
-    parser.add_argument(
-        "--OP-PPO-params", type=dict, default=None, help="PPO-actor learning rate"
-    )
-    parser.add_argument(
-        "--OP-SAC-params", type=dict, default=None, help="PPO-actor learning rate"
-    )
-
     # PPO parameters
     parser.add_argument(
         "--K-epochs", type=int, default=10, help="PPO update per one iter"
