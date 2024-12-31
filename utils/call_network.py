@@ -495,7 +495,7 @@ def call_opNetwork(
         )
 
         if args.op_mode == "sac":
-            alpha = nn.Parameter(torch.tensor(args.sac_init_alpha)).to(args.device)
+            alpha = nn.Parameter(torch.full((args.num_vector,), args.sac_init_alpha, device=args.device))
             optionCritic = OP_CriticTwin(
                 input_dim=args.s_flat_dim,
                 fc_dim=args.fc_dim,

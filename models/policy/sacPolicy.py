@@ -28,7 +28,7 @@ class SAC_Learner(BasePolicy):
 
         # Constants
         self.device = device
-        self.alpha = nn.Parameter(torch.tensor(alpha)).to(self.device)
+        self.alpha = nn.Parameter(torch.tensor(0.2, device=self.device))
         self.gamma = gamma
         self.tau = tau
         self.trj_per_iter = trj_per_iter

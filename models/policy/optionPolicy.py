@@ -200,7 +200,7 @@ class OP_Controller(BasePolicy):
         with torch.no_grad():
             next_actions, next_meta = self.optionPolicy(next_states, z)
             next_q1, next_q2, _ = self.optionCritic(next_states, next_actions, z)
-            next_q = torch.min(next_q1, next_q2) - self.alpha * next_meta["logprobs"]
+            next_q = torch.min(next_q1, next_q2) - self.alpha[z] * next_meta["logprobs"]
             target_q = rewards + (1 - terminals) * self.gamma * next_q
 
         q1, q2, _ = self.optionCritic(states, actions, z)
@@ -212,12 +212,12 @@ class OP_Controller(BasePolicy):
         with torch.no_grad():
             q1_new, q2_new, _ = self.optionCritic(states, new_actions, z)
             q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
-        policy_loss = (self.alpha * new_meta["logprobs"] - q_new).mean()
+        policy_loss = (self.alpha[z] * new_meta["logprobs"] - q_new).mean()
 
         # Alpha Loss
         alpha_loss = -(
             (
-                self.alpha * (new_meta["logprobs"] + self.optionPolicy._a_dim).detach()
+                self.alpha[z] * (new_meta["logprobs"] + self.optionPolicy._a_dim).detach()
             ).mean()
         )
 
@@ -245,7 +245,7 @@ class OP_Controller(BasePolicy):
             "OP_SAC/critic_loss": critic_loss.item(),
             "OP_SAC/policy_loss": policy_loss.item(),
             "OP_SAC/alpha_loss": alpha_loss.item(),
-            "OP_SAC/alpha": self.alpha.item(),
+            f"OP_SAC/alpha: {z}": self.alpha[z].item(),
             f"OP_SAC/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
 
