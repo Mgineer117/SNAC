@@ -407,16 +407,21 @@ class OPTrainer:
         if not dict_list:
             return {}
 
-        # Initialize a dictionary to hold the sum of values for each key
-        sum_dict = {key: 0 for key in dict_list[0].keys()}
+        # Initialize a dictionary to hold the sum of values and counts for each key
+        sum_dict = {}
+        count_dict = {}
 
         # Iterate over each dictionary in the list
         for d in dict_list:
             for key, value in d.items():
+                if key not in sum_dict:
+                    sum_dict[key] = 0
+                    count_dict[key] = 0
                 sum_dict[key] += value
+                count_dict[key] += 1
 
         # Calculate the average for each key
-        avg_dict = {key: sum_val / len(dict_list) for key, sum_val in sum_dict.items()}
+        avg_dict = {key: sum_val / count_dict[key] for key, sum_val in sum_dict.items()}
 
         return avg_dict
 
