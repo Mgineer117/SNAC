@@ -68,10 +68,11 @@ class SACTrainer:
         total_iterations = (self._epoch - self._init_epoch) * self._step_per_epoch
         completed_iterations = 0
 
+        sample_time = self.warm_buffer()
         for e in trange(self._init_epoch, self._epoch, desc="SAC Epoch"):
             ### Training Loop
             self.policy.train()
-            sample_time = self.warm_buffer()
+            
             for it in trange(self._step_per_epoch, desc="Training", leave=False):
                 batch = self.buffer.sample(self.policy.trj_per_iter)
                 loss_dict, update_time = self.policy.learn(batch)
@@ -97,21 +98,30 @@ class SACTrainer:
                 )
 
                 completed_iterations += 1
+                sample_time = 0
                 torch.cuda.empty_cache()
-
-            ### Evaluation Loop
-            self.policy.eval()
-            eval_dict = self.evaluator(
-                self.policy,
-                env_step=self.num_env_steps,
-                epoch=e + 1,
-                iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
-                dir_name="SAC",
-                grid_type=self.grid_type,
+            
+            # update the buffer
+            batch, sample_time = self.sampler.collect_samples(
+                self.policy, grid_type=self.grid_type,
             )
+            self.buffer.push(batch)
+            self.num_env_steps += len(batch["rewards"])
 
-            self.last_reward_mean = eval_dict["rew_mean"]
-            self.save_model(e + 1)
+            if e % self.log_interval== 0:
+                ### Evaluation Loop
+                self.policy.eval()
+                eval_dict = self.evaluator(
+                    self.policy,
+                    env_step=self.num_env_steps,
+                    epoch=e + 1,
+                    iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                    dir_name="SAC",
+                    grid_type=self.grid_type,
+                )
+
+                self.last_reward_mean = eval_dict["rew_mean"]
+                self.save_model(e + 1)
 
         total_time = (time.time() - start_time) / 3600
         self.logger.print(f"Total SAC training time: {total_time:.2f} hours")
@@ -129,21 +139,21 @@ class SACTrainer:
         sample_time = 0
         while self.buffer.num_trj < self.buffer.min_num_trj:
             batch, sampleT = self.sampler.collect_samples(
-                self.policy, grid_type=self.grid_type, random_init_pos=True
+                self.policy, grid_type=self.grid_type
             )
-            self.num_env_steps += len(batch["rewards"])
             self.buffer.push(batch)
+            self.num_env_steps += len(batch["rewards"])
             sample_time += sampleT
             total_sample_time += sampleT
-            if count % 25 == 0:
+            if count % 50 == 0:
                 print(
-                    f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                    f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.max_num_trj} | sample_time = {sample_time:.2f}s",
                     end="",
                 )
                 sample_time = 0
             count += 1
         print(
-            f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+            f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.max_num_trj} | total sample_time = {total_sample_time:.2f}s",
             end="",
         )
         print()

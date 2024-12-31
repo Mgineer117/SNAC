@@ -245,6 +245,39 @@ class OPTrainer:
 
         return epoch
 
+    def warm_buffer(self):
+        t0 = time.time()
+        # make sure there is nothing there
+        self.buffer.wipe()
+
+        # collect enough batch
+        count = 0
+        total_sample_time = 0
+        sample_time = 0
+        self.num_env_steps += self.buffer.min_num_trj
+        while self.buffer.num_trj < self.buffer.min_num_trj:
+            batch, sampleT = self.sampler.collect_samples(
+                self.policy, grid_type=self.grid_type, random_init_pos=True
+            )
+            self.buffer.push(batch)
+            sample_time += sampleT
+            total_sample_time += sampleT
+            if count % 50 == 0:
+                print(
+                    f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                    end="",
+                )
+                sample_time = 0
+            count += 1
+        print(
+            f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+            end="",
+        )
+        print()
+        t1 = time.time()
+        sample_time = t1 - t0
+        return sample_time
+    
     def save_model(self, e):
         # save checkpoint
         if e % self.log_interval == 0:

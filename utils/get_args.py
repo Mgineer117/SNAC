@@ -407,7 +407,7 @@ def get_args(verbose=True):
         "--op-mode", type=str, default="sac", help="PPO-actor learning rate"
     )
     parser.add_argument(
-        "--sac-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+        "--sac-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--sac-critic-lr",
@@ -418,7 +418,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-alpha-lr",
         type=float,
-        default=3e-4,
+        default=1e-4,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
@@ -442,19 +442,19 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-max-num-traj",
         type=int,
-        default=1500,
+        default=10000,
         help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
     )
     parser.add_argument(
         "--sac-min-num-traj",
         type=int,
-        default=1024,
+        default=100,
         help="For buffer learing, this sets the sub-iterations",
     )
     parser.add_argument(
         "--sac-trj-per-iter",
         type=int,
-        default=128,
+        default=10,
         help="This sets the number of trajectories to use for one sub-iteration",
     )
     parser.add_argument(

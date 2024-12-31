@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import os
+import math
 import time
 import pickle
 from utils.torch import get_flat_params_from, set_flat_params_to
@@ -28,11 +29,14 @@ class SAC_Learner(BasePolicy):
 
         # Constants
         self.device = device
-        self.alpha = nn.Parameter(torch.tensor(0.2, device=self.device))
+        self.log_alpha = nn.Parameter(torch.tensor(math.log(alpha), device=self.device))
+        self.alpha = alpha
         self.gamma = gamma
         self.tau = tau
         self.trj_per_iter = trj_per_iter
         self.target_update_interval = target_update_interval
+        self.target_entropy = -policy._a_dim
+        self.tune_alpha = False
         self.num_update = 1
 
         # Networks
@@ -47,7 +51,8 @@ class SAC_Learner(BasePolicy):
         self.critic_optimizer = torch.optim.AdamW(
             self.critic_twin.parameters(), lr=critic_lr
         )
-        self.alpha_optimizer = torch.optim.AdamW([self.alpha], lr=alpha_lr)
+        if self.tune_alpha:
+            self.alpha_optimizer = torch.optim.AdamW([self.log_alpha], lr=alpha_lr)
 
         self.to(self.device)
 
@@ -95,32 +100,36 @@ class SAC_Learner(BasePolicy):
             target_q = rewards + (1 - terminals) * self.gamma * next_q
 
         q1, q2 = self.critic_twin(states, actions)
-
         critic_loss = nn.MSELoss()(q1, target_q) + nn.MSELoss()(q2, target_q)
 
-        # Policy Loss
-        new_actions, new_meta = self.policy(states)
-        with torch.no_grad():
-            q1_new, q2_new = self.critic_twin(states, new_actions)
-            q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
-        policy_loss = (self.alpha * new_meta["logprobs"] - q_new).mean()
-
-        # Alpha Loss
-        alpha_loss = -(
-            (self.alpha * (new_meta["logprobs"] + self.policy._a_dim).detach()).mean()
-        )
-
-        # Update networks
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         self.critic_optimizer.step()
 
+        # Policy Loss
+        new_actions, new_meta = self.policy(states)
+        q1_new, q2_new = self.critic_twin(states, new_actions)
+        q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
+            
+        policy_loss = (self.alpha * new_meta["logprobs"] - q_new).mean()
+
         self.policy_optimizer.zero_grad()
-        self.alpha_optimizer.zero_grad()
         policy_loss.backward()
-        alpha_loss.backward()
         self.policy_optimizer.step()
-        self.alpha_optimizer.step()
+
+        # Alpha Loss
+        if self.tune_alpha:
+            alpha_loss = -(
+                (self.log_alpha * (new_meta["logprobs"] + self.target_entropy).detach()).mean()
+            )
+
+            self.alpha_optimizer.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optimizer.step()
+
+            self.alpha = self.log_alpha.exp()
+        else:
+            alpha_loss = torch.tensor(0.).to(self.device)
 
         # Soft update of target networks
         if self.num_update % self.target_update_interval == 0:
@@ -134,7 +143,8 @@ class SAC_Learner(BasePolicy):
             "SAC/critic_loss": critic_loss.item(),
             "SAC/policy_loss": policy_loss.item(),
             "SAC/alpha_loss": alpha_loss.item(),
-            "SAC/alpha": self.alpha.item(),
+            "SAC/alpha": self.alpha,
+            "SAC/trainReward":(torch.sum(rewards) / torch.sum(terminals)).item(),
         }
         update_time = time.time() - t0
         return loss_dict, update_time
@@ -142,7 +152,7 @@ class SAC_Learner(BasePolicy):
     def save_model(self, logdir, epoch=None, is_best=False):
         self.policy = self.policy.cpu()
         self.critic_twin = self.critic_twin.cpu()
-        alpha = nn.Parameter(self.alpha.clone().cpu())
+        alpha = nn.Parameter(self.log_alpha.clone().exp().cpu())
 
         if is_best:
             path = os.path.join(logdir, "best_model.p")

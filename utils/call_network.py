@@ -485,25 +485,32 @@ def call_opNetwork(
                     )
                 )
     else:
-        optionPolicy = OptionPolicy(
-            input_dim=args.s_flat_dim,
-            fc_dim=args.option_fc_dim,
-            a_dim=args.a_dim,
-            num_options=options.shape[0],
-            activation=nn.Tanh(),
-            is_discrete=args.is_discrete,
-        )
-
         if args.op_mode == "sac":
             alpha = nn.Parameter(torch.full((args.num_vector,), args.sac_init_alpha, device=args.device))
+            optionPolicy = OptionPolicy(
+                input_dim=args.s_flat_dim,
+                fc_dim=args.option_fc_dim,
+                a_dim=args.a_dim,
+                num_options=options.shape[0],
+                activation=nn.ReLU(),
+                is_discrete=args.is_discrete,
+            )
             optionCritic = OP_CriticTwin(
                 input_dim=args.s_flat_dim,
                 fc_dim=args.fc_dim,
                 num_options=options.shape[0],
-                activation=nn.Tanh(),
+                activation=nn.ReLU(),
             )
         else:
             alpha = None
+            optionPolicy = OptionPolicy(
+                input_dim=args.s_flat_dim,
+                fc_dim=args.option_fc_dim,
+                a_dim=args.a_dim,
+                num_options=options.shape[0],
+                activation=nn.Tanh(),
+                is_discrete=args.is_discrete,
+            )
             optionCritic = OP_Critic(
                 input_dim=args.s_flat_dim,
                 fc_dim=args.fc_dim,
