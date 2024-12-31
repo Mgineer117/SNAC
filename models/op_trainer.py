@@ -41,7 +41,7 @@ class OPTrainer:
         epoch: int = 1000,
         init_epoch: int = 0,
         step_per_epoch: int = 1000,
-        trj_per_iter:int = 10,
+        trj_per_iter: int = 10,
         eval_episodes: int = 10,
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         log_interval: int = 2,
@@ -56,7 +56,8 @@ class OPTrainer:
         self.writer = writer
 
         # training parameters
-        self._epoch = epoch
+        self._sac_epoch = epoch
+        self._ppo_epoch = epoch
         self._init_epoch = init_epoch
         self._step_per_epoch = step_per_epoch
         self._trj_per_iter = trj_per_iter
@@ -81,7 +82,7 @@ class OPTrainer:
             first_final_epoch = self.sac_train(mode)
         else:
             raise NotImplementedError(f"{mode} is not implemented")
-        
+
         return first_final_epoch
 
     def sac_train(self, mode) -> Dict[str, float]:
@@ -91,7 +92,7 @@ class OPTrainer:
 
         # Train loop
         first_init_epoch = self._init_epoch
-        first_final_epoch = self._epoch
+        first_final_epoch = self._sac_epoch
 
         total_iterations = (first_final_epoch - first_init_epoch) * self._step_per_epoch
         completed_iterations = 0
@@ -109,9 +110,12 @@ class OPTrainer:
                 ):
                     batch = self.buffers[z].sample(self._trj_per_iter)
                     loss_dict, updateT = self.policy.learn(batch, z, mode=mode)
-                    
+
                     batch, sampleT = self.sampler.collect_samples(
-                        self.policy, idx=z, grid_type=self.grid_type, random_init_pos=True
+                        self.policy,
+                        idx=z,
+                        grid_type=self.grid_type,
+                        random_init_pos=True,
                     )
                     self.buffers[z].push(batch)
 
@@ -136,7 +140,6 @@ class OPTrainer:
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 
-
             if e % self.log_interval == 0:
                 ### Eval Loop
                 self.policy.eval()
@@ -145,7 +148,9 @@ class OPTrainer:
                 ln_mean = np.zeros((self.policy.num_options,))
                 ln_std = np.zeros((self.policy.num_options,))
 
-                for z in trange(self.policy.num_options, desc=f"Evaluation", leave=False):
+                for z in trange(
+                    self.policy.num_options, desc=f"Evaluation", leave=False
+                ):
                     eval_dict = self.evaluator(
                         self.policy,
                         epoch=e + 1,
@@ -174,7 +179,8 @@ class OPTrainer:
                     "OP_SAC/eval_ln_std": ln_std,
                 }
                 self.evaluator.write_log(
-                    eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
+                    eval_dict,
+                    iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 )
 
                 self.last_reward_mean.append(rew_mean)
@@ -191,7 +197,7 @@ class OPTrainer:
 
         # Train loop
         first_init_epoch = self._init_epoch
-        first_final_epoch = self._epoch
+        first_final_epoch = self._ppo_epoch
 
         total_iterations = (first_final_epoch - first_init_epoch) * self._step_per_epoch
         completed_iterations = 0
@@ -248,7 +254,9 @@ class OPTrainer:
                 ln_mean = np.zeros((self.policy.num_options,))
                 ln_std = np.zeros((self.policy.num_options,))
 
-                for z in trange(self.policy.num_options, desc=f"Evaluation", leave=False):
+                for z in trange(
+                    self.policy.num_options, desc=f"Evaluation", leave=False
+                ):
                     eval_dict = self.evaluator(
                         self.policy,
                         epoch=e + 1,
@@ -277,7 +285,8 @@ class OPTrainer:
                     "OP_PPO/eval_ln_std": ln_std,
                 }
                 self.evaluator.write_log(
-                    eval_dict, iter_idx=int(e * self._step_per_epoch + self._step_per_epoch)
+                    eval_dict,
+                    iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 )
 
                 self.last_reward_mean.append(rew_mean)
@@ -375,12 +384,12 @@ class OPTrainer:
                     end="",
                 )
                 print()
-        
+
         t1 = time.time()
         sample_time = t1 - t0
 
         return sample_time
-    
+
     def save_model(self, e):
         # save checkpoint
         if e % self.log_interval == 0:
