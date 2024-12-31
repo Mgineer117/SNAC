@@ -56,8 +56,7 @@ class OPTrainer:
         self.writer = writer
 
         # training parameters
-        self._sac_epoch = epoch
-        self._ppo_epoch = epoch
+        self._epoch = epoch
         self._init_epoch = init_epoch
         self._step_per_epoch = step_per_epoch
         self._trj_per_iter = trj_per_iter
@@ -92,7 +91,7 @@ class OPTrainer:
 
         # Train loop
         first_init_epoch = self._init_epoch
-        first_final_epoch = self._sac_epoch
+        first_final_epoch = self._epoch
 
         total_iterations = (first_final_epoch - first_init_epoch) * self._step_per_epoch
         completed_iterations = 0
@@ -188,7 +187,7 @@ class OPTrainer:
 
                 self.save_model(e + 1)
 
-        return None
+        return first_final_epoch
 
     def ppo_train(self, mode) -> Dict[str, float]:
         start_time = time.time()
@@ -197,7 +196,7 @@ class OPTrainer:
 
         # Train loop
         first_init_epoch = self._init_epoch
-        first_final_epoch = self._ppo_epoch
+        first_final_epoch = self._epoch
 
         total_iterations = (first_final_epoch - first_init_epoch) * self._step_per_epoch
         completed_iterations = 0
