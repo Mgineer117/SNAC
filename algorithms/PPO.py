@@ -31,9 +31,12 @@ class PPO:
             min_option_length=args.min_option_length,
             min_cover_option_length=args.min_cover_option_length,
             episode_len=args.episode_len,
-            episode_num=args.episode_num,
+            batch_size=args.batch_size,
+            min_batch_for_worker=args.min_batch_for_worker,
+            cpu_preserv_rate=args.cpu_preserv_rate,
             num_cores=args.num_cores,
             gamma=args.gamma,
+            verbose=False,
         )
 
         # object initialization
@@ -86,8 +89,8 @@ class PPO:
         torch.cuda.empty_cache()
 
     def train_ppo(self):
-        num_eps = self.args.ppo_episode_num * self.args.K_epochs
-        self.sampler.initialize(episode_num=int(num_eps / 2))
+        total_batch_size = self.args.ppo_batch_size * self.args.K_epochs
+        self.sampler.initialize(batch_size=int(total_batch_size / 2))
 
         ### Call network param and run
         self.ppo_network = call_ppoNetwork(self.args)

@@ -24,14 +24,17 @@ class OptionCritic:
             state_dim=args.s_dim,
             feature_dim=args.sf_dim,
             action_dim=args.a_dim,
-            hc_action_dim=args.num_vector,
+            hc_action_dim=args.num_vector + 1,
             agent_num=args.agent_num,
             min_option_length=args.min_option_length,
             min_cover_option_length=args.min_cover_option_length,
             episode_len=args.episode_len,
-            episode_num=args.episode_num,
+            batch_size=args.batch_size,
+            min_batch_for_worker=args.min_batch_for_worker,
+            cpu_preserv_rate=args.cpu_preserv_rate,
             num_cores=args.num_cores,
             gamma=args.gamma,
+            verbose=False,
         )
 
         # object initialization
@@ -84,7 +87,7 @@ class OptionCritic:
         torch.cuda.empty_cache()
 
     def train_oc(self):
-        self.sampler.initialize(episode_num=self.args.oc_episode_num)
+        self.sampler.initialize(batch_size=self.args.oc_batch_size)
 
         ### Call network param and run
         self.oc_network = call_ocNetwork(self.args)

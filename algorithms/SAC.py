@@ -35,9 +35,12 @@ class SAC:
             min_option_length=args.min_option_length,
             min_cover_option_length=args.min_cover_option_length,
             episode_len=args.episode_len,
-            episode_num=args.episode_num,
+            batch_size=args.batch_size,
+            min_batch_for_worker=args.min_batch_for_worker,
+            cpu_preserv_rate=args.cpu_preserv_rate,
             num_cores=args.num_cores,
             gamma=args.gamma,
+            verbose=False,
         )
 
         # Object initialization
@@ -89,7 +92,7 @@ class SAC:
         torch.cuda.empty_cache()
 
     def train_sac(self):
-        self.sampler.initialize(episode_num=self.args.sac_episode_num)
+        self.sampler.initialize(batch_size=self.args.sac_batch_size)
 
         ### Call network parameters and run
         self.sac_network = call_sacNetwork(self.args)

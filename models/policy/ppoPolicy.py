@@ -124,7 +124,7 @@ class PPO_Learner(BasePolicy):
 
         # Minibatch setup
         batch_size = states.size(0)
-        minibatch_size = batch_size // self._K
+        minibatch_size = 2 * (batch_size // self._K)
 
         # K - Loop with minibatch training
         for _ in range(self._K):

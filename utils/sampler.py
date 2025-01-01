@@ -8,64 +8,12 @@ import torch.nn as nn
 import torch.multiprocessing as multiprocessing
 import numpy as np
 import cv2
+from math import floor, ceil
 
 from datetime import date
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple
 
 today = date.today()
-
-
-def allocate_values(total, value):
-    result = []
-    remaining = total
-
-    while remaining >= value:
-        result.append(value)
-        remaining -= value
-
-    if remaining != 0:
-        result.append(remaining)
-
-    return result
-
-
-def calculate_workers_and_rounds(environments, episodes_per_env, num_cores):
-    if episodes_per_env <= 5:
-        num_worker_per_env = 1
-    elif episodes_per_env > 5:
-        num_worker_per_env = episodes_per_env // 5
-
-    # Calculate total number of workers
-    total_num_workers = num_worker_per_env * len(environments)
-
-    if total_num_workers > num_cores:
-        avail_core_per_env = num_cores // num_worker_per_env
-
-        num_worker_per_round = allocate_values(
-            total_num_workers, avail_core_per_env * num_worker_per_env
-        )
-        num_env_per_round = allocate_values(len(environments), avail_core_per_env)
-        rounds = len(num_env_per_round)
-    else:
-        num_worker_per_round = [total_num_workers]
-        num_env_per_round = [len(environments)]
-        rounds = 1
-
-    episodes_per_worker = math.floor(
-        episodes_per_env * len(environments) / total_num_workers
-    )
-
-    total_episodes = episodes_per_env * len(environments)
-    running_episodes = episodes_per_worker * total_num_workers
-    dropped_episodes = total_episodes - running_episodes
-
-    return (
-        num_worker_per_round,
-        num_env_per_round,
-        episodes_per_worker,
-        dropped_episodes,
-        rounds,
-    )
 
 
 class Base:
@@ -186,7 +134,7 @@ class Base:
             # iterate over envs
             for env in envs:
                 workers_for_env = self.num_workers_per_round[round_number] // len(envs)
-                for i in range(workers_for_env):
+                for _ in range(workers_for_env):
                     if worker_idx == self.total_num_worker - 1:
                         # Main thread process
                         memory = sample_fn(
@@ -194,14 +142,11 @@ class Base:
                             None,
                             env,
                             policy,
-                            self.thread_batch_size,
-                            self.episode_len,
-                            self.episodes_per_worker,
                             idx,
                             grid_type,
                             random_init_pos,
-                            i,
-                            deterministic,
+                            seed=worker_idx,
+                            deterministic=deterministic,
                         )
                     else:
                         # Sub-thread process
@@ -210,20 +155,19 @@ class Base:
                             queue,
                             env,
                             policy,
-                            self.thread_batch_size,
-                            self.episode_len,
-                            self.episodes_per_worker,
                             idx,
                             grid_type,
                             random_init_pos,
-                            i,
+                            worker_idx,
                             deterministic,
                         )
                         p = multiprocessing.Process(target=sample_fn, args=worker_args)
                         processes.append(p)
                         p.start()
                     worker_idx += 1
-                env_idx += 1
+                if worker_idx % self.req_num_workers == 0:
+                    env_idx += 1
+                    print(env_idx)
             for p in processes:
                 p.join()
 
@@ -235,6 +179,10 @@ class Base:
         for worker_memory in worker_memories[::-1]:  # concat in order
             for k in memory:
                 memory[k] = np.concatenate((memory[k], worker_memory[k]), axis=0)
+
+        # concat to the desired batch size
+        for k, v in memory.items():
+            memory[k] = v[: self.batch_size]
 
         policy.to_device(policy_device)
         t_end = time.time()
@@ -254,8 +202,10 @@ class OnlineSampler(Base):
         min_option_length: int,
         min_cover_option_length: int,
         episode_len: int,
-        episode_num: int,
-        num_cores: int = None,
+        batch_size: int,
+        min_batch_for_worker: int = 1024,
+        cpu_preserv_rate: float = 0.95,
+        num_cores: int | None = None,
         gamma: float = 0.99,
         verbose: bool = True,
     ) -> None:
@@ -269,96 +219,137 @@ class OnlineSampler(Base):
         the task is assigned. 
         This assigned appropriate parameters assuming one worker work with 2 trajectories.
         """
-        self.gamma = gamma
+
+        # dimensional params
         self.state_dim = state_dim
         self.feature_dim = feature_dim
         self.action_dim = action_dim
         self.hc_action_dim = hc_action_dim
         self.agent_num = agent_num
+        self.gamma = gamma
+
+        # Misc params
         self.min_option_length = min_option_length
         self.min_cover_option_length = min_cover_option_length
+
+        # sampling params
         self.episode_len = episode_len
-        self.episode_num = episode_num
+        self.min_batch_for_worker = min_batch_for_worker
+        self.thread_batch_size = self.min_batch_for_worker + 2 * self.episode_len
+        self.batch_size = batch_size
+
         if isinstance(training_envs, List):
             self.training_envs = training_envs
         else:
             self.training_envs = [training_envs]
 
-        # Preprocess for multiprocessing to avoid CPU overscription and deadlock
-        self.temp_cores = multiprocessing.cpu_count()
-        self.num_cores = (
-            num_cores if num_cores is not None else self.temp_cores
-        )  # torch.get_num_threads() returns appropriate num cpu cores while mp give all available
+            # Preprocess for multiprocessing to avoid CPU overscription and deadlock
+        self.cpu_preserv_rate = cpu_preserv_rate
+        self.temp_cores = floor(multiprocessing.cpu_count() * self.cpu_preserv_rate)
+        self.num_cores = num_cores if num_cores is not None else self.temp_cores
+
         (
             num_workers_per_round,
             num_env_per_round,
-            episodes_per_worker,
-            dropped_episodes,
+            req_num_workers,
             rounds,
-        ) = calculate_workers_and_rounds(
-            self.training_envs, self.episode_num, self.num_cores
-        )
+        ) = self.calculate_workers_and_rounds()
 
+        self.req_num_workers = req_num_workers
         self.num_workers_per_round = num_workers_per_round
-        self.num_env_per_round = num_env_per_round
         self.total_num_worker = sum(self.num_workers_per_round)
-        self.episodes_per_worker = episodes_per_worker
-        self.thread_batch_size = self.episodes_per_worker * self.episode_len
+        self.num_env_per_round = num_env_per_round
         self.num_worker_per_env = int(self.total_num_worker / len(self.training_envs))
-        self.rounds = rounds
 
-        total_episodes = self.total_num_worker * self.episodes_per_worker
+        self.rounds = rounds
         if verbose:
             print("====================")
             print("Sampling Parameters:")
             print("====================")
             print(
-                f"Cores (usage)/(given)     : {self.num_workers_per_round[0]}/{self.num_cores} out of {multiprocessing.cpu_count()}"
+                f"Cores (usage)/(given)     : {self.num_workers_per_round}/{self.num_cores} out of {multiprocessing.cpu_count()}"
             )
             print(f"# Environments each Round : {self.num_env_per_round}")
             print(f"Total number of Worker    : {self.total_num_worker}")
-            print(f"Episodes per Worker       : {self.episodes_per_worker}")
-            print(
-                f"Running Eps / Given Eps   : {total_episodes} / {total_episodes - dropped_episodes}"
-            )
             print(f"Max. batch size           : {self.thread_batch_size}")
 
         # enforce one thread for each worker to avoid CPU overscription.
         torch.set_num_threads(1)
 
-    def initialize(self, episode_num, verbose=True):
-        # Preprocess for multiprocessing to avoid CPU overscription and deadlock
+    def initialize(self, batch_size, verbose=True):
+        # sampling params
+        self.thread_batch_size = self.min_batch_for_worker + 2 * self.episode_len
+        self.batch_size = batch_size
+
         (
             num_workers_per_round,
             num_env_per_round,
-            episodes_per_worker,
-            dropped_episodes,
+            req_num_workers,
             rounds,
-        ) = calculate_workers_and_rounds(
-            self.training_envs, episode_num, self.num_cores
-        )
+        ) = self.calculate_workers_and_rounds()
 
+        self.req_num_workers = req_num_workers
         self.num_workers_per_round = num_workers_per_round
-        self.num_env_per_round = num_env_per_round
         self.total_num_worker = sum(self.num_workers_per_round)
-        self.episodes_per_worker = episodes_per_worker
-        self.thread_batch_size = self.episodes_per_worker * self.episode_len
+        self.num_env_per_round = num_env_per_round
         self.num_worker_per_env = int(self.total_num_worker / len(self.training_envs))
-        self.rounds = rounds
 
-        total_episodes = self.total_num_worker * self.episodes_per_worker
+        self.rounds = rounds
         if verbose:
-            print(f"\n+++++Sampler episode num has changed+++++\n")
+            print("====================")
+            print("Sampling Parameters:")
+            print("====================")
             print(
-                f"Cores (usage)/(given)     : {self.num_workers_per_round[0]}/{self.num_cores} out of {multiprocessing.cpu_count()}"
+                f"Cores (usage)/(given)     : {self.num_workers_per_round}/{self.num_cores} out of {multiprocessing.cpu_count()}"
             )
             print(f"# Environments each Round : {self.num_env_per_round}")
             print(f"Total number of Worker    : {self.total_num_worker}")
-            print(f"Episodes per Worker       : {self.episodes_per_worker}")
-            print(
-                f"Running Eps / Given Eps   : {total_episodes} / {total_episodes - dropped_episodes}"
-            )
             print(f"Max. batch size           : {self.thread_batch_size}")
+
+        # enforce one thread for each worker to avoid CPU overscription.
+        torch.set_num_threads(1)
+
+    def calculate_workers_and_rounds(self):
+        """
+        Calculate the number of workers and rounds for multiprocessing training.
+
+        Returns:
+            num_worker_per_round (list): Number of workers per round.
+            num_env_per_round (list): Number of environments per round.
+            rounds (int): Total number of rounds.
+        """
+        # Calculate required number of workers
+        req_num_workers = ceil(self.batch_size / self.min_batch_for_worker)
+        total_num_workers = req_num_workers * len(self.training_envs)
+
+        if total_num_workers > self.num_cores:
+            # Available cores per environment
+            avail_core_per_env = self.num_cores // len(self.training_envs)
+
+            # Calculate the number of workers per round per environment
+            max_workers_per_round = avail_core_per_env
+            num_worker_per_round = []
+            num_env_per_round = []
+            rounds = ceil(total_num_workers / self.num_cores)
+
+            remaining_workers = total_num_workers
+
+            for _ in range(rounds):
+                workers_this_round = min(remaining_workers, self.num_cores)
+                num_worker_per_round.append(workers_this_round)
+
+                # Calculate the number of environments for this round
+                envs_this_round = ceil(workers_this_round / req_num_workers)
+                num_env_per_round.append(envs_this_round)
+
+                remaining_workers -= workers_this_round
+        else:
+            # All workers can run in a single round
+            num_worker_per_round = [total_num_workers]
+            num_env_per_round = [len(self.training_envs)]
+            rounds = 1
+
+        return num_worker_per_round, num_env_per_round, req_num_workers, rounds
 
     def collect_trajectory(
         self,
@@ -366,9 +357,6 @@ class OnlineSampler(Base):
         queue,
         env,
         policy: nn.Module,
-        thread_batch_size: int,
-        episode_len: int,
-        episode_num: int,
         idx: int | None = None,
         grid_type: int = 0,
         random_init_pos: bool = False,
@@ -376,18 +364,14 @@ class OnlineSampler(Base):
         deterministic: bool = False,
     ):
         # estimate the batch size to hava a large batch
-        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
+        data = self.get_reset_data(batch_size=self.thread_batch_size)  # allocate memory
 
         # If no seed is given, generate one
         if seed is None:
             seed = random.randint(0, 1_000_000)
 
-        if queue is not None:
-            # Apply different seeds for multiprocessor's action stochacity
-            self.set_any_seed(seed, pid)
-
         current_step = 0
-        for iter in range(episode_num):
+        while current_step < self.min_batch_for_worker:
             # env initialization
             if random_init_pos:
                 options = {"random_init_pos": True}
@@ -399,14 +383,13 @@ class OnlineSampler(Base):
                 options=options,
             )
 
-            for t in range(episode_len):
+            for t in range(self.episode_len):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=deterministic)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
 
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
-                    trunc = True if (t + 1) == episode_len else False
                     done = term or trunc
 
                 # saving the data
@@ -444,9 +427,6 @@ class OnlineSampler(Base):
         queue,
         env,
         policy: nn.Module,
-        thread_batch_size: int,
-        episode_len: int,
-        episode_num: int,
         idx: int = None,
         grid_type: int = 0,
         random_init_pos: bool = False,
@@ -454,32 +434,32 @@ class OnlineSampler(Base):
         deterministic: bool = False,
     ):
         # estimate the batch size to hava a large batch
-        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
+        data = self.get_reset_data(batch_size=self.thread_batch_size)  # allocate memory
 
         # For each episode, apply different seed for stochasticity
         if seed is None:
             seed = random.randint(0, 1_000_000)
 
-        if queue is not None:
-            # Apply different seeds for multiprocessor's action stochacity
-            self.set_any_seed(seed, pid)
-
         def env_step(a):
             next_obs, rew, term, trunc1, infos = env.step(a)
 
             self.external_t += 1
-            trunc2 = True if (self.external_t + 1) == episode_len else False
+            trunc2 = True if (self.external_t + 1) == self.episode_len else False
             done = term or trunc1 or trunc2
 
             return next_obs, rew, done, infos
 
         current_step = 0
-        for iter in range(episode_num):
+        while current_step < self.min_batch_for_worker:
             # env initialization
-            obs, _ = env.reset(seed=grid_type)
+            if random_init_pos:
+                options = {"random_init_pos": True}
+            else:
+                options = {"random_init_pos": False}
+            obs, _ = env.reset(seed=grid_type, options=options)
 
             self.external_t = 0
-            for t in range(episode_len):
+            for t in range(self.episode_len):
 
                 with torch.no_grad():
                     # sample action
@@ -567,9 +547,6 @@ class OnlineSampler(Base):
         queue,
         env,
         policy: nn.Module,
-        thread_batch_size: int,
-        episode_len: int,
-        episode_num: int,
         idx: int = None,
         grid_type: int = 0,
         random_init_pos: bool = False,
@@ -585,34 +562,33 @@ class OnlineSampler(Base):
         Machado, Marlos C., et al. "Temporal abstraction in reinforcement learning with the successor representation."
         """
         # estimate the batch size to hava a large batch
-        data = self.get_reset_data(batch_size=thread_batch_size)  # allocate memory
+        data = self.get_reset_data(batch_size=self.thread_batch_size)  # allocate memory
 
         # For each episode, apply different seed for stochasticity
         if seed is None:
             seed = random.randint(0, 1_000_000)
 
-        if queue is not None:
-            # Apply different seeds for multiprocessor's action stochacity
-            self.set_any_seed(seed, pid)
-
         def env_step(a):
             next_obs, rew, term, trunc1, infos = env.step(a)
 
             self.external_t += 1
-            trunc2 = True if (self.external_t + 1) == episode_len else False
+            trunc2 = True if (self.external_t + 1) == self.episode_len else False
             done = term or trunc1 or trunc2
 
             return next_obs, rew, done, infos
 
         current_step = 0
-        for iter in range(episode_num):
+        while current_step < self.min_batch_for_worker:
             # env initialization
-            obs, _ = env.reset(seed=grid_type)
+            if random_init_pos:
+                options = {"random_init_pos": True}
+            else:
+                options = {"random_init_pos": False}
+            obs, _ = env.reset(seed=grid_type, options=options)
 
             is_first_iter = True
             self.external_t = 0
-            for t in range(episode_len):
-
+            for t in range(self.episode_len):
                 with torch.no_grad():
                     # sample action
                     a, metaData = policy(obs, idx, deterministic=deterministic)
@@ -663,11 +639,8 @@ class OnlineSampler(Base):
 
                 obs = next_obs
 
-        end_idx = (
-            current_step if current_step < thread_batch_size else thread_batch_size
-        )
         for k in data:
-            data[k] = data[k][:end_idx]
+            data[k] = data[k][:current_step]
 
         if queue is not None:
             queue.put([pid, data])

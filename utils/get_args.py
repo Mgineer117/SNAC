@@ -198,39 +198,51 @@ def get_args(verbose=True):
         help="Minimum time step requirement for covering option",
     )
     parser.add_argument(
-        "--episode-num",
+        "--cpu-preserve-rate",
+        type=float,
+        default=0.95,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--batch-size",
         type=int,
         default=10,
         help="number of episodes to collect for one env",
     )
     parser.add_argument(
-        "--op-episode-num",
+        "--op-batch-size",
         type=int,
         default=None,
         help="number of episodes to collect for one env",
     )
     parser.add_argument(
-        "--hc-episode-num",
+        "--hc-batch-size",
         type=int,
         default=None,
         help="number of episodes to collect for one env",
     )
     parser.add_argument(
-        "--ppo-episode-num",
+        "--ppo-batch-size",
         type=int,
         default=None,
         help="number of episodes to collect for one env",
     )
     parser.add_argument(
-        "--sac-episode-num",
+        "--sac-batch-size",
         type=int,
         default=None,
         help="number of episodes to collect for one env",
     )
     parser.add_argument(
-        "--oc-episode-num",
+        "--oc-batch-size",
         type=int,
         default=None,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--min-batch-for-worker",
+        type=int,
+        default=1024,
         help="number of episodes to collect for one env",
     )
     parser.add_argument(
@@ -387,10 +399,10 @@ def get_args(verbose=True):
 
     # PPO parameters
     parser.add_argument(
-        "--K-epochs", type=int, default=5, help="PPO update per one iter"
+        "--K-epochs", type=int, default=10, help="PPO update per one iter"
     )
     parser.add_argument(
-        "--OP-K-epochs", type=int, default=5, help="PPO update per one iter"
+        "--OP-K-epochs", type=int, default=10, help="PPO update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"
