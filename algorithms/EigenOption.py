@@ -119,7 +119,8 @@ class EigenOption:
         This discovers the eigenvectors via clustering for each of reward and state decompositions.
         --------------------------------------------------------------------------------------------
         """
-        self.sampler.initialize(episode_num=self.args.oc_episode_num)
+        num_eps = self.args.op_episode_num * self.args.OP_K_epochs
+        self.sampler.initialize(episode_num=int(num_eps))
 
         if not self.args.import_op_model:
             self.option_vals, self.options, _ = get_eigenvectors(
@@ -166,7 +167,8 @@ class EigenOption:
         self.curr_epoch += final_epoch
 
     def train_hc(self):
-        self.sampler.initialize(episode_num=self.args.hc_episode_num)
+        num_eps = self.args.hc_episode_num * self.args.K_epochs
+        self.sampler.initialize(episode_num=int(num_eps))
 
         self.hc_network = call_hcNetwork(
             self.sf_network.feaNet, self.op_network, self.args
