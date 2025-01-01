@@ -387,7 +387,7 @@ def get_args(verbose=True):
 
     # PPO parameters
     parser.add_argument(
-        "--K-epochs", type=int, default=10, help="PPO update per one iter"
+        "--K-epochs", type=int, default=3, help="PPO update per one iter"
     )
     parser.add_argument(
         "--OP-K-epochs", type=int, default=10, help="PPO update per one iter"

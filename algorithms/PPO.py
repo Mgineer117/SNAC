@@ -86,7 +86,8 @@ class PPO:
         torch.cuda.empty_cache()
 
     def train_ppo(self):
-        self.sampler.initialize(episode_num=self.args.ppo_episode_num)
+        num_eps = self.args.ppo_episode_num * self.args.K_epochs
+        self.sampler.initialize(episode_num=int(num_eps))
 
         ### Call network param and run
         self.ppo_network = call_ppoNetwork(self.args)

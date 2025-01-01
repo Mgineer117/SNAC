@@ -91,8 +91,8 @@ class HC_Controller(BasePolicy):
         self._bfgs_iter = K
         self._forward_steps = 0
 
-        self.normalizer = normalizer 
-        
+        self.normalizer = normalizer
+
         # trainable networks
         self.policy = policy
         self.primitivePolicy = primitivePolicy
@@ -159,11 +159,11 @@ class HC_Controller(BasePolicy):
         Flat tensor-based state dimension ~ [Batch, tensor] or [tensor]
         """
         self._forward_steps += 1
-        
+
         normalized_obs = self.preprocess_obs(obs)
 
         if idx is None:
-            
+
             # sample a from the Hierarchical Policy
             z, z_argmax, metaData = self.policy(
                 normalized_obs["observation"], deterministic=deterministic
@@ -189,7 +189,9 @@ class HC_Controller(BasePolicy):
                 a, _ = self.op_network(obs, z_argmax, deterministic=deterministic)
         else:
             # primitive action selection
-            a, _ = self.primitivePolicy(normalized_obs["observation"], deterministic=deterministic)
+            a, _ = self.primitivePolicy(
+                normalized_obs["observation"], deterministic=deterministic
+            )
 
         return a, {
             "z": z,
@@ -207,8 +209,8 @@ class HC_Controller(BasePolicy):
 
         # normalization
         if self.normalizer is not None:
-            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
-            
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False)
+
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         states = states.reshape(states.shape[0], -1)
@@ -222,82 +224,94 @@ class HC_Controller(BasePolicy):
             torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
         )
 
-        with torch.no_grad():
-            values, _ = self.critic(states)
-            advantages, returns = estimate_advantages(
-                rewards,
-                terminals,
-                values,
-                gamma=self._gamma,
-                tau=self._tau,
-                device=self.device,
-            )
-            valueLoss = self.mse_loss(returns, values)
-
-        if self.is_bfgs:
-            # L-BFGS-F value network update
-            def closure(flat_params):
-                set_flat_params_to(self.critic, torch.tensor(flat_params))
-                for param in self.critic.parameters():
-                    if param.grad is not None:
-                        param.grad.data.fill_(0)
-                values, _ = self.critic(states)
-                valueLoss = self.mse_loss(values, returns)
-                for param in self.critic.parameters():
-                    valueLoss += param.pow(2).sum() * self._l2_reg
-                valueLoss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
-
-                return (
-                    valueLoss.item(),
-                    get_flat_grad_from(self.critic.parameters()).cpu().numpy(),
-                )
-
-            flat_params, _, opt_info = bfgs(
-                closure,
-                get_flat_params_from(self.critic).detach().cpu().numpy(),
-                maxiter=self._bfgs_iter,
-            )
-            set_flat_params_to(self.critic, torch.tensor(flat_params))
+        # Minibatch setup
+        batch_size = states.size(0)
+        minibatch_size = batch_size // self._K
 
         # K - Loop
         for _ in range(self._K):
-            if not self.is_bfgs:
-                values, _ = self.critic(states)
-                valueLoss = self.mse_loss(returns, values)
+            indices = torch.randperm(batch_size)[:minibatch_size]
+            mb_states = states[indices]
+            mb_actions = actions[indices]
+            mb_option_actions = option_actions[indices]
+            mb_rewards = rewards[indices]
+            mb_terminals = terminals[indices]
+            mb_old_logprobs = old_logprobs[indices]
+
+            # Compute Advantage and returns of the current batch
+            with torch.no_grad():
+                mb_values, _ = self.critic(mb_states)
+                mb_advantages, mb_returns = estimate_advantages(
+                    mb_rewards,
+                    mb_terminals,
+                    mb_values,
+                    gamma=self._gamma,
+                    tau=self._tau,
+                    device=self.device,
+                )
+
+            valueLoss = self.mse_loss(mb_returns, mb_values)
+
+            if self.is_bfgs:
+                # L-BFGS-F value network update
+                def closure(flat_params):
+                    set_flat_params_to(self.critic, torch.tensor(flat_params))
+                    for param in self.critic.parameters():
+                        if param.grad is not None:
+                            param.grad.data.fill_(0)
+                    mb_values, _ = self.critic(mb_states)
+                    valueLoss = self.mse_loss(mb_values, mb_returns)
+                    for param in self.critic.parameters():
+                        valueLoss += param.pow(2).sum() * self._l2_reg
+                    valueLoss.backward()
+                    torch.nn.utils.clip_grad_norm_(
+                        self.critic.parameters(), max_norm=1.0
+                    )
+
+                    return (
+                        valueLoss.item(),
+                        get_flat_grad_from(self.critic.parameters()).cpu().numpy(),
+                    )
+
+                flat_params, _, opt_info = bfgs(
+                    closure,
+                    get_flat_params_from(self.critic).detach().cpu().numpy(),
+                    maxiter=self._bfgs_iter,
+                )
+                set_flat_params_to(self.critic, torch.tensor(flat_params))
 
             # find mask: the actions contributions by hc policy only
             hc_mask = torch.argmax(option_actions, dim=-1) < self._num_options
             pm_mask = ~hc_mask
 
-            _, _, hc_metaData = self.policy(states)
-            _, pm_metaData = self.primitivePolicy(states)
+            _, _, hc_metaData = self.policy(mb_states)
+            _, pm_metaData = self.primitivePolicy(mb_states)
 
             # Compute hierarchical policy logprobs and entropy
-            hc_logprobs = self.policy.log_prob(hc_metaData["dist"], option_actions)[
+            hc_logprobs = self.policy.log_prob(hc_metaData["dist"], mb_option_actions)[
                 hc_mask
             ]
             hc_entropy = self.policy.entropy(hc_metaData["dist"])[hc_mask]
 
             # Compute primitive policy logprobs and entropy
-            pm_logprobs = self.primitivePolicy.log_prob(pm_metaData["dist"], actions)[
-                pm_mask
-            ]
+            pm_logprobs = self.primitivePolicy.log_prob(
+                pm_metaData["dist"], mb_actions
+            )[pm_mask]
 
             pm_entropy = self.primitivePolicy.entropy(pm_metaData["dist"])[pm_mask]
 
             # Combine logprobs and entropy in the original order
-            logprobs = torch.empty_like(rewards)
-            entropy = torch.empty_like(rewards)
+            logprobs = torch.empty_like(mb_rewards)
+            entropy = torch.empty_like(mb_rewards)
             logprobs[hc_mask] = hc_logprobs
             logprobs[pm_mask] = pm_logprobs
             entropy[hc_mask] = hc_entropy
             entropy[pm_mask] = pm_entropy
 
-            ratios = torch.exp(logprobs - old_logprobs)
+            ratios = torch.exp(logprobs - mb_old_logprobs)
 
-            surr1 = ratios * advantages
-            surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * advantages
+            surr1 = ratios * mb_advantages
+            surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
 
             actorLoss = -torch.min(surr1, surr2)
             entropyLoss = self._entropy_scaler * entropy
