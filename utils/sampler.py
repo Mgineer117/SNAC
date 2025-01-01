@@ -285,8 +285,9 @@ class OnlineSampler(Base):
             self.training_envs = [training_envs]
 
         # Preprocess for multiprocessing to avoid CPU overscription and deadlock
+        self.temp_cores = multiprocessing.cpu_count()
         self.num_cores = (
-            num_cores if num_cores is not None else multiprocessing.cpu_count()
+            num_cores if num_cores is not None else self.temp_cores
         )  # torch.get_num_threads() returns appropriate num cpu cores while mp give all available
         (
             num_workers_per_round,

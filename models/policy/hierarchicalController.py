@@ -281,7 +281,7 @@ class HC_Controller(BasePolicy):
                 set_flat_params_to(self.critic, torch.tensor(flat_params))
 
             # find mask: the actions contributions by hc policy only
-            hc_mask = torch.argmax(option_actions, dim=-1) < self._num_options
+            hc_mask = torch.argmax(mb_option_actions, dim=-1) < self._num_options
             pm_mask = ~hc_mask
 
             _, _, hc_metaData = self.policy(mb_states)
