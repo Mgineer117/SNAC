@@ -110,7 +110,7 @@ class PPO_Learner(BasePolicy):
 
         # normalization
         if self.normalizer is not None:
-            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False)
 
         # Ingredients
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
