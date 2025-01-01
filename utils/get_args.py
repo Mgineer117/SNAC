@@ -335,7 +335,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-critic-lr",
         type=float,
-        default=1e-4,
+        default=None,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
@@ -344,7 +344,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--hc-critic-lr",
         type=float,
-        default=1e-4,
+        default=None,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
@@ -353,7 +353,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--ppo-critic-lr",
         type=float,
-        default=1e-4,
+        default=None,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
@@ -542,7 +542,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=True,
+        default=False,
         help="it imports previously trained model",
     )
     parser.add_argument(

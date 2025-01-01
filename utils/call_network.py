@@ -540,14 +540,14 @@ def call_opNetwork(
                 fc_dim=args.option_fc_dim,
                 a_dim=args.a_dim,
                 num_options=options.shape[0],
-                activation=nn.ReLU(),
+                activation=nn.Tanh(),
                 is_discrete=args.is_discrete,
             )
             optionCritic = OP_Critic(
                 input_dim=args.s_flat_dim,
                 fc_dim=args.fc_dim,
                 num_options=options.shape[0],
-                activation=nn.ReLU(),
+                activation=nn.Tanh(),
             )
         alpha = None
         if args.obs_norm != "none":
@@ -611,7 +611,7 @@ def call_hcNetwork(sf_network, op_network, args):
             input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
             num_options=args.num_vector,
-            activation=nn.ReLU(),
+            activation=nn.Tanh(),
         )
         if args.PM_policy == "PPO":
             primitivePolicy = HC_PPO(
@@ -619,7 +619,7 @@ def call_hcNetwork(sf_network, op_network, args):
                 fc_dim=args.fc_dim,
                 a_dim=args.a_dim,
                 is_discrete=args.is_discrete,
-                activation=nn.ReLU(),
+                activation=nn.Tanh(),
             )
         elif args.PM_policy == "RW":
             primitivePolicy = HC_RW(
@@ -631,7 +631,7 @@ def call_hcNetwork(sf_network, op_network, args):
         critic = HC_Critic(
             input_dim=args.s_flat_dim,
             fc_dim=args.fc_dim,
-            activation=nn.ReLU(),
+            activation=nn.Tanh(),
         )
 
         if args.obs_norm != "none":
