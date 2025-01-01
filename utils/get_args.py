@@ -410,18 +410,18 @@ def get_args(verbose=True):
         "--tune-alpha", type=bool, default=True, help="PPO-actor learning rate"
     )
     parser.add_argument(
-        "--sac-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--sac-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--sac-critic-lr",
         type=float,
-        default=3e-4,
+        default=1e-4,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
         "--sac-alpha-lr",
         type=float,
-        default=1e-4,
+        default=5e-5,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
@@ -433,7 +433,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-soft-update-rate",
         type=float,
-        default=0.01,
+        default=0.005,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
