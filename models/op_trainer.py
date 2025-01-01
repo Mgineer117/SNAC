@@ -185,7 +185,7 @@ class OPTrainer:
                 self.last_reward_mean.append(rew_mean)
                 self.last_reward_std.append(rew_std)
 
-                self.save_model(e + 1)
+                self.save_model(e + 1, mode=mode)
 
         return first_final_epoch
 
@@ -291,7 +291,7 @@ class OPTrainer:
                 self.last_reward_mean.append(rew_mean)
                 self.last_reward_std.append(rew_std)
 
-                self.save_model(e + 1)
+                self.save_model(e + 1, mode=mode)
             torch.cuda.empty_cache()
 
         self.policy.eval()
@@ -389,17 +389,17 @@ class OPTrainer:
 
         return sample_time
 
-    def save_model(self, e):
+    def save_model(self, e, mode):
         # save checkpoint
         if e % self.log_interval == 0:
-            self.policy.save_model(self.logger.checkpoint_dirs[2], e)
+            self.policy.save_model(self.logger.checkpoint_dirs[2], e, mode=mode)
 
         # save the best model
         if (
             np.mean(self.last_reward_mean) > self.last_max_reward
             and np.mean(self.last_reward_std) <= self.std_limit
         ):
-            self.policy.save_model(self.logger.log_dirs[2], e, is_best=True)
+            self.policy.save_model(self.logger.log_dirs[2], e, is_best=True, mode=mode)
             self.last_max_reward = np.mean(self.last_reward_mean)
 
     def average_dict_values(self, dict_list):
