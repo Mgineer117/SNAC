@@ -49,15 +49,17 @@ class OptionPolicy(nn.Module):
 
     def create_model(self, input_dim, fc_dim, output_dim):
         if self.is_discrete:
-            return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
+            return MLP(
+                input_dim, (fc_dim, int(fc_dim / 2)), output_dim, activation=self.act
+            )
         else:
-            return MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
+            return MLP(input_dim, (fc_dim, int(fc_dim / 2)), activation=self.act)
 
     def create_mu_model(self, input_dim, fc_dim, output_dim):
-        return MLP(fc_dim, (output_dim,), activation=nn.Identity())
+        return MLP(int(fc_dim / 2), (output_dim,), activation=nn.Identity())
 
     def create_logstd_model(self, input_dim, fc_dim, output_dim):
-        return MLP(fc_dim, (output_dim,), activation=nn.Identity())
+        return MLP(int(fc_dim / 2), (output_dim,), activation=nn.Identity())
 
     def forward(self, state: torch.Tensor, z: int, deterministic=False):
         # when the input is raw by forawrd() not learn()

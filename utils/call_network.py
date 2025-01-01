@@ -211,7 +211,7 @@ def call_sacNetwork(args):
             normalizer = ObservationNormalizer(state_dim=args.s_dim)
         else:
             normalizer = None
-        
+
     # Create the SAC Learner
     policy = SAC_Learner(
         policy=actor,
@@ -481,27 +481,41 @@ def call_opNetwork(
         print("Loading previous OP parameters....")
         if args.op_mode == "sac":
             if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-                optionPolicy, optionCritic, option_vals, options, alpha, normalizer = pickle.load(
-                    open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
+                optionPolicy, optionCritic, option_vals, options, alpha, normalizer = (
+                    pickle.load(
+                        open(
+                            f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p",
+                            "rb",
+                        )
+                    )
                 )
             else:
-                optionPolicy, optionCritic, option_vals, options, alpha, normalizer = pickle.load(
-                    open(
-                        f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
-                        "rb",
+                optionPolicy, optionCritic, option_vals, options, alpha, normalizer = (
+                    pickle.load(
+                        open(
+                            f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
+                            "rb",
+                        )
                     )
                 )
         elif args.op_mode == "ppo":
             alpha = None
             if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-                optionPolicy, optionCritic, option_vals, options, normalizer = pickle.load(
-                    open(f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p", "rb")
+                optionPolicy, optionCritic, option_vals, options, normalizer = (
+                    pickle.load(
+                        open(
+                            f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p",
+                            "rb",
+                        )
+                    )
                 )
             else:
-                optionPolicy, optionCritic, option_vals, options, normalizer = pickle.load(
-                    open(
-                        f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
-                        "rb",
+                optionPolicy, optionCritic, option_vals, options, normalizer = (
+                    pickle.load(
+                        open(
+                            f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
+                            "rb",
+                        )
                     )
                 )
     else:
@@ -526,14 +540,14 @@ def call_opNetwork(
                 fc_dim=args.option_fc_dim,
                 a_dim=args.a_dim,
                 num_options=options.shape[0],
-                activation=nn.Tanh(),
+                activation=nn.ReLU(),
                 is_discrete=args.is_discrete,
             )
             optionCritic = OP_Critic(
                 input_dim=args.s_flat_dim,
                 fc_dim=args.fc_dim,
                 num_options=options.shape[0],
-                activation=nn.Tanh(),
+                activation=nn.ReLU(),
             )
         alpha = None
         if args.obs_norm != "none":
