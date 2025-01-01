@@ -124,7 +124,7 @@ class SNAC:
         --------------------------------------------------------------------------------------------
         """
         num_eps = self.args.op_episode_num * self.args.OP_K_epochs
-        self.sampler.initialize(episode_num=int(num_eps))
+        self.sampler.initialize(episode_num=int(num_eps / 2))
 
         if not self.args.import_op_model:
             self.option_vals, self.options, _ = get_eigenvectors(
@@ -177,7 +177,7 @@ class SNAC:
         options and the random walk.
         """
         num_eps = self.args.hc_episode_num * self.args.K_epochs
-        self.sampler.initialize(episode_num=int(num_eps))
+        self.sampler.initialize(episode_num=int(num_eps / 2))
 
         self.hc_network = call_hcNetwork(self.sf_network, self.op_network, self.args)
         print_model_summary(self.hc_network, model_name="HC model")

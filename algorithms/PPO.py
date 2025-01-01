@@ -87,7 +87,7 @@ class PPO:
 
     def train_ppo(self):
         num_eps = self.args.ppo_episode_num * self.args.K_epochs
-        self.sampler.initialize(episode_num=int(num_eps))
+        self.sampler.initialize(episode_num=int(num_eps / 2))
 
         ### Call network param and run
         self.ppo_network = call_ppoNetwork(self.args)
