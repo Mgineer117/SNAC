@@ -17,6 +17,7 @@ from models.layers.oc_networks import OC_Policy, OC_Critic
 from models.policy.base_policy import BasePolicy
 from utils.normalizer import ObservationNormalizer
 
+
 class OC_Learner(BasePolicy):
     def __init__(
         self,
@@ -44,8 +45,8 @@ class OC_Learner(BasePolicy):
         self._bfgs_iter = K
         self._forward_steps = 0
 
-        self.normalizer = normalizer 
-        
+        self.normalizer = normalizer
+
         # trainable networks
         self.policy = policy
         self.critic = critic
@@ -145,9 +146,11 @@ class OC_Learner(BasePolicy):
         """
         # normalization
         if self.normalizer is not None:
-            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
-            batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
-            
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False)
+            batch["next_states"] = self.normalizer.normalize(
+                batch["next_states"], update=False
+            )
+
         states = self.to_tensor(batch["states"], self._dtype, self.device)
         next_states = self.to_tensor(batch["next_states"], self._dtype, self.device)
         option_actions = self.to_tensor(
@@ -218,9 +221,11 @@ class OC_Learner(BasePolicy):
         """
         # normalization
         if self.normalizer is not None:
-            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
-            batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
-            
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False)
+            batch["next_states"] = self.normalizer.normalize(
+                batch["next_states"], update=False
+            )
+
         states = self.to_tensor(batch["states"], self._dtype, self.device)
         next_states = self.to_tensor(batch["next_states"], self._dtype, self.device)
         option_actions = self.to_tensor(
