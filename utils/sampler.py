@@ -203,7 +203,7 @@ class OnlineSampler(Base):
         episode_len: int,
         batch_size: int,
         min_batch_for_worker: int = 1024,
-        cpu_preserv_rate: float = 0.95,
+        cpu_preserve_rate: float = 0.95,
         num_cores: int | None = None,
         gamma: float = 0.99,
         verbose: bool = True,
@@ -243,8 +243,8 @@ class OnlineSampler(Base):
             self.training_envs = [training_envs]
 
             # Preprocess for multiprocessing to avoid CPU overscription and deadlock
-        self.cpu_preserv_rate = cpu_preserv_rate
-        self.temp_cores = floor(multiprocessing.cpu_count() * self.cpu_preserv_rate)
+        self.cpu_preserve_rate = cpu_preserve_rate
+        self.temp_cores = floor(multiprocessing.cpu_count() * self.cpu_preserve_rate)
         self.num_cores = num_cores if num_cores is not None else self.temp_cores
 
         (

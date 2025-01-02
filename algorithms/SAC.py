@@ -37,7 +37,7 @@ class SAC:
             episode_len=args.episode_len,
             batch_size=args.batch_size,
             min_batch_for_worker=args.min_batch_for_worker,
-            cpu_preserv_rate=args.cpu_preserv_rate,
+            cpu_preserve_rate=args.cpu_preserve_rate,
             num_cores=args.num_cores,
             gamma=args.gamma,
             verbose=False,

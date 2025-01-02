@@ -198,7 +198,7 @@ def get_args(verbose=True):
         help="Minimum time step requirement for covering option",
     )
     parser.add_argument(
-        "--cpu-preserv-rate",
+        "--cpu-preserve-rate",
         type=float,
         default=0.95,
         help="number of episodes to collect for one env",
