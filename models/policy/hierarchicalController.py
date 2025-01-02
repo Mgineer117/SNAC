@@ -266,7 +266,7 @@ class HC_Controller(BasePolicy):
                         valueLoss += param.pow(2).sum() * self._l2_reg
                     valueLoss.backward()
                     torch.nn.utils.clip_grad_norm_(
-                        self.critic.parameters(), max_norm=1.0
+                        self.critic.parameters(), max_norm=0.5
                     )
 
                     return (
@@ -321,7 +321,7 @@ class HC_Controller(BasePolicy):
 
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=0.5)
             grad_dict = self.compute_gradient_norm(
                 [self.policy, self.primitivePolicy, self.critic],
                 ["policy", "primitivePolicy", "critic"],
