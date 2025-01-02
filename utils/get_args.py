@@ -168,43 +168,43 @@ def get_args(verbose=True):
         "--SF-epoch",
         type=int,
         default=None,  # 1000
-        help="total number of epochs; every epoch it does evaluation",
+        help="total number of epochs for SFs training",
     )
     parser.add_argument(
         "--Psi-epoch",
         type=int,
         default=None,  # 10
-        help="total number of epochs; every epoch it does evaluation",
+        help="total number of epochs for Psi network training. If 0>, Q = Psi*w action is used instead.",
     )
     parser.add_argument(
         "--OP-epoch",
         type=int,
         default=None,  # 500
-        help="For PPO alg. Total number of epochs; every epoch it does evaluation",
+        help="total number of epochs for OP training",
     )
     parser.add_argument(
         "--HC-epoch",
         type=int,
         default=None,  # 500
-        help="total number of epochs; every epoch it does evaluation",
+        help="total number of epochs for HC training",
     )
     parser.add_argument(
         "--OC-epoch",
         type=int,
         default=None,  # 500
-        help="For PPO alg. Total number of epochs; every epoch it does evaluation",
+        help="total number of epochs for OC training",
     )
     parser.add_argument(
         "--PPO-epoch",
         type=int,
         default=None,  # 500
-        help="For PPO alg. Total number of epochs; every epoch it does evaluation",
+        help="total number of epochs for OC training",
     )
     parser.add_argument(
         "--SAC-epoch",
         type=int,
         default=None,  # 500
-        help="For PPO alg. Total number of epochs; every epoch it does evaluation",
+        help="total number of epochs for SAC training",
     )
     parser.add_argument(
         "--step-per-epoch",
@@ -212,46 +212,52 @@ def get_args(verbose=True):
         default=None,  # 10
         help="number of iterations within one epoch",
     )
+    parser.add_argument(
+        "--bfgs-iter",
+        type=int,
+        default=5,
+        help="Number of bfgs iterations for one minibatch",
+    )
 
     ### Learning rates
     parser.add_argument(
         "--feature-lr",
         type=float,
         default=None,
-        help="CNN lr where scheduler is used so can be high",
+        help="SFs train lr where scheduler is used so can be high",
     )
     parser.add_argument(
         "--option-lr",
         type=float,
         default=None,
-        help="Intermediate-level model learning rate",
+        help="option vector lr",
     )
     parser.add_argument(
         "--psi-lr",
         type=float,
         default=3e-4,
-        help="Intermediate-level model learning rate",
+        help="psi network lr",
     )
     parser.add_argument(
-        "--bfgs-iter", type=int, default=5, help="PPO update per one iter"
-    )
-    parser.add_argument(
-        "--op-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+        "--op-policy-lr", type=float, default=3e-4, help="Option network lr"
     )
     parser.add_argument(
         "--op-critic-lr",
         type=float,
         default=None,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Option policy (PPO-based) critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--hc-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
+        "--hc-policy-lr",
+        type=float,
+        default=1e-4,
+        help="Hierarchical Controller network lr",
     )
     parser.add_argument(
         "--hc-critic-lr",
         type=float,
         default=None,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Hierarchical Policy policy (PPO-based) critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
         "--ppo-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
@@ -265,94 +271,100 @@ def get_args(verbose=True):
 
     ### Algorithmic parameters
     parser.add_argument(
-        "--op-mode", type=str, default="ppo", help="PPO-actor learning rate"
+        "--op-mode",
+        type=str,
+        default="ppo",
+        help="ppo / sac. Either algorithm is used for option network training.",
     )
     parser.add_argument(
-        "--obs-norm", type=str, default="cma", help="PPO update per one iter"
+        "--obs-norm",
+        type=str,
+        default="cma",
+        help="ema / cma. ema: Explonential / Cumulative moving average. Observation normalization for each network.",
     )
     parser.add_argument(
         "--min-option-length",
         type=int,
         default=5,
-        help="Minimum time step requirement for option",
+        help="Minimum time step for one option duration of SNAC / EigenOption",
     )
     parser.add_argument(
         "--min-cover-option-length",
         type=int,
         default=25,
-        help="Minimum time step requirement for covering option",
+        help="Minimum time step for one option duration of successive option",
     )
     parser.add_argument(
         "--num-vector",
         type=int,
         default=16,
-        help="Must be divided by 2. ex) 10, 20, 30. Minimum = 4 for SNAC.",
+        help="Must be divided by 4. ex) 8, 12, 16. Minimum = 8.",
     )
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=10,
-        help="number of episodes to collect for one env",
+        default=256,
+        help="Base number of batch size for training",
     )
     parser.add_argument(
         "--op-batch-size",
         type=int,
         default=None,
-        help="number of episodes to collect for one env",
+        help="Option policy number of batch size for training",
     )
     parser.add_argument(
         "--hc-batch-size",
         type=int,
         default=None,
-        help="number of episodes to collect for one env",
+        help="Hierarchical policy number of batch size for training",
     )
     parser.add_argument(
         "--ppo-batch-size",
         type=int,
         default=None,
-        help="number of episodes to collect for one env",
+        help="Naive ppo number of batch size for training",
     )
     parser.add_argument(
         "--sac-batch-size",
         type=int,
         default=None,
-        help="number of episodes to collect for one env",
+        help="SAC number of batch size for training",
     )
     parser.add_argument(
         "--oc-batch-size",
         type=int,
         default=None,
-        help="number of episodes to collect for one env",
+        help="Option critic number of batch size for training",
     )
     parser.add_argument(
         "--min-batch-for-worker",
         type=int,
         default=1024,
-        help="number of episodes to collect for one env",
+        help="Minimum batch size assgined for one worker (thread)",
     )
     parser.add_argument(
         "--op-entropy-scaler",
         type=float,
         default=5e-3,
-        help="entropy scaler from PPO action-distribution",
+        help="Option policy entropy scaler",
     )
     parser.add_argument(
         "--hc-entropy-scaler",
         type=float,
         default=5e-2,
-        help="entropy scaler from PPO action-distribution",
+        help="Hierarchical policy entropy scaler",
     )
     parser.add_argument(
         "--ppo-entropy-scaler",
         type=float,
         default=5e-2,
-        help="entropy scaler from PPO action-distribution",
+        help="PPO policy entropy scaler",
     )
     parser.add_argument(
         "--PM-policy",
         type=str,
         default=None,
-        help="CNN lr where scheduler is used so can be high",
+        help="RW / PPO. The choice of primitive policy for hierarchical policy.",
     )
 
     ### SF param (loss scale)
@@ -360,49 +372,49 @@ def get_args(verbose=True):
         "--phi-loss-r-scaler",
         type=float,
         default=None,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Scaler to SFs reward regression loss",
     )
     parser.add_argument(
         "--phi-loss-s-scaler",
         type=float,
         default=None,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Scaler to SFs latent state regression loss",
     )
     parser.add_argument(
         "--phi-loss-kl-scaler",
         type=float,
         default=None,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Scaler to SFs latent state regression loss (VAE only)",
     )
     parser.add_argument(
         "--phi-loss-l2-scaler",
         type=float,
         default=None,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Scaler to SFs network weight to prevent overfitting",
     )
     parser.add_argument(
         "--num-traj-decomp",
         type=int,
         default=None,
-        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
+        help="Number of trajectory to decompose via SVD for option discovery",
     )
     parser.add_argument(
         "--max-num-traj",
         type=int,
         default=None,
-        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
+        help="Maximum number of trajectories the buffer can store. Exceeding it will refresh the oldest trajectory",
     )
     parser.add_argument(
         "--min-num-traj",
         type=int,
         default=None,
-        help="For buffer learing, this sets the sub-iterations",
+        help="Minimum number of trajectory to start training.",
     )
     parser.add_argument(
         "--trj-per-iter",
         type=int,
         default=None,
-        help="This sets the number of trajectories to use for one sub-iteration",
+        help="Number of trajectory to pull out from the buffer to train SFs",
     )
 
     ### Resorces
@@ -410,14 +422,13 @@ def get_args(verbose=True):
         "--num-cores",
         type=int,
         default=None,
-        help="number of threads to use in sampling; \
-                            sampler will select threads number with this limit",
+        help="Number of threads to use in sampling. If none, sampler will select available threads number with this limit",
     )
     parser.add_argument(
         "--cpu-preserve-rate",
         type=float,
         default=0.95,
-        help="number of episodes to collect for one env",
+        help="For multiple run of experiments, one can set this to restrict the cpu threads the one exp uses for sampling.",
     )
 
     ### Dimensional params
@@ -425,7 +436,7 @@ def get_args(verbose=True):
         "--a-dim",
         type=int,
         default=None,
-        help="One can arbitrarily set the max dimension of action when one wants to disregard other useless action components of Minigrid",
+        help="action dimension. For grid with 5 available actions, it is one-hotted to be 1 x 5.",
     )
     parser.add_argument(
         "--fc-dim",
@@ -443,13 +454,13 @@ def get_args(verbose=True):
         "--option-fc-dim",
         type=int,
         default=None,
-        help="This is a dimension of FCL that decodes the output of CNN or VAE",
+        help="This is a dimension of FCL of option policy",
     )
     parser.add_argument(
         "--sf-dim",
         type=int,
         default=None,
-        help="This is an feature dimension thus option dimension. 32 / 64",
+        help="This is an latent feature dimension thus option dimension.",
     )
 
     # PPO parameters
@@ -457,7 +468,7 @@ def get_args(verbose=True):
         "--K-epochs", type=int, default=10, help="PPO update per one iter"
     )
     parser.add_argument(
-        "--OP-K-epochs", type=int, default=10, help="PPO update per one iter"
+        "--OP-K-epochs", type=int, default=10, help="Option policy update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"
@@ -466,63 +477,63 @@ def get_args(verbose=True):
         "--tau",
         type=float,
         default=0.95,
-        help="Used in advantage estimation for numerical stability",
+        help="Used in advantage estimation.",
     )
 
     # SAC parameters
     parser.add_argument(
-        "--tune-alpha", type=bool, default=True, help="PPO-actor learning rate"
+        "--tune-alpha", type=bool, default=True, help="Automatic entropy scaler."
     )
     parser.add_argument(
-        "--sac-policy-lr", type=float, default=5e-5, help="PPO-actor learning rate"
+        "--sac-policy-lr", type=float, default=5e-5, help="SAC-actor learning rate"
     )
     parser.add_argument(
         "--sac-critic-lr",
         type=float,
         default=1e-4,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="SAC-critic learning rate. (AdamW)",
     )
     parser.add_argument(
         "--sac-alpha-lr",
         type=float,
         default=5e-5,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Lr for auto-tune entropy scaler",
     )
     parser.add_argument(
         "--sac-init-alpha",
         type=float,
         default=0.2,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Initial entropy scaler",
     )
     parser.add_argument(
         "--sac-soft-update-rate",
         type=float,
         default=0.005,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Target critic network update. Lower the slower rate of update",
     )
     parser.add_argument(
         "--target-update-interval",
         type=int,
         default=1,
-        help="PPO-critic learning rate. If none, BFGS is used.",
+        help="Interval to perform target critic update in SAC",
     )
     parser.add_argument(
         "--sac-max-num-traj",
         type=int,
         default=10000,
-        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
+        help="Max number of trajectory the buffer will contain in SAC",
     )
     parser.add_argument(
         "--sac-min-num-traj",
         type=int,
         default=100,
-        help="For buffer learing, this sets the sub-iterations",
+        help="Min number of trajectory the buffer will contain in SAC",
     )
     parser.add_argument(
         "--sac-trj-per-iter",
         type=int,
         default=10,
-        help="This sets the number of trajectories to use for one sub-iteration",
+        help="N",
     )
     parser.add_argument(
         "--sac-step-per-epoch",
