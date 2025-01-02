@@ -167,7 +167,6 @@ class Base:
                     worker_idx += 1
                 if worker_idx % self.req_num_workers == 0:
                     env_idx += 1
-                    print(env_idx)
             for p in processes:
                 p.join()
 
