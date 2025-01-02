@@ -268,7 +268,7 @@ def get_args(verbose=True):
         "--op-mode", type=str, default="ppo", help="PPO-actor learning rate"
     )
     parser.add_argument(
-        "--obs-norm", type=str, default="ema", help="PPO update per one iter"
+        "--obs-norm", type=str, default="cma", help="PPO update per one iter"
     )
     parser.add_argument(
         "--min-option-length",

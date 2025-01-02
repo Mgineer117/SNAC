@@ -7,7 +7,7 @@ class ObservationNormalizer:
         state_dim,
         mode="ema",
         alpha=0.95,
-        max_updates=500000,
+        max_updates=10000,
     ):
         """
         mode: Type of moving average ('ema', 'cma', or 'wma')
@@ -24,7 +24,7 @@ class ObservationNormalizer:
 
         # Initialize the statistics
         self.count = 0
-        self.eps = 1e-5
+        self.eps = 1e-3
 
         # Initialize based on the mode
         if mode == "ema":

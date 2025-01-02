@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 import os
 import math
 import time
@@ -9,6 +10,7 @@ from copy import deepcopy
 from models.policy.base_policy import BasePolicy
 from models.layers.sac_networks import SAC_Policy, SAC_CriticTwin
 from utils.normalizer import ObservationNormalizer
+
 
 class SAC_Learner(BasePolicy):
     def __init__(
@@ -88,8 +90,10 @@ class SAC_Learner(BasePolicy):
 
         # normalization
         if self.normalizer is not None:
-            batch["states"] = self.normalizer.normalize(batch["states"], update=False) 
-            batch["next_states"] = self.normalizer.normalize(batch["next_states"], update=False) 
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False)
+            batch["next_states"] = self.normalizer.normalize(
+                batch["next_states"], update=False
+            )
 
         states = torch.from_numpy(batch["states"]).to(torch.float32).to(self.device)
         states = states.reshape(states.shape[0], -1)
@@ -121,7 +125,7 @@ class SAC_Learner(BasePolicy):
         new_actions, new_meta = self.policy(states)
         q1_new, q2_new = self.critic_twin(states, new_actions)
         q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
-            
+
         policy_loss = (self.alpha * new_meta["logprobs"] - q_new).mean()
 
         self.policy_optimizer.zero_grad()
@@ -131,7 +135,10 @@ class SAC_Learner(BasePolicy):
         # Alpha Loss
         if self.tune_alpha:
             alpha_loss = -(
-                (self.log_alpha * (new_meta["logprobs"] + self.target_entropy).detach()).mean()
+                (
+                    self.log_alpha
+                    * (new_meta["logprobs"] + self.target_entropy).detach()
+                ).mean()
             )
 
             self.alpha_optimizer.zero_grad()
@@ -140,7 +147,7 @@ class SAC_Learner(BasePolicy):
 
             self.alpha = self.log_alpha.exp()
         else:
-            alpha_loss = torch.tensor(0.).to(self.device)
+            alpha_loss = torch.tensor(0.0).to(self.device)
 
         # Soft update of target networks
         if self.num_update % self.target_update_interval == 0:
@@ -155,9 +162,9 @@ class SAC_Learner(BasePolicy):
             "SAC/policy_loss": policy_loss.item(),
             "SAC/alpha_loss": alpha_loss.item(),
             "SAC/alpha": self.alpha.item(),
-            "SAC/trainReward":(torch.sum(rewards) / torch.sum(terminals)).item(),
+            "SAC/trainReward": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
-        
+
         update_time = time.time() - t0
         return loss_dict, update_time
 

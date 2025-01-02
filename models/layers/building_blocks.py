@@ -98,10 +98,12 @@ class MLP(nn.Module):
         super().__init__()
         hidden_dims = [input_dim] + list(hidden_dims)
         model = []
+
+        # Initialize hidden layers
         for in_dim, out_dim in zip(hidden_dims[:-1], hidden_dims[1:]):
             linear_layer = nn.Linear(in_dim, out_dim)
             if initialization:
-                nn.init.xavier_uniform_(linear_layer.weight)
+                nn.init.orthogonal_(linear_layer.weight)  # Orthogonal initialization
                 linear_layer.bias.data.fill_(0.01)
             model += (
                 [linear_layer, activation] if activation is not None else [linear_layer]
@@ -111,13 +113,16 @@ class MLP(nn.Module):
                 model += [nn.Dropout(p=dropout_rate)]
 
         self.output_dim = hidden_dims[-1]
+
+        # Initialize output layer
         if output_dim is not None:
             linear_layer = nn.Linear(hidden_dims[-1], output_dim)
-            nn.init.xavier_uniform_(linear_layer.weight)
-            linear_layer.bias.data.fill_(0.01)
-
+            if initialization:
+                linear_layer.weight.data.fill_(0.01)  # Set weights to 0.01
+                linear_layer.bias.data.fill_(0.01)  # Set biases to 0.01
             model += [linear_layer]
             self.output_dim = output_dim
+
         self.model = nn.Sequential(*model).to(device)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
