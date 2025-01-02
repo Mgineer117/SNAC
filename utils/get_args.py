@@ -357,7 +357,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--ppo-entropy-scaler",
         type=float,
-        default=5e-2,
+        default=5e-3,
         help="PPO policy entropy scaler",
     )
     parser.add_argument(
@@ -485,7 +485,7 @@ def get_args(verbose=True):
         "--tune-alpha", type=bool, default=True, help="Automatic entropy scaler."
     )
     parser.add_argument(
-        "--sac-policy-lr", type=float, default=5e-5, help="SAC-actor learning rate"
+        "--sac-policy-lr", type=float, default=3e-4, help="SAC-actor learning rate"
     )
     parser.add_argument(
         "--sac-critic-lr",
@@ -496,7 +496,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-alpha-lr",
         type=float,
-        default=5e-5,
+        default=1e-4,
         help="Lr for auto-tune entropy scaler",
     )
     parser.add_argument(
@@ -532,7 +532,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-trj-per-iter",
         type=int,
-        default=10,
+        default=25,
         help="N",
     )
     parser.add_argument(
@@ -544,7 +544,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-entropy-scaler",
         type=float,
-        default=5e-2,
+        default=5e-3,
         help="entropy scaler from PPO action-distribution",
     )
 
