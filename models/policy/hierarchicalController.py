@@ -71,6 +71,7 @@ class HC_Controller(BasePolicy):
         critic_lr: float = 1e-4,
         eps: float = 0.2,
         entropy_scaler: float = 1e-3,
+        bfgs_iter: int = 5,
         gamma: float = 0.99,
         tau: float = 0.95,
         K: int = 5,
@@ -88,7 +89,7 @@ class HC_Controller(BasePolicy):
         self._tau = tau
         self._K = K
         self._l2_reg = 1e-6
-        self._bfgs_iter = K
+        self._bfgs_iter = bfgs_iter
         self._forward_steps = 0
 
         self.normalizer = normalizer
@@ -226,7 +227,7 @@ class HC_Controller(BasePolicy):
 
         # Minibatch setup
         batch_size = states.size(0)
-        minibatch_size = batch_size // self._K
+        minibatch_size = 2 * (batch_size // self._K)
 
         # K - Loop
         for _ in range(self._K):

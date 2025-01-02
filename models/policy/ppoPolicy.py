@@ -27,6 +27,7 @@ class PPO_Learner(BasePolicy):
         critic_lr: float = 5e-4,
         eps: float = 0.2,
         entropy_scaler: float = 1e-3,
+        bfgs_iter: int = 5,
         gamma: float = 0.99,
         tau: float = 0.9,
         K: int = 5,
@@ -43,7 +44,7 @@ class PPO_Learner(BasePolicy):
         self._tau = tau
         self._K = K
         self._l2_reg = 1e-6
-        self._bfgs_iter = K
+        self._bfgs_iter = bfgs_iter
         self._forward_steps = 0
 
         self.normalizer = normalizer

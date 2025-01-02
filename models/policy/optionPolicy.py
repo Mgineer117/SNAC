@@ -55,7 +55,7 @@ class OP_Controller(BasePolicy):
         self.tau = args.tau
         self.K = args.OP_K_epochs
         self.l2_reg = 1e-6
-        self.bfgs_iter = args.OP_K_epochs
+        self.bfgs_iter = args.bfgs_iter
         self.is_discrete = args.is_discrete
 
         self.normalizer = normalizer
@@ -343,7 +343,7 @@ class OP_Controller(BasePolicy):
 
         # Minibatch setup
         batch_size = states.size(0)
-        minibatch_size = batch_size // self.K
+        minibatch_size = 2 * (batch_size // self.K)
 
         # K - Loop
         for _ in range(self.K):
