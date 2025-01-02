@@ -37,7 +37,9 @@ def get_args(verbose=True):
     """Call args"""
     parser = argparse.ArgumentParser()
 
-    # WandB and Logging parameters
+    ### Adjustable parameters
+
+    ### WandB and Logging parameters
     parser.add_argument(
         "--project", type=str, default="Test", help="WandB project classification"
     )
@@ -55,24 +57,6 @@ def get_args(verbose=True):
         type=str,
         default=None,
         help='Seed-specific folder name in the "group" folder.',
-    )
-    parser.add_argument(
-        "--env-name",
-        type=str,
-        default="Maze",
-        help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
-    )
-    parser.add_argument(
-        "--ctf-map",
-        type=str,
-        default=None,
-        help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
-    )
-    parser.add_argument(
-        "--algo-name",
-        type=str,
-        default="PPO",
-        help="SNAC / EigenOption / CoveringOption / PPO",
     )
     parser.add_argument(
         "--sf-log-interval",
@@ -110,11 +94,67 @@ def get_args(verbose=True):
         default=None,
         help="logging interval; epoch-based",
     )
+
+    ### Environmental / Running parameters
+    parser.add_argument(
+        "--env-name",
+        type=str,
+        default="Maze",
+        help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
+    )
+    parser.add_argument(
+        "--ctf-map",
+        type=str,
+        default=None,
+        help="This specifies which environment one is working with= FourRooms or CtF1v1, CtF1v2}",
+    )
+    parser.add_argument(
+        "--algo-name",
+        type=str,
+        default="PPO",
+        help="SNAC / EigenOption / CoveringOption / PPO",
+    )
     parser.add_argument(
         "--grid-type",
         type=int,
         default=0,
         help="0 or 1. Seed to fix the grid, agent, and goal locations",
+    )
+    parser.add_argument(
+        "--episode-len",
+        type=int,
+        default=None,
+        help="episodic length; useful when one wants to constrain to long to short horizon",
+    )
+    parser.add_argument(
+        "--tile-size",
+        type=int,
+        default=1,
+        help="Changing this requires redesign of CNN. tensor image size",
+    )
+    parser.add_argument(
+        "--img-tile-size",
+        type=int,
+        default=32,
+        help="32 is default. This is used for logging the images of training progresses. image tile size",
+    )
+    parser.add_argument(
+        "--cost-scaler",
+        type=float,
+        default=1e-0,
+        help="reward shaping parameter r = reawrd - scaler * cost",
+    )
+    parser.add_argument(
+        "--eval-episodes",
+        type=int,
+        default=None,
+        help="number of episodes for evaluation; mean of those is returned as eval performance",
+    )
+    parser.add_argument(
+        "--post-process",
+        type=str,
+        default=None,
+        help="number of episodes for evaluation; mean of those is returned as eval performance",
     )
     parser.add_argument(
         "--seeds",
@@ -123,7 +163,7 @@ def get_args(verbose=True):
         help="seeds for computational stochasticity --seeds 1,3,5,7,9 # without space",
     )
 
-    # OpenAI Gym parameters
+    ### Algorithmic iterations
     parser.add_argument(
         "--SF-epoch",
         type=int,
@@ -172,157 +212,8 @@ def get_args(verbose=True):
         default=None,  # 10
         help="number of iterations within one epoch",
     )
-    parser.add_argument(
-        "--num-cores",
-        type=int,
-        default=None,
-        help="number of threads to use in sampling; \
-                            sampler will select threads number with this limit",
-    )
-    parser.add_argument(
-        "--episode-len",
-        type=int,
-        default=None,
-        help="episodic length; useful when one wants to constrain to long to short horizon",
-    )
-    parser.add_argument(
-        "--min-option-length",
-        type=int,
-        default=5,
-        help="Minimum time step requirement for option",
-    )
-    parser.add_argument(
-        "--min-cover-option-length",
-        type=int,
-        default=25,
-        help="Minimum time step requirement for covering option",
-    )
-    parser.add_argument(
-        "--cpu-preserve-rate",
-        type=float,
-        default=0.95,
-        help="number of episodes to collect for one env",
-    )
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=10,
-        help="number of episodes to collect for one env",
-    )
-    parser.add_argument(
-        "--op-batch-size",
-        type=int,
-        default=None,
-        help="number of episodes to collect for one env",
-    )
-    parser.add_argument(
-        "--hc-batch-size",
-        type=int,
-        default=None,
-        help="number of episodes to collect for one env",
-    )
-    parser.add_argument(
-        "--ppo-batch-size",
-        type=int,
-        default=None,
-        help="number of episodes to collect for one env",
-    )
-    parser.add_argument(
-        "--sac-batch-size",
-        type=int,
-        default=None,
-        help="number of episodes to collect for one env",
-    )
-    parser.add_argument(
-        "--oc-batch-size",
-        type=int,
-        default=None,
-        help="number of episodes to collect for one env",
-    )
-    parser.add_argument(
-        "--min-batch-for-worker",
-        type=int,
-        default=1024,
-        help="number of episodes to collect for one env",
-    )
-    parser.add_argument(
-        "--eval-episodes",
-        type=int,
-        default=None,
-        help="number of episodes for evaluation; mean of those is returned as eval performance",
-    )
-    parser.add_argument(
-        "--post-process",
-        type=str,
-        default=None,
-        help="number of episodes for evaluation; mean of those is returned as eval performance",
-    )
 
-    # some params
-    parser.add_argument(
-        "--tile-size",
-        type=int,
-        default=1,
-        help="Changing this requires redesign of CNN. tensor image size",
-    )
-    parser.add_argument(
-        "--img-tile-size",
-        type=int,
-        default=32,
-        help="32 is default. This is used for logging the images of training progresses. image tile size",
-    )
-    parser.add_argument(
-        "--cost-scaler",
-        type=float,
-        default=1e-0,
-        help="reward shaping parameter r = reawrd - scaler * cost",
-    )
-
-    # dimensional params
-    parser.add_argument(
-        "--a-dim",
-        type=int,
-        default=None,
-        help="One can arbitrarily set the max dimension of action when one wants to disregard other useless action components of Minigrid",
-    )
-    parser.add_argument(
-        "--fc-dim",
-        type=int,
-        default=None,
-        help="This is general fully connected dimension for most of network this code.",
-    )
-    parser.add_argument(
-        "--feature-fc-dim",
-        type=int,
-        default=None,
-        help="This is a dimension of FCL that decodes the output of CNN or VAE",
-    )
-    parser.add_argument(
-        "--option-fc-dim",
-        type=int,
-        default=None,
-        help="This is a dimension of FCL that decodes the output of CNN or VAE",
-    )
-    parser.add_argument(
-        "--sf-dim",
-        type=int,
-        default=None,
-        help="This is an feature dimension thus option dimension. 32 / 64",
-    )
-    parser.add_argument(
-        "--num-vector",
-        type=int,
-        default=16,
-        help="Must be divided by 2. ex) 10, 20, 30. Minimum = 4 for SNAC.",
-    )
-
-    parser.add_argument(
-        "--PM-policy",
-        type=str,
-        default=None,
-        help="CNN lr where scheduler is used so can be high",
-    )
-    # learning rates
+    ### Learning rates
     parser.add_argument(
         "--feature-lr",
         type=float,
@@ -371,6 +262,100 @@ def get_args(verbose=True):
         default=None,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
+
+    ### Algorithmic parameters
+    parser.add_argument(
+        "--op-mode", type=str, default="ppo", help="PPO-actor learning rate"
+    )
+    parser.add_argument(
+        "--obs-norm", type=str, default="ema", help="PPO update per one iter"
+    )
+    parser.add_argument(
+        "--min-option-length",
+        type=int,
+        default=5,
+        help="Minimum time step requirement for option",
+    )
+    parser.add_argument(
+        "--min-cover-option-length",
+        type=int,
+        default=25,
+        help="Minimum time step requirement for covering option",
+    )
+    parser.add_argument(
+        "--num-vector",
+        type=int,
+        default=16,
+        help="Must be divided by 2. ex) 10, 20, 30. Minimum = 4 for SNAC.",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=10,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--op-batch-size",
+        type=int,
+        default=None,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--hc-batch-size",
+        type=int,
+        default=None,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--ppo-batch-size",
+        type=int,
+        default=None,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--sac-batch-size",
+        type=int,
+        default=None,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--oc-batch-size",
+        type=int,
+        default=None,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--min-batch-for-worker",
+        type=int,
+        default=1024,
+        help="number of episodes to collect for one env",
+    )
+    parser.add_argument(
+        "--op-entropy-scaler",
+        type=float,
+        default=5e-3,
+        help="entropy scaler from PPO action-distribution",
+    )
+    parser.add_argument(
+        "--hc-entropy-scaler",
+        type=float,
+        default=5e-2,
+        help="entropy scaler from PPO action-distribution",
+    )
+    parser.add_argument(
+        "--ppo-entropy-scaler",
+        type=float,
+        default=5e-2,
+        help="entropy scaler from PPO action-distribution",
+    )
+    parser.add_argument(
+        "--PM-policy",
+        type=str,
+        default=None,
+        help="CNN lr where scheduler is used so can be high",
+    )
+
+    ### SF param (loss scale)
     parser.add_argument(
         "--phi-loss-r-scaler",
         type=float,
@@ -395,9 +380,76 @@ def get_args(verbose=True):
         default=None,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
-
     parser.add_argument(
-        "--obs-norm", type=str, default="ema", help="PPO update per one iter"
+        "--num-traj-decomp",
+        type=int,
+        default=None,
+        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
+    )
+    parser.add_argument(
+        "--max-num-traj",
+        type=int,
+        default=None,
+        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
+    )
+    parser.add_argument(
+        "--min-num-traj",
+        type=int,
+        default=None,
+        help="For buffer learing, this sets the sub-iterations",
+    )
+    parser.add_argument(
+        "--trj-per-iter",
+        type=int,
+        default=None,
+        help="This sets the number of trajectories to use for one sub-iteration",
+    )
+
+    ### Resorces
+    parser.add_argument(
+        "--num-cores",
+        type=int,
+        default=None,
+        help="number of threads to use in sampling; \
+                            sampler will select threads number with this limit",
+    )
+    parser.add_argument(
+        "--cpu-preserve-rate",
+        type=float,
+        default=0.95,
+        help="number of episodes to collect for one env",
+    )
+
+    ### Dimensional params
+    parser.add_argument(
+        "--a-dim",
+        type=int,
+        default=None,
+        help="One can arbitrarily set the max dimension of action when one wants to disregard other useless action components of Minigrid",
+    )
+    parser.add_argument(
+        "--fc-dim",
+        type=int,
+        default=None,
+        help="This is general fully connected dimension for most of network this code.",
+    )
+    parser.add_argument(
+        "--feature-fc-dim",
+        type=int,
+        default=None,
+        help="This is a dimension of FCL that decodes the output of CNN or VAE",
+    )
+    parser.add_argument(
+        "--option-fc-dim",
+        type=int,
+        default=None,
+        help="This is a dimension of FCL that decodes the output of CNN or VAE",
+    )
+    parser.add_argument(
+        "--sf-dim",
+        type=int,
+        default=None,
+        help="This is an feature dimension thus option dimension. 32 / 64",
     )
 
     # PPO parameters
@@ -418,9 +470,6 @@ def get_args(verbose=True):
     )
 
     # SAC parameters
-    parser.add_argument(
-        "--op-mode", type=str, default="ppo", help="PPO-actor learning rate"
-    )
     parser.add_argument(
         "--tune-alpha", type=bool, default=True, help="PPO-actor learning rate"
     )
@@ -481,25 +530,6 @@ def get_args(verbose=True):
         default=None,
         help="This sets the number of trajectories to use for one sub-iteration",
     )
-
-    parser.add_argument(
-        "--op-entropy-scaler",
-        type=float,
-        default=5e-3,
-        help="entropy scaler from PPO action-distribution",
-    )
-    parser.add_argument(
-        "--hc-entropy-scaler",
-        type=float,
-        default=5e-2,
-        help="entropy scaler from PPO action-distribution",
-    )
-    parser.add_argument(
-        "--ppo-entropy-scaler",
-        type=float,
-        default=5e-2,
-        help="entropy scaler from PPO action-distribution",
-    )
     parser.add_argument(
         "--sac-entropy-scaler",
         type=float,
@@ -508,32 +538,6 @@ def get_args(verbose=True):
     )
 
     parser.add_argument("--gamma", type=float, default=None, help="discount parameters")
-
-    # Training parameters
-    parser.add_argument(
-        "--num-traj-decomp",
-        type=int,
-        default=None,
-        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
-    )
-    parser.add_argument(
-        "--max-num-traj",
-        type=int,
-        default=None,
-        help="This sets the max number of trajectories the buffer will store. Exceeding will replace oldest trjs",
-    )
-    parser.add_argument(
-        "--min-num-traj",
-        type=int,
-        default=None,
-        help="For buffer learing, this sets the sub-iterations",
-    )
-    parser.add_argument(
-        "--trj-per-iter",
-        type=int,
-        default=None,
-        help="This sets the number of trajectories to use for one sub-iteration",
-    )
 
     # Misc. parameters
     parser.add_argument(
