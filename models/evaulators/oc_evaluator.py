@@ -120,7 +120,7 @@ class OC_Evaluator(Evaluator):
             if self.gridCriteria:
                 self.init_grid(env)
 
-            option_indices = []
+            option_indices = {"x": [], "y": []}
             done = False
             while not done:
                 with torch.no_grad():
@@ -169,7 +169,8 @@ class OC_Evaluator(Evaluator):
                     )
                 ep_reward += rew
                 ep_length += 1
-                option_indices.append(metaData["z_argmax"].numpy())
+                option_indices["x"].append(t)
+                option_indices["y"].append(metaData["z_argmax"].numpy())
 
                 # Update the render
                 if self.renderCriteria:
@@ -208,7 +209,7 @@ class OC_Evaluator(Evaluator):
                         )
 
                     dist, ep_entropy = compute_categorical_entropy(
-                        option_indices, policy._a_dim
+                        option_indices["y"], policy._a_dim
                     )
 
                     ep_buffer.append(
