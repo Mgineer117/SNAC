@@ -122,6 +122,7 @@ class OC_Evaluator(Evaluator):
 
             option_indices = {"x": [], "y": []}
             done = False
+            t = 0
             while not done:
                 with torch.no_grad():
                     a, metaData = policy(s, idx, deterministic=True)
@@ -171,6 +172,7 @@ class OC_Evaluator(Evaluator):
                 ep_length += 1
                 option_indices["x"].append(t)
                 option_indices["y"].append(metaData["z_argmax"].numpy())
+                t += step_count
 
                 # Update the render
                 if self.renderCriteria:
