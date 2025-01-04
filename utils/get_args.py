@@ -250,7 +250,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--hc-policy-lr",
         type=float,
-        default=1e-4,
+        default=3e-4,
         help="Hierarchical Controller network lr",
     )
     parser.add_argument(
