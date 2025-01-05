@@ -80,7 +80,7 @@ class OP_Controller(BasePolicy):
 
             if self.tune_alpha:
                 self.log_alpha = nn.Parameter(torch.log(self.alpha))
-                optimizers["alpha"] = torch.optim.AdamW(
+                optimizers["alpha"] = torch.optim.Adam(
                     [self.log_alpha], lr=args.sac_alpha_lr
                 )
 

@@ -51,14 +51,12 @@ class SAC_Learner(BasePolicy):
         self.target_critic_twin = deepcopy(critic_twin)
 
         # Optimizers
-        self.policy_optimizer = torch.optim.AdamW(
-            self.policy.parameters(), lr=policy_lr
-        )
-        self.critic_optimizer = torch.optim.AdamW(
+        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
+        self.critic_optimizer = torch.optim.Adam(
             self.critic_twin.parameters(), lr=critic_lr
         )
         if self.tune_alpha:
-            self.alpha_optimizer = torch.optim.AdamW([self.log_alpha], lr=alpha_lr)
+            self.alpha_optimizer = torch.optim.Adam([self.log_alpha], lr=alpha_lr)
 
         self.to(self.device)
 

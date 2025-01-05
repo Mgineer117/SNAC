@@ -103,7 +103,7 @@ class HC_Controller(BasePolicy):
         self.op_network = op_network
 
         if critic_lr is None:
-            self.optimizer = torch.optim.AdamW(
+            self.optimizer = torch.optim.Adam(
                 [
                     {"params": self.policy.parameters(), "lr": policy_lr},
                     {"params": self.primitivePolicy.parameters(), "lr": policy_lr},
@@ -111,7 +111,7 @@ class HC_Controller(BasePolicy):
             )
             self.is_bfgs = True
         else:
-            self.optimizer = torch.optim.AdamW(
+            self.optimizer = torch.optim.Adam(
                 [
                     {"params": self.policy.parameters(), "lr": policy_lr},
                     {"params": self.primitivePolicy.parameters(), "lr": policy_lr},

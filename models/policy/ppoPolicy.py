@@ -54,10 +54,10 @@ class PPO_Learner(BasePolicy):
         self.critic = critic
 
         if critic_lr is None:
-            self.optimizer = torch.optim.AdamW(self.policy.parameters(), lr=policy_lr)
+            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
             self.is_bfgs = True
         else:
-            self.optimizer = torch.optim.AdamW(
+            self.optimizer = torch.optim.Adam(
                 [
                     {"params": self.policy.parameters(), "lr": policy_lr},
                     {"params": self.critic.parameters(), "lr": critic_lr},

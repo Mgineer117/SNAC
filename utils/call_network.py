@@ -559,20 +559,20 @@ def call_opNetwork(
     optimizers = {}
     if args.op_mode == "sac":
         is_bfgs = False
-        optimizers["policy"] = torch.optim.AdamW(
+        optimizers["policy"] = torch.optim.Adam(
             optionPolicy.parameters(), lr=args.sac_policy_lr
         )
-        optimizers["critic"] = torch.optim.AdamW(
+        optimizers["critic"] = torch.optim.Adam(
             optionCritic.parameters(), lr=args.sac_critic_lr
         )
     elif args.op_mode == "ppo":
         if args.op_critic_lr is None:
-            optimizers["ppo"] = torch.optim.AdamW(
+            optimizers["ppo"] = torch.optim.Adam(
                 optionPolicy.parameters(), lr=args.op_policy_lr
             )
             is_bfgs = True
         else:
-            optimizers["ppo"] = torch.optim.AdamW(
+            optimizers["ppo"] = torch.optim.Adam(
                 [
                     {"params": optionPolicy.parameters(), "lr": args.op_policy_lr},
                     {"params": optionCritic.parameters(), "lr": args.op_critic_lr},
