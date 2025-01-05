@@ -90,7 +90,7 @@ class PPO:
 
     def train_ppo(self):
         total_batch_size = self.args.ppo_batch_size * self.args.K_epochs
-        self.sampler.initialize(batch_size=int(total_batch_size / 2))
+        self.sampler.initialize(batch_size=total_batch_size)
 
         ### Call network param and run
         self.ppo_network = call_ppoNetwork(self.args)

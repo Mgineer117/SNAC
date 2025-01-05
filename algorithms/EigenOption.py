@@ -122,7 +122,7 @@ class EigenOption:
         --------------------------------------------------------------------------------------------
         """
         total_batch_size = self.args.op_batch_size * self.args.OP_K_epochs
-        self.sampler.initialize(batch_size=int(total_batch_size / 2))
+        self.sampler.initialize(batch_size=total_batch_size)
 
         if not self.args.import_op_model:
             self.option_vals, self.options, _ = get_eigenvectors(
@@ -170,7 +170,7 @@ class EigenOption:
 
     def train_hc(self):
         total_batch_size = self.args.hc_batch_size * self.args.K_epochs
-        self.sampler.initialize(batch_size=int(total_batch_size / 2))
+        self.sampler.initialize(batch_size=total_batch_size)
 
         self.hc_network = call_hcNetwork(
             self.sf_network.feaNet, self.op_network, self.args
