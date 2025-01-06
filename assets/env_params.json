@@ -154,7 +154,7 @@
         "phi_loss_l2_scaler": 1e-7,
         "episode_len": 150,
         "op_batch_size": 512,
-        "hc_batch_size": 1024,
+        "hc_batch_size": 512,
         "ppo_batch_size": 512,
         "sac_batch_size": 512,
         "oc_batch_size": 512,
