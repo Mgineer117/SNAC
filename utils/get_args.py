@@ -239,7 +239,7 @@ def get_args(verbose=True):
         help="psi network lr",
     )
     parser.add_argument(
-        "--op-policy-lr", type=float, default=5e-4, help="Option network lr"
+        "--op-policy-lr", type=float, default=1e-3, help="Option network lr"
     )
     parser.add_argument(
         "--op-critic-lr",
@@ -250,7 +250,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--hc-policy-lr",
         type=float,
-        default=3e-4,
+        default=5e-4,
         help="Hierarchical Controller network lr",
     )
     parser.add_argument(
