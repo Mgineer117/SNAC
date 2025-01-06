@@ -265,7 +265,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--ppo-critic-lr",
         type=float,
-        default=5e-4,
+        default=None,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
 
@@ -303,7 +303,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=256,
+        default=None,
         help="Base number of batch size for training",
     )
     parser.add_argument(

@@ -65,6 +65,7 @@ class HC_Controller(BasePolicy):
         policy: HC_Policy,
         primitivePolicy: HC_PPO,
         critic: HC_Critic,
+        minibatch_size: int,
         normalizer: ObservationNormalizer,
         a_dim: int,
         policy_lr: float = 5e-4,
@@ -80,6 +81,7 @@ class HC_Controller(BasePolicy):
         super(HC_Controller, self).__init__()
         # constants
         self.device = device
+        self.minibatch_size = minibatch_size
 
         self._num_options = policy._num_options
         self._entropy_scaler = entropy_scaler
@@ -227,11 +229,10 @@ class HC_Controller(BasePolicy):
 
         # Minibatch setup
         batch_size = states.size(0)
-        minibatch_size = 2 * (batch_size // self._K)
 
         # K - Loop
         for _ in range(self._K):
-            indices = torch.randperm(batch_size)[:minibatch_size]
+            indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
             mb_option_actions = option_actions[indices]

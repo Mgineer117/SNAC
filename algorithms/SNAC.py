@@ -125,8 +125,7 @@ class SNAC:
         This discovers the eigenvectors via clustering for each of reward and state decompositions.
         --------------------------------------------------------------------------------------------
         """
-        total_batch_size = self.args.op_batch_size * self.args.OP_K_epochs
-        self.sampler.initialize(batch_size=total_batch_size)
+        self.sampler.initialize(batch_size=self.args.batch_size)
 
         if not self.args.import_op_model:
             self.option_vals, self.options, _ = get_eigenvectors(
@@ -178,8 +177,7 @@ class SNAC:
         Train Hierarchical Controller to compute optimal policy that alternates between
         options and the random walk.
         """
-        total_batch_size = self.args.hc_batch_size * self.args.K_epochs
-        self.sampler.initialize(batch_size=total_batch_size)
+        self.sampler.initialize(batch_size=self.args.batch_size)
 
         self.hc_network = call_hcNetwork(self.sf_network, self.op_network, self.args)
         print_model_summary(self.hc_network, model_name="HC model")

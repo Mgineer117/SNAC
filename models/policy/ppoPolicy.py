@@ -25,6 +25,7 @@ class PPO_Learner(BasePolicy):
         normalizer: ObservationNormalizer,
         policy_lr: float = 3e-4,
         critic_lr: float = 5e-4,
+        minibatch_size: int = 256,
         eps: float = 0.2,
         entropy_scaler: float = 1e-3,
         bfgs_iter: int = 5,
@@ -38,6 +39,7 @@ class PPO_Learner(BasePolicy):
         # constants
         self.device = device
 
+        self.minibatch_size = minibatch_size
         self._entropy_scaler = entropy_scaler
         self._eps = eps
         self._gamma = gamma
@@ -125,11 +127,10 @@ class PPO_Learner(BasePolicy):
 
         # Minibatch setup
         batch_size = states.size(0)
-        minibatch_size = 2 * (batch_size // self._K)
 
         # K - Loop with minibatch training
         for _ in range(self._K):
-            indices = torch.randperm(batch_size)[:minibatch_size]
+            indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
             mb_rewards = rewards[indices]

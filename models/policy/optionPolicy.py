@@ -29,6 +29,7 @@ class OP_Controller(BasePolicy):
         sf_network: BasePolicy,
         optionPolicy: OptionPolicy,
         optionCritic: OP_Critic,
+        minibatch_size: int,
         alpha: torch.Tensor | None,
         normalizer: ObservationNormalizer,
         optimizers: dict,
@@ -42,6 +43,7 @@ class OP_Controller(BasePolicy):
 
         # constants
         self.device = args.device
+        self.minibatch_size = minibatch_size
         self.algo_name = args.algo_name
         self.options = nn.Parameter(options.to(self._dtype).to(self.device))
         self.option_vals = option_vals.to(self._dtype).to(self.device)
@@ -343,11 +345,10 @@ class OP_Controller(BasePolicy):
 
         # Minibatch setup
         batch_size = states.size(0)
-        minibatch_size = 2 * (batch_size // self.K)
 
         # K - Loop
         for _ in range(self.K):
-            indices = torch.randperm(batch_size)[:minibatch_size]
+            indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
             mb_rewards = rewards[indices]
