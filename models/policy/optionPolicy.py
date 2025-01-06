@@ -356,8 +356,8 @@ class OP_Controller(BasePolicy):
             mb_old_logprobs = old_logprobs[indices]
 
             # Compute Advantage and returns of the current batch
+            mb_values, _ = self.optionCritic(mb_states)
             with torch.no_grad():
-                mb_values, _ = self.optionCritic(mb_states, z)
                 mb_advantages, mb_returns = estimate_advantages(
                     mb_rewards,
                     mb_terminals,
@@ -366,7 +366,6 @@ class OP_Controller(BasePolicy):
                     tau=self.tau,
                     device=self.device,
                 )
-
             valueLoss = self.mse_loss(mb_returns, mb_values)
 
             if self.is_bfgs:

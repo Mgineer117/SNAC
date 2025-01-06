@@ -138,8 +138,8 @@ class PPO_Learner(BasePolicy):
             mb_old_logprobs = old_logprobs[indices]
 
             # Compute Advantage and returns of the current batch
+            mb_values = self.critic(mb_states)
             with torch.no_grad():
-                mb_values = self.critic(mb_states)
                 mb_advantages, mb_returns = estimate_advantages(
                     mb_rewards,
                     mb_terminals,
@@ -148,7 +148,6 @@ class PPO_Learner(BasePolicy):
                     tau=self._tau,
                     device=self.device,
                 )
-
             valueLoss = self.mse_loss(mb_returns, mb_values)
 
             # Update value function (critic)
