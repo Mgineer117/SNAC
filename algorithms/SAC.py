@@ -22,6 +22,7 @@ class SAC:
 
         # Define buffers and sampler for Monte-Carlo sampling
         self.buffer = TrajectoryBuffer(
+            episode_len=args.episode_len,
             min_num_trj=args.sac_min_num_traj,
             max_num_trj=args.sac_max_num_traj,
         )

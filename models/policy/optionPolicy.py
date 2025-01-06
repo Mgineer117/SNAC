@@ -195,7 +195,7 @@ class OP_Controller(BasePolicy):
                 + param.data * self.soft_update_rate
             )
 
-    def learn(self, batch, z, mode="sac"):
+    def learn(self, batch, z, mode="ppo"):
         if mode == "ppo":
             loss_dict, update_time = self.ppo_learn(batch, z)
         elif mode == "sac":
@@ -460,7 +460,7 @@ class OP_Controller(BasePolicy):
             t1 - t0,
         )
 
-    def save_model(self, logdir, epoch=None, is_best=False, mode="sac"):
+    def save_model(self, logdir, epoch=None, is_best=False, mode="ppo"):
         self.optionPolicy = self.optionPolicy.cpu()
         self.optionCritic = self.optionCritic.cpu()
         option_vals = self.option_vals.clone().cpu()

@@ -64,7 +64,7 @@ class SF_Combined(BasePolicy):
         feature_lr: float = 3e-4,
         psi_lr: float = 5e-4,
         option_lr: float = 1e-4,
-        trj_per_iter: int = 10,
+        batch_size: int = 1024,
         decision_mode: str = "random",
         gamma: float = 0.99,
         epsilon: float = 0.2,
@@ -85,7 +85,7 @@ class SF_Combined(BasePolicy):
         self.decision_mode = decision_mode
         self.device = device
 
-        self._trj_per_iter = trj_per_iter
+        self._batch_size = batch_size
         self._a_dim = a_dim
         self._fc_dim = feaNet._fc_dim
         self._sf_dim = feaNet._sf_dim
@@ -300,7 +300,7 @@ class SF_Combined(BasePolicy):
         t0 = time.time()
 
         ### Pull data from the batch
-        batch = buffer.sample(self._trj_per_iter)
+        batch = buffer.sample(self._batch_size)
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
         next_states = (
@@ -356,7 +356,7 @@ class SF_Combined(BasePolicy):
         self.train()
         t0 = time.time()
 
-        batch = buffer.sample(self._trj_per_iter)
+        batch = buffer.sample(self._batch_size)
 
         ### Pull data from the batch
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)

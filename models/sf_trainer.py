@@ -189,7 +189,7 @@ class SFTrainer:
         count = 0
         total_sample_time = 0
         sample_time = 0
-        while self.buffer.num_trj < self.buffer.min_num_trj:
+        while self.buffer.num_trj() < self.buffer.min_num_trj:
             batch, sampleT = self.sampler.collect_samples(
                 self.policy, grid_type=self.grid_type, random_init_pos=True
             )
@@ -198,13 +198,13 @@ class SFTrainer:
             total_sample_time += sampleT
             if count % 25 == 0:
                 print(
-                    f"\nWarming buffer with {self.post_process} {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                    f"\nWarming buffer with {self.post_process} {self.buffer.num_trj()}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
                     end="",
                 )
                 sample_time = 0
             count += 1
         print(
-            f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+            f"\nWarming Complete! {self.buffer.num_trj()}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
             end="",
         )
         print()

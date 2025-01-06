@@ -37,6 +37,7 @@ class FeatureTrain:
 
         # define buffers and sampler for Monte-Carlo sampling
         self.buffer = TrajectoryBuffer(
+            episode_len=args.episode_len,
             min_num_trj=args.min_num_traj,
             max_num_trj=args.max_num_traj,
         )

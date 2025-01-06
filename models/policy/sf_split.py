@@ -106,7 +106,7 @@ class SF_Split(BasePolicy):
         feature_lr: float = 3e-4,
         option_lr: float = 1e-4,
         psi_lr: float = 5e-4,
-        trj_per_iter: int = 10,
+        batch_size: int = 1024,
         gamma: float = 0.99,
         phi_loss_r_scaler: float = 1.0,
         phi_loss_s_scaler: float = 0.1,
@@ -124,7 +124,7 @@ class SF_Split(BasePolicy):
         # constants
         self.device = device
 
-        self._trj_per_iter = trj_per_iter
+        self._batch_size = batch_size
         self._a_dim = a_dim
         self._fc_dim = feaNet._fc_dim
         self._sf_dim = feaNet._sf_dim
@@ -398,7 +398,7 @@ class SF_Split(BasePolicy):
         t0 = time.time()
 
         ### Pull data from the batch
-        batch = buffer.sample(self._trj_per_iter)
+        batch = buffer.sample(self._batch_size)
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
         next_states = (
@@ -452,7 +452,7 @@ class SF_Split(BasePolicy):
         self.train()
         t0 = time.time()
 
-        batch = buffer.sample(self._trj_per_iter)
+        batch = buffer.sample(self._batch_size)
 
         ### Pull data from the batch
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)

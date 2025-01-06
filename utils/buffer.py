@@ -1,20 +1,24 @@
 import numpy as np
 import torch
 
+from math import ceil, floor
 from typing import Optional, Union, Tuple, Dict, List
 
 
 class TrajectoryBuffer:
     def __init__(
-        self, min_num_trj: int, max_num_trj: int, device: str = torch.device("cpu")
+        self,
+        episode_len: int,
+        min_num_trj: int,
+        max_num_trj: int,
     ) -> None:
+        self.episode_len = episode_len
         self.min_num_trj = min_num_trj
         self.max_num_trj = max_num_trj
-        self.device = device
 
         # Using lists to store trajectories
         self.trajectories = []
-        self.num_trj = 0
+        self.num_trj = lambda: len(self.trajectories)
         self.full = False
 
     def decompose(self, batch) -> List[Dict[str, np.ndarray]]:
@@ -67,7 +71,6 @@ class TrajectoryBuffer:
 
     def wipe(self):
         self.trajectories = []
-        self.num_trj = 0
         self.full = False
 
     def push(self, batch: dict, post_process: str | None = None) -> None:
@@ -116,24 +119,46 @@ class TrajectoryBuffer:
                 trajs = [result_dict]
 
             for traj in trajs:
-                if self.num_trj < self.max_num_trj:
+                if self.num_trj() < self.max_num_trj:
                     self.trajectories.append(traj)
                 else:
-                    self.trajectories[self.num_trj % self.max_num_trj] = traj
-                self.num_trj += 1
+                    self.trajectories[self.num_trj() % self.max_num_trj] = traj
 
-    def sample(self, num_traj: int) -> Dict[str, torch.Tensor]:
-        if num_traj > self.num_trj:
-            num_traj = self.num_trj
+    def sample(self, batch_size: int) -> Dict[str, torch.Tensor]:
+        """
+        Sample a batch of trajectories from the buffer, ensuring the batch matches the given size.
+        """
+        num_traj = ceil(batch_size / self.episode_len)
 
-        # Sample random trajectories
+        enough_data = True
+        if num_traj > self.num_trj():
+            enough_data = False
+            print(f"Warning: Not enough data in buffer. Adjusting to available data.")
+            num_traj = self.num_trj()
+
         sampled_indices = np.random.choice(
-            min(self.num_trj, self.max_num_trj), num_traj, replace=False
+            min(self.num_trj(), self.max_num_trj), num_traj, replace=False
         )
-
-        # Collect sampled data and concatenate
         sampled_data = [self.trajectories[idx] for idx in sampled_indices]
 
+        if enough_data:
+            actual_size = np.concatenate(
+                [traj["rewards"] for traj in sampled_data], axis=0
+            ).shape[0]
+            while actual_size < batch_size:
+                additional_needed = batch_size - actual_size
+                num_traj += ceil(additional_needed / self.episode_len)
+                new_indices = np.random.choice(
+                    min(self.num_trj(), self.max_num_trj),
+                    num_traj,
+                    replace=False,
+                )
+                sampled_data = [self.trajectories[idx] for idx in new_indices]
+                actual_size = np.concatenate(
+                    [traj["rewards"] for traj in sampled_data], axis=0
+                ).shape[0]
+
+        # Concatenate data for the sampled trajectories
         sampled_batch = {
             "states": np.concatenate([traj["states"] for traj in sampled_data], axis=0),
             "actions": np.concatenate(
@@ -161,12 +186,16 @@ class TrajectoryBuffer:
                 [traj["entropys"] for traj in sampled_data], axis=0
             ),
         }
+
+        # Check if the batch size matches and truncate if necessary
+        for key in sampled_batch.keys():
+            sampled_batch[key] = sampled_batch[key][:batch_size]
 
         return sampled_batch
 
     def sample_all(self) -> Dict[str, torch.Tensor]:
         # Sample random trajectories
-        sampled_indices = range(0, self.num_trj)
+        sampled_indices = range(0, self.num_trj())
 
         # Collect sampled data and concatenate
         sampled_data = [self.trajectories[idx] for idx in sampled_indices]
@@ -200,4 +229,3 @@ class TrajectoryBuffer:
         }
 
         return sampled_batch
-

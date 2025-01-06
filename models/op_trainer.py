@@ -41,7 +41,7 @@ class OPTrainer:
         epoch: int = 1000,
         init_epoch: int = 0,
         step_per_epoch: int = 1000,
-        trj_per_iter: int = 10,
+        batch_size: int = 10,
         eval_episodes: int = 10,
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         log_interval: int = 2,
@@ -59,7 +59,7 @@ class OPTrainer:
         self._epoch = epoch
         self._init_epoch = init_epoch
         self._step_per_epoch = step_per_epoch
-        self._trj_per_iter = trj_per_iter
+        self._batch_size = batch_size
 
         self._eval_episodes = eval_episodes
         self._scheduling_epoch = int(self._epoch // 10) if self._epoch >= 10 else None
@@ -107,7 +107,7 @@ class OPTrainer:
                 for z in trange(
                     self.policy.num_options, desc=f"Updating Option", leave=False
                 ):
-                    batch = self.buffers[z].sample(self._trj_per_iter)
+                    batch = self.buffers[z].sample(self._batch_size)
                     loss_dict, updateT = self.policy.learn(batch, z, mode=mode)
 
                     batch, sampleT = self.sampler.collect_samples(
@@ -362,7 +362,7 @@ class OPTrainer:
             total_sample_time = 0
             sample_time = 0
             self.num_env_steps += buffer.min_num_trj
-            while buffer.num_trj < buffer.min_num_trj:
+            while buffer.num_trj() < buffer.min_num_trj:
                 batch, sampleT = self.sampler.collect_samples(
                     self.policy, idx=z, grid_type=self.grid_type, random_init_pos=True
                 )
@@ -372,14 +372,14 @@ class OPTrainer:
                 if count % 50 == 0:
                     if verbose:
                         print(
-                            f"\nWarming buffer {buffer.num_trj}/{buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                            f"\nWarming buffer {buffer.num_trj()}/{buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
                             end="",
                         )
                     sample_time = 0
                 count += 1
             if verbose:
                 print(
-                    f"\nWarming Complete! {buffer.num_trj}/{buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+                    f"\nWarming Complete! {buffer.num_trj()}/{buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
                     end="",
                 )
                 print()
@@ -506,7 +506,7 @@ class OPTrainer2:
                 sample_time += sampleT
 
                 # update params
-                loss_dict, avgRewDict, updateT = self.policy.learn(batch, z)
+                loss_dict, updateT = self.policy.learn(batch, z)
                 update_time += updateT
 
                 # Logging further info
@@ -522,7 +522,7 @@ class OPTrainer2:
                 epoch=e + 1,
                 iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
                 idx=z,
-                name1=self.policy._option_vals[z],
+                name1=self.policy.option_vals[z],
                 dir_name=self.prefix,
                 write_log=False,  # since OP needs to write log of average of all options
                 grid_type=self.grid_type,

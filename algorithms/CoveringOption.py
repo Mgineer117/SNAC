@@ -32,6 +32,7 @@ class CoveringOption:
 
         # define buffers and sampler for Monte-Carlo sampling
         self.buffer = TrajectoryBuffer(
+            episode_len=args.episode_len,
             min_num_trj=args.sac_min_num_traj,
             max_num_trj=args.sac_max_num_traj,
         )
@@ -131,8 +132,8 @@ class CoveringOption:
                 - Train OptionPolicy for the vectors
         ----------------------------------------------
         """
-        num_eps = self.args.op_episode_num * self.args.OP_K_epochs
-        self.sampler.initialize(episode_num=int(num_eps))
+        total_batch_size = int(self.args.op_batch_size * (self.args.OP_K_epochs + 1))
+        self.sampler.initialize(batch_size=total_batch_size)
 
         self.option_vals = torch.zeros((self.args.num_vector))
         self.options = torch.zeros((self.args.num_vector, self.args.sf_dim))
@@ -219,8 +220,8 @@ class CoveringOption:
         Train Hierarchical Controller to compute optimal policy that alternates between
         options and the random walk.
         """
-        num_eps = self.args.hc_episode_num * self.args.K_epochs
-        self.sampler.initialize(episode_num=int(num_eps))
+        total_batch_size = int(self.args.hc_batch_size * (self.args.K_epochs + 1))
+        self.sampler.initialize(batch_size=total_batch_size)
 
         self.hc_network = call_hcNetwork(
             self.sf_network.feaNet, self.op_network, self.args
@@ -258,10 +259,10 @@ class CoveringOption:
                 - To concat the batch to improve the diffusion SF matrix
         """
         option_buffer = TrajectoryBuffer(
-            min_num_trj=app_trj_num, max_num_trj=200, device=self.args.device
+            episode_len=self.args.episode_len, min_num_trj=0, max_num_trj=app_trj_num
         )
 
-        while option_buffer.num_trj < option_buffer.min_num_trj:
+        while option_buffer.num_trj() < option_buffer.max_num_trj:
             batch, sample_time = self.sampler.collect_samples(
                 policy,
                 grid_type=self.args.grid_type,

@@ -24,7 +24,7 @@ class SAC_Learner(BasePolicy):
         alpha_lr: float = 3e-4,
         gamma: float = 0.99,
         tau: float = 0.005,
-        trj_per_iter: int = 10,
+        batch_size: int = 1024,
         target_update_interval: int = 1,
         tune_alpha: bool = True,
         device="cpu",
@@ -37,7 +37,7 @@ class SAC_Learner(BasePolicy):
         self.alpha = torch.tensor(alpha)
         self.gamma = gamma
         self.tau = tau
-        self.trj_per_iter = trj_per_iter
+        self.batch_size = batch_size
         self.target_update_interval = target_update_interval
         self.target_entropy = -policy._a_dim
         self.tune_alpha = tune_alpha

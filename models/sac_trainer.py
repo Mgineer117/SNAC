@@ -72,9 +72,9 @@ class SACTrainer:
         for e in trange(self._init_epoch, self._epoch, desc="SAC Epoch"):
             ### Training Loop
             self.policy.train()
-            
+
             for it in trange(self._step_per_epoch, desc="Training", leave=False):
-                batch = self.buffer.sample(self.policy.trj_per_iter)
+                batch = self.buffer.sample(self.policy.batch_size)
                 loss_dict, update_time = self.policy.learn(batch)
 
                 # Calculate expected remaining time
@@ -100,15 +100,16 @@ class SACTrainer:
                 completed_iterations += 1
                 sample_time = 0
                 torch.cuda.empty_cache()
-            
+
             # update the buffer
             batch, sample_time = self.sampler.collect_samples(
-                self.policy, grid_type=self.grid_type,
+                self.policy,
+                grid_type=self.grid_type,
             )
             self.buffer.push(batch)
             self.num_env_steps += len(batch["rewards"])
 
-            if e % self.log_interval== 0:
+            if e % self.log_interval == 0:
                 ### Evaluation Loop
                 self.policy.eval()
                 eval_dict = self.evaluator(
@@ -137,7 +138,7 @@ class SACTrainer:
         count = 0
         total_sample_time = 0
         sample_time = 0
-        while self.buffer.num_trj < self.buffer.min_num_trj:
+        while self.buffer.num_trj() < self.buffer.min_num_trj:
             batch, sampleT = self.sampler.collect_samples(
                 self.policy, grid_type=self.grid_type
             )
@@ -148,7 +149,7 @@ class SACTrainer:
             if count % 50 == 0:
                 if verbose:
                     print(
-                        f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                        f"\nWarming buffer {self.buffer.num_trj()}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
                         end="",
                     )
                 sample_time = 0
@@ -156,7 +157,7 @@ class SACTrainer:
 
         if verbose:
             print(
-                f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+                f"\nWarming Complete! {self.buffer.num_trj()}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
                 end="",
             )
             print()
