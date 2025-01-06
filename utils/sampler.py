@@ -369,6 +369,10 @@ class OnlineSampler(Base):
         if seed is None:
             seed = random.randint(0, 1_000_000)
 
+        if queue is not None:
+            # Apply different seeds for multiprocessor's action stochacity
+            self.set_any_seed(seed, pid)
+
         current_step = 0
         while current_step < self.min_batch_for_worker:
             # env initialization
