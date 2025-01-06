@@ -356,7 +356,7 @@ class OP_Controller(BasePolicy):
             mb_old_logprobs = old_logprobs[indices]
 
             # Compute Advantage and returns of the current batch
-            mb_values, _ = self.optionCritic(mb_states)
+            mb_values, _ = self.optionCritic(mb_states, z)
             with torch.no_grad():
                 mb_advantages, mb_returns = estimate_advantages(
                     mb_rewards,
