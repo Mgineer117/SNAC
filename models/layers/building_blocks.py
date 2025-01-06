@@ -103,8 +103,10 @@ class MLP(nn.Module):
         for in_dim, out_dim in zip(hidden_dims[:-1], hidden_dims[1:]):
             linear_layer = nn.Linear(in_dim, out_dim)
             if initialization:
-                nn.init.orthogonal_(linear_layer.weight)  # Orthogonal initialization
-                linear_layer.bias.data.fill_(0.01)
+                nn.init.orthogonal_(
+                    linear_layer.weight, gain=1.414
+                )  # Orthogonal initialization
+                linear_layer.bias.data.fill_(0.0)
             model += (
                 [linear_layer, activation] if activation is not None else [linear_layer]
             )
@@ -118,8 +120,10 @@ class MLP(nn.Module):
         if output_dim is not None:
             linear_layer = nn.Linear(hidden_dims[-1], output_dim)
             if initialization:
-                linear_layer.weight.data.fill_(0.01)  # Set weights to 0.01
-                linear_layer.bias.data.fill_(0.01)  # Set biases to 0.01
+                nn.init.orthogonal_(
+                    linear_layer.weight, gain=0.1
+                )  # Set weights to 0.01
+                linear_layer.bias.data.fill_(0.0)  # Set biases to 0.01
             model += [linear_layer]
             self.output_dim = output_dim
 
