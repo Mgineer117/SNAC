@@ -279,7 +279,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--obs-norm",
         type=str,
-        default="cma",
+        default="none",
         help="ema / cma. ema: Explonential / Cumulative moving average. Observation normalization for each network.",
     )
     parser.add_argument(

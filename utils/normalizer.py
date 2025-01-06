@@ -24,7 +24,7 @@ class ObservationNormalizer:
 
         # Initialize the statistics
         self.count = 0
-        self.eps = 1e-3
+        self.eps = 1e-2
 
         # Initialize based on the mode
         if mode == "ema":
