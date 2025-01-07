@@ -357,7 +357,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--ppo-entropy-scaler",
         type=float,
-        default=5e-3,
+        default=5e-2,
         help="PPO policy entropy scaler",
     )
     parser.add_argument(
@@ -544,7 +544,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-entropy-scaler",
         type=float,
-        default=5e-3,
+        default=5e-2,
         help="entropy scaler from PPO action-distribution",
     )
 
