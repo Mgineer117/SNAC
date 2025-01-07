@@ -347,14 +347,14 @@ class OP_Controller(BasePolicy):
         batch_size = states.size(0)
 
         # Compute Advantage and returns of the current batch
-        values = self.optionCritic(states, z)
+        values, _ = self.optionCritic(states, z)
         with torch.no_grad():
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
                 values,
-                gamma=self._gamma,
-                tau=self._tau,
+                gamma=self.gamma,
+                tau=self.tau,
                 device=self.device,
             )
 
@@ -399,7 +399,7 @@ class OP_Controller(BasePolicy):
                 )
                 set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
 
-            mb_values = self.optionCritic(mb_states, z)
+            mb_values, _ = self.optionCritic(mb_states, z)
             valueLoss = self.mse_loss(mb_returns, mb_values)
 
             _, metaData = self.optionPolicy(mb_states, z)

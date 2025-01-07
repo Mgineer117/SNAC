@@ -87,6 +87,7 @@ def discover_options(
     num: int = 10,
     gamma: int = 0.99,
     num_trj: int = 100,
+    episode_len: int = 100,
     idx: int | None = None,
     draw_map: bool = False,
     device=torch.device("cpu"),
@@ -109,28 +110,28 @@ def discover_options(
     ### Collect batch to compute phi for psi
     is_covering_option = idx is not None  # Simplified conditional
     option_buffer = TrajectoryBuffer(
-        min_num_trj=num_trj, max_num_trj=1001, device="cpu"  # Operate on CPU
+        episode_len=episode_len, min_num_trj=0, max_num_trj=num_trj
     )
     # Collecting samples to meet the minimum trajectory count
     count = 0
-    while option_buffer.num_trj < option_buffer.min_num_trj:
+    while option_buffer.num_trj() < option_buffer.max_num_trj:
         batch, sample_time = sampler.collect_samples(
             policy, grid_type=grid_type, idx=idx, is_covering_option=is_covering_option
         )
         option_buffer.push(batch)
         if (count + 1) % 2 == 0:
             print(
-                f"\nWarming buffer {option_buffer.num_trj}/{option_buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                f"\nWarming buffer {option_buffer.num_trj()}/{option_buffer.max_num_trj} | sample_time = {sample_time:.2f}s",
                 end="",
             )
         count += 1
     print(
-        f"\nWarming Complete! {option_buffer.num_trj}/{option_buffer.min_num_trj} | {option_buffer.min_num_trj} will only be used!!!",
+        f"\nWarming Complete! {option_buffer.num_trj()}/{option_buffer.max_num_trj}",
         end="",
     )
 
     # Sampling and cleaning up buffer
-    batch = option_buffer.sample(num_trj)
+    batch = option_buffer.sample_all()
     option_buffer.wipe()
 
     # Convert collected batch data to tensors on CPU
@@ -500,6 +501,7 @@ def get_eigenvectors(
             algo_name=args.algo_name,
             num=int(args.num_vector / 2),
             num_trj=args.num_traj_decomp,
+            episode_len=args.episode_len,
             draw_map=draw_map,
             gamma=args.gamma,
             device=args.device,
@@ -520,6 +522,7 @@ def get_eigenvectors(
             algo_name=args.algo_name,
             num=args.num_vector,
             num_trj=args.num_traj_decomp,
+            episode_len=args.episode_len,
             draw_map=draw_map,
             gamma=args.gamma,
             device=args.device,

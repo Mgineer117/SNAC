@@ -41,7 +41,7 @@ class OPTrainer:
         epoch: int = 1000,
         init_epoch: int = 0,
         step_per_epoch: int = 1000,
-        batch_size: int = 10,
+        batch_size: int = 1024,
         eval_episodes: int = 10,
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         log_interval: int = 2,
@@ -361,8 +361,8 @@ class OPTrainer:
             count = 0
             total_sample_time = 0
             sample_time = 0
-            self.num_env_steps += buffer.min_num_trj
-            while buffer.num_trj() < buffer.min_num_trj:
+            self.num_env_steps += self._batch_size
+            while buffer.num_trj() < buffer.max_num_trj:
                 batch, sampleT = self.sampler.collect_samples(
                     self.policy, idx=z, grid_type=self.grid_type, random_init_pos=True
                 )
@@ -372,14 +372,14 @@ class OPTrainer:
                 if count % 50 == 0:
                     if verbose:
                         print(
-                            f"\nWarming buffer {buffer.num_trj()}/{buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                            f"\nWarming buffer {buffer.num_trj()}/{buffer.max_num_trj} | sample_time = {sample_time:.2f}s",
                             end="",
                         )
                     sample_time = 0
                 count += 1
             if verbose:
                 print(
-                    f"\nWarming Complete! {buffer.num_trj()}/{buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+                    f"\nWarming Complete! {buffer.num_trj()}/{buffer.max_num_trj} | total sample_time = {total_sample_time:.2f}s",
                     end="",
                 )
                 print()
@@ -605,39 +605,6 @@ class OPTrainer2:
         )
 
         return epoch
-
-    def warm_buffer(self):
-        t0 = time.time()
-        # make sure there is nothing there
-        self.buffer.wipe()
-
-        # collect enough batch
-        count = 0
-        total_sample_time = 0
-        sample_time = 0
-        while self.buffer.num_trj < self.buffer.min_num_trj:
-            batch, sampleT = self.sampler.collect_samples(
-                self.policy, grid_type=self.grid_type, random_init_pos=True
-            )
-            self.num_env_steps += len(batch["rewards"])
-            self.buffer.push(batch)
-            sample_time += sampleT
-            total_sample_time += sampleT
-            if count % 25 == 0:
-                print(
-                    f"\nWarming buffer {self.buffer.num_trj}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
-                    end="",
-                )
-                sample_time = 0
-            count += 1
-        print(
-            f"\nWarming Complete! {self.buffer.num_trj}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
-            end="",
-        )
-        print()
-        t1 = time.time()
-        sample_time = t1 - t0
-        return sample_time
 
     def save_model(self, e):
         # save checkpoint

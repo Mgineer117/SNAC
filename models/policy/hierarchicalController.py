@@ -282,7 +282,7 @@ class HC_Controller(BasePolicy):
                 )
                 set_flat_params_to(self.critic, torch.tensor(flat_params))
 
-            mb_values = self.critic(mb_states)
+            mb_values, _ = self.critic(mb_states)
             valueLoss = self.mse_loss(mb_returns, mb_values)
 
             # find mask: the actions contributions by hc policy only

@@ -138,7 +138,7 @@ class SACTrainer:
         count = 0
         total_sample_time = 0
         sample_time = 0
-        while self.buffer.num_trj() < self.buffer.min_num_trj:
+        while self.buffer.num_trj() < self.buffer.max_num_trj:
             batch, sampleT = self.sampler.collect_samples(
                 self.policy, grid_type=self.grid_type
             )
@@ -149,7 +149,7 @@ class SACTrainer:
             if count % 50 == 0:
                 if verbose:
                     print(
-                        f"\nWarming buffer {self.buffer.num_trj()}/{self.buffer.min_num_trj} | sample_time = {sample_time:.2f}s",
+                        f"\nWarming buffer {self.buffer.num_trj()}/{self.buffer.max_num_trj} | sample_time = {sample_time:.2f}s",
                         end="",
                     )
                 sample_time = 0
@@ -157,7 +157,7 @@ class SACTrainer:
 
         if verbose:
             print(
-                f"\nWarming Complete! {self.buffer.num_trj()}/{self.buffer.min_num_trj} | total sample_time = {total_sample_time:.2f}s",
+                f"\nWarming Complete! {self.buffer.num_trj()}/{self.buffer.max_num_trj} | total sample_time = {total_sample_time:.2f}s",
                 end="",
             )
             print()
