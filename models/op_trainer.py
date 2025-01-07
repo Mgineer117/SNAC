@@ -189,7 +189,7 @@ class OPTrainer:
 
         return first_final_epoch
 
-    def ppo_train(self, mode) -> Dict[str, float]:
+    def ppo_train(self, mode="ppo") -> Dict[str, float]:
         start_time = time.time()
         self.last_reward_mean = deque(maxlen=3)
         self.last_reward_std = deque(maxlen=3)
