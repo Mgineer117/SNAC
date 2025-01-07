@@ -119,7 +119,7 @@ def discover_options(
             policy, grid_type=grid_type, idx=idx, is_covering_option=is_covering_option
         )
         option_buffer.push(batch)
-        if (count + 1) % 2 == 0:
+        if (count + 1) % 5 == 0:
             print(
                 f"\nWarming buffer {option_buffer.num_trj()}/{option_buffer.max_num_trj} | sample_time = {sample_time:.2f}s",
                 end="",
