@@ -347,8 +347,8 @@ class OP_Controller(BasePolicy):
         batch_size = states.size(0)
 
         # Compute Advantage and returns of the current batch
-        values, _ = self.optionCritic(states, z)
         with torch.no_grad():
+            values, _ = self.optionCritic(states, z)
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
