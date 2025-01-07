@@ -476,13 +476,7 @@ class OP_Controller(BasePolicy):
         else:
             path = os.path.join(logdir, "model_" + str(epoch) + ".p")
 
-        print(path)
-        print(path)
-        print(path)
         if mode == "sac":
-            print("sac :()")
-            print("sac :()")
-            print("sac :()")
             alpha = nn.Parameter(self.alpha.clone().cpu())
             pickle.dump(
                 (
@@ -496,9 +490,6 @@ class OP_Controller(BasePolicy):
                 open(path, "wb"),
             )
         elif mode == "ppo":
-            print("dumped!!!")
-            print("dumped!!!")
-            print("dumped!!!")
             pickle.dump(
                 (
                     self.optionPolicy,

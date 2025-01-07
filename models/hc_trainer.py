@@ -127,7 +127,7 @@ class HCTrainer:
     def save_model(self, e):
         # save checkpoint
         if e % self.log_interval == 0:
-            self.policy.save_model(self.logger.checkpoint_dirs[4], e)
+            self.policy.save_model(self.logger.checkpoint_dirs[2], e)
 
         # save the best model
         if (
@@ -135,7 +135,7 @@ class HCTrainer:
             and np.mean(self.last_reward_std) <= self.std_limit
         ):
             self.policy.save_model(
-                self.logger.log_dirs[4], e, name=self._prefix, is_best=True
+                self.logger.log_dirs[2], e, name=self._prefix, is_best=True
             )
             self.last_max_reward = np.mean(self.last_reward_mean)
 

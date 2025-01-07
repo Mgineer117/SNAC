@@ -168,11 +168,11 @@ class SACTrainer:
     def save_model(self, e: int):
         # Save checkpoint
         if e % self.log_interval == 0:
-            self.policy.save_model(self.logger.checkpoint_dirs[1], e)
+            self.policy.save_model(self.logger.checkpoint_dirs[5], e)
 
         # Save best model
         if self.last_reward_mean > self.last_max_reward:
-            self.policy.save_model(self.logger.log_dirs[1], e, is_best=True)
+            self.policy.save_model(self.logger.log_dirs[5], e, is_best=True)
             self.last_max_reward = self.last_reward_mean
 
     def write_log(self, logging_dict: dict, iter_idx: int):

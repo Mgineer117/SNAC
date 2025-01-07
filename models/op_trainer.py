@@ -391,14 +391,14 @@ class OPTrainer:
 
     def save_model(self, e, mode):
         # save checkpoint
-        self.policy.save_model(self.logger.checkpoint_dirs[2], e, mode=mode)
+        self.policy.save_model(self.logger.checkpoint_dirs[1], e, mode=mode)
 
         # save the best model
         if (
             np.mean(self.last_reward_mean) > self.last_max_reward
             and np.mean(self.last_reward_std) <= self.std_limit
         ):
-            self.policy.save_model(self.logger.log_dirs[2], e, is_best=True, mode=mode)
+            self.policy.save_model(self.logger.log_dirs[1], e, is_best=True, mode=mode)
             self.last_max_reward = np.mean(self.last_reward_mean)
 
     def average_dict_values(self, dict_list):
