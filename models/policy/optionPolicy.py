@@ -346,27 +346,28 @@ class OP_Controller(BasePolicy):
         # Minibatch setup
         batch_size = states.size(0)
 
+        # Compute Advantage and returns of the current batch
+        values = self.optionCritic(states, z)
+        with torch.no_grad():
+            advantages, returns = estimate_advantages(
+                rewards,
+                terminals,
+                values,
+                gamma=self._gamma,
+                tau=self._tau,
+                device=self.device,
+            )
+
         # K - Loop
         for _ in range(self.K):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
-            mb_rewards = rewards[indices]
-            mb_terminals = terminals[indices]
             mb_old_logprobs = old_logprobs[indices]
 
-            # Compute Advantage and returns of the current batch
-            mb_values, _ = self.optionCritic(mb_states, z)
-            with torch.no_grad():
-                mb_advantages, mb_returns = estimate_advantages(
-                    mb_rewards,
-                    mb_terminals,
-                    mb_values,
-                    gamma=self.gamma,
-                    tau=self.tau,
-                    device=self.device,
-                )
-            valueLoss = self.mse_loss(mb_returns, mb_values)
+            # global batch normalization and target return
+            mb_returns = returns[indices]
+            mb_advantages = advantages[indices]
 
             if self.is_bfgs:
                 # L-BFGS-F value network update
@@ -397,6 +398,9 @@ class OP_Controller(BasePolicy):
                     maxiter=self.bfgs_iter,
                 )
                 set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
+
+            mb_values = self.optionCritic(mb_states, z)
+            valueLoss = self.mse_loss(mb_returns, mb_values)
 
             _, metaData = self.optionPolicy(mb_states, z)
 

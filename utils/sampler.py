@@ -134,7 +134,7 @@ class Base:
             # iterate over envs
             for env in envs:
                 workers_for_env = self.num_workers_per_round[round_number] // len(envs)
-                for _ in range(workers_for_env):
+                for i in range(workers_for_env):
                     if worker_idx == self.total_num_worker - 1:
                         # Main thread process
                         memory = sample_fn(
@@ -145,7 +145,7 @@ class Base:
                             idx,
                             grid_type,
                             random_init_pos,
-                            seed=worker_idx,
+                            seed=i,
                             deterministic=deterministic,
                         )
                     else:
@@ -158,7 +158,7 @@ class Base:
                             idx,
                             grid_type,
                             random_init_pos,
-                            worker_idx,
+                            i,
                             deterministic,
                         )
                         p = multiprocessing.Process(target=sample_fn, args=worker_args)
@@ -393,6 +393,7 @@ class OnlineSampler(Base):
 
                     # env stepping
                     next_obs, rew, term, trunc, infos = env.step(a)
+                    trunc = True if (t + 1) == self.episode_len else False
                     done = term or trunc
 
                 # saving the data

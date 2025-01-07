@@ -128,27 +128,28 @@ class PPO_Learner(BasePolicy):
         # Minibatch setup
         batch_size = states.size(0)
 
+        # Compute Advantage and returns of the current batch
+        values = self.critic(states)
+        with torch.no_grad():
+            advantages, returns = estimate_advantages(
+                rewards,
+                terminals,
+                values,
+                gamma=self._gamma,
+                tau=self._tau,
+                device=self.device,
+            )
+
         # K - Loop with minibatch training
         for _ in range(self._K):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
-            mb_rewards = rewards[indices]
-            mb_terminals = terminals[indices]
             mb_old_logprobs = old_logprobs[indices]
 
-            # Compute Advantage and returns of the current batch
-            mb_values = self.critic(mb_states)
-            with torch.no_grad():
-                mb_advantages, mb_returns = estimate_advantages(
-                    mb_rewards,
-                    mb_terminals,
-                    mb_values,
-                    gamma=self._gamma,
-                    tau=self._tau,
-                    device=self.device,
-                )
-            valueLoss = self.mse_loss(mb_returns, mb_values)
+            # global batch normalization and target return
+            mb_returns = returns[indices]
+            mb_advantages = advantages[indices]
 
             # Update value function (critic)
             if self.is_bfgs:
@@ -178,6 +179,9 @@ class PPO_Learner(BasePolicy):
                     maxiter=self._bfgs_iter,
                 )
                 set_flat_params_to(self.critic, torch.tensor(flat_params))
+
+            mb_values = self.critic(mb_states)
+            valueLoss = self.mse_loss(mb_returns, mb_values)
 
             # policy ingredients
             _, metaData = self.policy(mb_states)
