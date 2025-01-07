@@ -496,6 +496,7 @@ class OP_Controller(BasePolicy):
                     self.optionCritic,
                     option_vals,
                     options,
+                    self.normalizer,
                 ),
                 open(path, "wb"),
             )

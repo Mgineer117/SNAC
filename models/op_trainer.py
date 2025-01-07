@@ -76,15 +76,15 @@ class OPTrainer:
 
     def train(self, mode="sac") -> Dict[str, float]:
         if mode == "ppo":
-            first_final_epoch = self.ppo_train(mode)
+            first_final_epoch = self.ppo_train()
         elif mode == "sac":
-            first_final_epoch = self.sac_train(mode)
+            first_final_epoch = self.sac_train()
         else:
             raise NotImplementedError(f"{mode} is not implemented")
 
         return first_final_epoch
 
-    def sac_train(self, mode) -> Dict[str, float]:
+    def sac_train(self, mode="sac") -> Dict[str, float]:
         start_time = time.time()
         self.last_reward_mean = deque(maxlen=3)
         self.last_reward_std = deque(maxlen=3)
@@ -391,8 +391,7 @@ class OPTrainer:
 
     def save_model(self, e, mode):
         # save checkpoint
-        if e % self.log_interval == 0:
-            self.policy.save_model(self.logger.checkpoint_dirs[2], e, mode=mode)
+        self.policy.save_model(self.logger.checkpoint_dirs[2], e, mode=mode)
 
         # save the best model
         if (
