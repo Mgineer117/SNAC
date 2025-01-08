@@ -52,7 +52,9 @@ class HC_Evaluator(Evaluator):
         renderPlot: bool = False,
         render_fps: int = 10,
         min_option_length: int = 3,
+        gamma: float = 0.99,
         eval_ep_num: int = 1,
+        episode_len: int = 100,
         log_interval: int = 1,
     ):
         super(HC_Evaluator, self).__init__(
@@ -65,7 +67,9 @@ class HC_Evaluator(Evaluator):
         )
         self.plotter = plotter
         self.render_fps = render_fps
+        self.gamma = gamma
         self.min_option_length = min_option_length
+        self.episode_len = episode_len
 
         if dir is not None:
             if gridPlot:
@@ -100,15 +104,29 @@ class HC_Evaluator(Evaluator):
         queue=None,
     ) -> dict[str, list[float]]:
         ep_buffer = []
+
+        # For each episode, apply different seed for stochasticity
+        if seed is None:
+            seed = random.randint(0, 1_000_000)
+
         if queue is not None:
             self.set_any_seed(grid_type, seed)
+
+        def env_step(a):
+            next_obs, rew, term, trunc1, infos = env.step(a)
+            self.external_t += 1
+
+            trunc2 = True if self.external_t == self.episode_len else False
+            done = term or trunc1 or trunc2
+
+            return next_obs, rew, done, infos
 
         successes = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
             # logging initialization
-            ep_reward, ep_length = 0, 0
+            ep_reward = 0
 
             # env initialization
             options = {"random_init_pos": False}
@@ -119,8 +137,8 @@ class HC_Evaluator(Evaluator):
 
             option_indices = {"x": [], "y": []}
             done = False
-            t = 0
-            while not done:
+            self.external_t = 1
+            while self.external_t < self.episode_len or not done:
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
@@ -131,43 +149,31 @@ class HC_Evaluator(Evaluator):
                     if self.gridCriteria:
                         self.get_agent_pos(env)
 
-                    next_obs, rew, term, trunc, infos = env.step(a)
-                    done = term or trunc
+                    next_obs, rew, done, infos = env_step(a)
+                    if not done:
+                        for step_count in range(1, self.min_option_length):
+                            # env stepping
+                            with torch.no_grad():
+                                option_a, _ = policy(
+                                    next_obs,
+                                    metaData["z_argmax"],
+                                    deterministic=True,
+                                )
+                                option_a = option_a.cpu().numpy().squeeze()
 
-                    option_termination = False
-                    step_count = 1
-                    while not (done or option_termination):
-                        # env stepping
-                        with torch.no_grad():
-                            option_a, _ = policy(
-                                next_obs, metaData["z_argmax"], deterministic=True
-                            )
-                            option_a = option_a.cpu().numpy().squeeze()
+                            next_obs, op_rew, done, infos = env_step(option_a)
+                            rew += self.gamma**step_count * op_rew
+                            if done:
+                                break
 
-                        # Update the grid
-                        if self.gridCriteria:
-                            self.get_agent_pos(env)
-
-                        next_obs, op_rew, term, trunc, infos = env.step(option_a)
-
-                        rew += 0.99**step_count * op_rew
-                        step_count += 1
-
-                        option_termination = (
-                            True if step_count >= self.min_option_length else False
-                        )
-                        done = term or trunc
-
-                ### Conventional Loop
                 else:
-                    # Update the grid
+                    ### Conventional Loop
                     if self.gridCriteria:
+                        # Update the grid
                         self.get_agent_pos(env)
 
-                    step_count = 1  # dummy
                     # env stepping
-                    next_obs, rew, term, trunc, infos = env.step(a)
-                    done = term or trunc
+                    next_obs, rew, done, infos = env_step(a)
 
                 obs = next_obs
 
@@ -177,10 +183,8 @@ class HC_Evaluator(Evaluator):
                     )
 
                 ep_reward += rew
-                ep_length += step_count
-                option_indices["x"].append(t)
+                option_indices["x"].append(self.external_t)
                 option_indices["y"].append(metaData["z_argmax"].numpy())
-                t += step_count
 
                 # Update the render
                 if self.renderCriteria:
@@ -226,7 +230,7 @@ class HC_Evaluator(Evaluator):
                     ep_buffer.append(
                         {
                             "ep_reward": ep_reward,
-                            "ep_length": ep_length,
+                            "ep_length": self.external_t,
                             "ep_entropy": ep_entropy,
                         }
                     )

@@ -233,7 +233,7 @@ class HC_Controller(BasePolicy):
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
             values, _ = self.critic(states)
-            _, returns = estimate_advantages(
+            advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
                 values,
@@ -256,19 +256,10 @@ class HC_Controller(BasePolicy):
 
             # global batch normalization and target return
             mb_returns = returns[indices]
+            mb_advantages = advantages[indices]
+
             mb_values, _ = self.critic(mb_states)
             valueLoss = self.mse_loss(mb_returns, mb_values)
-            with torch.no_grad():
-                mb_advantages, _ = estimate_advantages(
-                    mb_rewards,
-                    mb_terminals,
-                    mb_values,
-                    gamma=self._gamma,
-                    tau=self._tau,
-                    device=self.device,
-                )
-
-            # mb_advantages = advantages[indices]
 
             if self.is_bfgs:
                 # L-BFGS-F value network update

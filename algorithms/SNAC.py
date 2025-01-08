@@ -99,7 +99,9 @@ class SNAC:
             "gridPlot": True,
             "renderPlot": args.rendering,
             "render_fps": args.render_fps,
+            "gamma": args.gamma,
             "eval_ep_num": args.eval_episodes,
+            "episode_len": args.episode_len,
         }
 
         if args.env_name in ("PointNavigation"):

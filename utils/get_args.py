@@ -215,7 +215,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--bfgs-iter",
         type=int,
-        default=5,
+        default=10,
         help="Number of bfgs iterations for one minibatch",
     )
 
@@ -339,7 +339,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-batch-for-worker",
         type=int,
-        default=2048,
+        default=1024,
         help="Minimum batch size assgined for one worker (thread)",
     )
     parser.add_argument(
@@ -578,7 +578,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-op-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(
