@@ -153,7 +153,7 @@ class PPO_Learner(BasePolicy):
             mb_returns = returns[indices]
             mb_advantages = advantages[indices]
 
-            mb_values, _ = self.critic(mb_states)
+            mb_values = self.critic(mb_states)
             valueLoss = self.mse_loss(mb_returns, mb_values)
 
             # Update value function (critic)
