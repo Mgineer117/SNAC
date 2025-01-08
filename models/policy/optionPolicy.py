@@ -387,7 +387,7 @@ class OP_Controller(BasePolicy):
                         valueLoss += param.pow(2).sum() * self.l2_reg
                     valueLoss.backward()
                     torch.nn.utils.clip_grad_norm_(
-                        self.optionCritic.parameters(), max_norm=1.0
+                        self.optionCritic.parameters(), max_norm=10.0
                     )
 
                     return (
@@ -421,7 +421,7 @@ class OP_Controller(BasePolicy):
 
             self.optimizers["ppo"].zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=10.0)
             grad_dict = self.compute_gradient_norm(
                 [self.optionPolicy, self.optionCritic],
                 ["optionPolicy", "optionCritic"],
