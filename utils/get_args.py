@@ -239,7 +239,7 @@ def get_args(verbose=True):
         help="psi network lr",
     )
     parser.add_argument(
-        "--op-policy-lr", type=float, default=5e-4, help="Option network lr"
+        "--op-policy-lr", type=float, default=3e-4, help="Option network lr"
     )
     parser.add_argument(
         "--op-critic-lr",
@@ -468,7 +468,7 @@ def get_args(verbose=True):
         "--K-epochs", type=int, default=5, help="PPO update per one iter"
     )
     parser.add_argument(
-        "--OP-K-epochs", type=int, default=5, help="Option policy update per one iter"
+        "--OP-K-epochs", type=int, default=10, help="Option policy update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"
