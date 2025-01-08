@@ -33,8 +33,8 @@ class EigenOption:
         # define buffers and sampler for Monte-Carlo sampling
         self.buffer = TrajectoryBuffer(
             episode_len=args.episode_len,
-            min_num_trj=args.sac_min_num_traj,
-            max_num_trj=args.sac_max_num_traj,
+            min_num_trj=args.min_num_traj,
+            max_num_trj=args.max_num_traj,
         )
         self.sampler = OnlineSampler(
             training_envs=self.env,

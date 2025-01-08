@@ -125,12 +125,9 @@ class PPO_Learner(BasePolicy):
             torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
         )
 
-        # Minibatch setup
-        batch_size = states.size(0)
-
         # Compute Advantage and returns of the current batch
-        values = self.critic(states)
         with torch.no_grad():
+            values = self.critic(states)
             advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
@@ -139,6 +136,9 @@ class PPO_Learner(BasePolicy):
                 tau=self._tau,
                 device=self.device,
             )
+
+        # Minibatch setup
+        batch_size = states.size(0)
 
         # K - Loop with minibatch training
         for _ in range(self._K):
@@ -151,6 +151,9 @@ class PPO_Learner(BasePolicy):
             mb_returns = returns[indices]
             mb_advantages = advantages[indices]
 
+            mb_values_for_adam = self.critic(mb_states)
+            valueLoss = self.mse_loss(mb_values_for_adam, mb_returns)
+
             # Update value function (critic)
             if self.is_bfgs:
                 # L-BFGS-F value network update
@@ -159,8 +162,8 @@ class PPO_Learner(BasePolicy):
                     for param in self.critic.parameters():
                         if param.grad is not None:
                             param.grad.data.fill_(0)
-                    mb_values = self.critic(mb_states)
-                    valueLoss = self.mse_loss(mb_values, mb_returns)
+                    mb_values_for_bfgs = self.critic(mb_states)
+                    valueLoss = self.mse_loss(mb_values_for_bfgs, mb_returns)
                     for param in self.critic.parameters():
                         valueLoss += param.pow(2).sum() * self._l2_reg
                     valueLoss.backward()
@@ -179,9 +182,6 @@ class PPO_Learner(BasePolicy):
                     maxiter=self._bfgs_iter,
                 )
                 set_flat_params_to(self.critic, torch.tensor(flat_params))
-
-            mb_values = self.critic(mb_states)
-            valueLoss = self.mse_loss(mb_returns, mb_values)
 
             # policy ingredients
             _, metaData = self.policy(mb_states)
