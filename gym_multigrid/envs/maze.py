@@ -220,25 +220,6 @@ class Maze(MultiGridEnv):
                 fwd_pos = tuple(a + b for a, b in zip(curr_pos, (-1, 0)))
                 fwd_cell = self.grid.get(*fwd_pos)
 
-                # # Compute the distance between the current position and the goal
-                # dist_reward = np.linalg.norm(
-                #     np.array(self.goal_positions[self.grid_type]) - np.array(fwd_pos),
-                #     ord=2,
-                # )
-
-                # # Normalize the distance with the maximum possible distance in the grid
-                # dist_norm_reward = dist_reward / np.linalg.norm(
-                #     [self.width, self.height], ord=2
-                # )
-
-                # # Invert the normalized distance to make reward larger as the agent gets closer
-                # inverse_dist_reward = 1 - dist_norm_reward  # Closer => higher reward
-
-                # # Scale the reward and add to the total rewards
-                # rewards += (
-                #     0.1 * inverse_dist_reward
-                # )  # Weak reward signal, range 0 ~ 0.1
-
                 if fwd_cell is not None:
                     if fwd_cell.type == "goal":
                         done = True

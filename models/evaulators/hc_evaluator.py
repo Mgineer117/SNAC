@@ -138,7 +138,7 @@ class HC_Evaluator(Evaluator):
             option_indices = {"x": [], "y": []}
             done = False
             self.external_t = 1
-            while self.external_t < self.episode_len or not done:
+            while not done:
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
@@ -151,7 +151,7 @@ class HC_Evaluator(Evaluator):
 
                     next_obs, rew, done, infos = env_step(a)
                     if not done:
-                        for step_count in range(1, self.min_option_length):
+                        for o_t in range(1, self.min_option_length):
                             # env stepping
                             with torch.no_grad():
                                 option_a, _ = policy(
@@ -162,7 +162,7 @@ class HC_Evaluator(Evaluator):
                                 option_a = option_a.cpu().numpy().squeeze()
 
                             next_obs, op_rew, done, infos = env_step(option_a)
-                            rew += self.gamma**step_count * op_rew
+                            rew += self.gamma**o_t * op_rew
                             if done:
                                 break
 
@@ -182,6 +182,7 @@ class HC_Evaluator(Evaluator):
                         successes[num_episodes], infos["success"]
                     )
 
+                print(self.external_t, rew, done)
                 ep_reward += rew
                 option_indices["x"].append(self.external_t)
                 option_indices["y"].append(metaData["z_argmax"].numpy())

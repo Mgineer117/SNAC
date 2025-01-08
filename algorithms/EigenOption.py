@@ -179,20 +179,19 @@ class EigenOption:
             self.sf_network.feaNet, self.op_network, self.args
         )
         print_model_summary(self.hc_network, model_name="HC model")
-        if not self.args.import_hc_model:
-            hc_trainer = HCTrainer(
-                policy=self.hc_network,
-                sampler=self.sampler,
-                logger=self.logger,
-                writer=self.writer,
-                evaluator=self.hc_evaluator,
-                prefix="HC",
-                epoch=self.curr_epoch + self.args.HC_epoch,
-                init_epoch=self.curr_epoch,
-                step_per_epoch=self.args.step_per_epoch,
-                eval_episodes=self.args.eval_episodes,
-                log_interval=self.args.hc_log_interval,
-                grid_type=self.args.grid_type,
-            )
-            hc_trainer.train()
+        hc_trainer = HCTrainer(
+            policy=self.hc_network,
+            sampler=self.sampler,
+            logger=self.logger,
+            writer=self.writer,
+            evaluator=self.hc_evaluator,
+            prefix="HC",
+            epoch=self.curr_epoch + self.args.HC_epoch,
+            init_epoch=self.curr_epoch,
+            step_per_epoch=self.args.step_per_epoch,
+            eval_episodes=self.args.eval_episodes,
+            log_interval=self.args.hc_log_interval,
+            grid_type=self.args.grid_type,
+        )
+        hc_trainer.train()
         self.curr_epoch += self.args.HC_epoch

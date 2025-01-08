@@ -606,9 +606,16 @@ def call_hcNetwork(sf_network, op_network, args):
 
     if args.import_hc_model:
         print("Loading previous HC parameters....")
-        policy, primitivePolicy, critic, normalizer = pickle.load(
-            open("log/eval_log/model_for_eval/hc_model.p", "rb")
-        )
+
+        if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
+            policy, primitivePolicy, critic, normalizer = pickle.load(
+                open(f"log/eval_log/model_for_eval/{args.env_name}/hc_SNAC.p", "rb")
+            )
+        else:
+            policy, primitivePolicy, critic, normalizer = pickle.load(
+                open(f"log/eval_log/model_for_eval/{args.env_name}/hc_Spatial.p", "rb")
+            )
+
     else:
         policy = HC_Policy(
             input_dim=args.s_flat_dim,
