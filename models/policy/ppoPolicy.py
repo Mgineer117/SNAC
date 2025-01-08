@@ -128,7 +128,7 @@ class PPO_Learner(BasePolicy):
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
             values = self.critic(states)
-            advantages, returns = estimate_advantages(
+            _, returns = estimate_advantages(
                 rewards,
                 terminals,
                 values,
@@ -145,14 +145,23 @@ class PPO_Learner(BasePolicy):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
+            mb_rewards = rewards[indices]
+            mb_terminals = terminals[indices]
             mb_old_logprobs = old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
-            mb_advantages = advantages[indices]
-
-            mb_values_for_adam = self.critic(mb_states)
-            valueLoss = self.mse_loss(mb_values_for_adam, mb_returns)
+            mb_values = self.critic(mb_states)
+            valueLoss = self.mse_loss(mb_returns, mb_values)
+            with torch.no_grad():
+                mb_advantages, _ = estimate_advantages(
+                    mb_rewards,
+                    mb_terminals,
+                    mb_values,
+                    gamma=self._gamma,
+                    tau=self._tau,
+                    device=self.device,
+                )
 
             # Update value function (critic)
             if self.is_bfgs:
@@ -168,7 +177,7 @@ class PPO_Learner(BasePolicy):
                         valueLoss += param.pow(2).sum() * self._l2_reg
                     valueLoss.backward()
                     torch.nn.utils.clip_grad_norm_(
-                        self.critic.parameters(), max_norm=0.5
+                        self.critic.parameters(), max_norm=1.0
                     )
 
                     return (
@@ -198,7 +207,7 @@ class PPO_Learner(BasePolicy):
 
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=0.5)
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
             grad_dict = self.compute_gradient_norm(
                 [self.policy, self.critic],
                 ["policy", "critic"],

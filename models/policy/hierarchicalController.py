@@ -231,9 +231,9 @@ class HC_Controller(BasePolicy):
         batch_size = states.size(0)
 
         # Compute Advantage and returns of the current batch
-        values, _ = self.critic(states)
         with torch.no_grad():
-            advantages, returns = estimate_advantages(
+            values, _ = self.critic(states)
+            _, returns = estimate_advantages(
                 rewards,
                 terminals,
                 values,
@@ -245,14 +245,30 @@ class HC_Controller(BasePolicy):
         # K - Loop
         for _ in range(self._K):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
+
             mb_states = states[indices]
             mb_actions = actions[indices]
             mb_option_actions = option_actions[indices]
+            mb_rewards = rewards[indices]
+            mb_terminals = terminals[indices]
+
             mb_old_logprobs = old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
-            mb_advantages = advantages[indices]
+            mb_values, _ = self.critic(mb_states)
+            valueLoss = self.mse_loss(mb_returns, mb_values)
+            with torch.no_grad():
+                mb_advantages, _ = estimate_advantages(
+                    mb_rewards,
+                    mb_terminals,
+                    mb_values,
+                    gamma=self._gamma,
+                    tau=self._tau,
+                    device=self.device,
+                )
+
+            # mb_advantages = advantages[indices]
 
             if self.is_bfgs:
                 # L-BFGS-F value network update
@@ -267,7 +283,7 @@ class HC_Controller(BasePolicy):
                         valueLoss += param.pow(2).sum() * self._l2_reg
                     valueLoss.backward()
                     torch.nn.utils.clip_grad_norm_(
-                        self.critic.parameters(), max_norm=0.5
+                        self.critic.parameters(), max_norm=1.0
                     )
 
                     return (
@@ -281,9 +297,6 @@ class HC_Controller(BasePolicy):
                     maxiter=self._bfgs_iter,
                 )
                 set_flat_params_to(self.critic, torch.tensor(flat_params))
-
-            mb_values, _ = self.critic(mb_states)
-            valueLoss = self.mse_loss(mb_returns, mb_values)
 
             # find mask: the actions contributions by hc policy only
             hc_mask = torch.argmax(mb_option_actions, dim=-1) < self._num_options
@@ -325,7 +338,7 @@ class HC_Controller(BasePolicy):
 
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=0.5)
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
             grad_dict = self.compute_gradient_norm(
                 [self.policy, self.primitivePolicy, self.critic],
                 ["policy", "primitivePolicy", "critic"],

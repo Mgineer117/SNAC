@@ -349,7 +349,7 @@ class OP_Controller(BasePolicy):
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
             values, _ = self.optionCritic(states, z)
-            advantages, returns = estimate_advantages(
+            _, returns = estimate_advantages(
                 rewards,
                 terminals,
                 values,
@@ -363,11 +363,23 @@ class OP_Controller(BasePolicy):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
+            mb_rewards = rewards[indices]
+            mb_terminals = terminals[indices]
             mb_old_logprobs = old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
-            mb_advantages = advantages[indices]
+            mb_values, _ = self.optionCritic(mb_states, z)
+            valueLoss = self.mse_loss(mb_returns, mb_values)
+            with torch.no_grad():
+                mb_advantages, _ = estimate_advantages(
+                    mb_rewards,
+                    mb_terminals,
+                    mb_values,
+                    gamma=self.gamma,
+                    tau=self.tau,
+                    device=self.device,
+                )
 
             if self.is_bfgs:
                 # L-BFGS-F value network update
@@ -382,7 +394,7 @@ class OP_Controller(BasePolicy):
                         valueLoss += param.pow(2).sum() * self.l2_reg
                     valueLoss.backward()
                     torch.nn.utils.clip_grad_norm_(
-                        self.optionCritic.parameters(), max_norm=0.5
+                        self.optionCritic.parameters(), max_norm=1.0
                     )
 
                     return (
@@ -398,9 +410,6 @@ class OP_Controller(BasePolicy):
                     maxiter=self.bfgs_iter,
                 )
                 set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
-
-            mb_values, _ = self.optionCritic(mb_states, z)
-            valueLoss = self.mse_loss(mb_returns, mb_values)
 
             _, metaData = self.optionPolicy(mb_states, z)
 
@@ -419,7 +428,7 @@ class OP_Controller(BasePolicy):
 
             self.optimizers["ppo"].zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=0.5)
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
             grad_dict = self.compute_gradient_norm(
                 [self.optionPolicy, self.optionCritic],
                 ["optionPolicy", "optionCritic"],
