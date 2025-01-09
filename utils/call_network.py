@@ -254,22 +254,15 @@ def call_ppoNetwork(args):
             activation=nn.Tanh(),
         )
 
-        if args.obs_norm != "none":
-            normalizer = ObservationNormalizer(state_dim=args.s_dim)
-        else:
-            normalizer = None
-
     policy = PPO_Learner(
         policy=actor,
         critic=critic,
-        normalizer=normalizer,
         policy_lr=args.ppo_policy_lr,
         critic_lr=args.ppo_critic_lr,
         minibatch_size=args.ppo_batch_size,
         entropy_scaler=args.ppo_entropy_scaler,
-        bfgs_iter=args.bfgs_iter,
         eps=args.eps_clip,
-        tau=args.tau,
+        gae=args.tau,
         gamma=args.gamma,
         K=args.K_epochs,
         device=args.device,
@@ -557,30 +550,6 @@ def call_opNetwork(
         else:
             normalizer = None
 
-    optimizers = {}
-    if args.op_mode == "sac":
-        is_bfgs = False
-        optimizers["policy"] = torch.optim.Adam(
-            optionPolicy.parameters(), lr=args.sac_policy_lr
-        )
-        optimizers["critic"] = torch.optim.Adam(
-            optionCritic.parameters(), lr=args.sac_critic_lr
-        )
-    elif args.op_mode == "ppo":
-        if args.op_critic_lr is None:
-            optimizers["ppo"] = torch.optim.Adam(
-                optionPolicy.parameters(), lr=args.op_policy_lr
-            )
-            is_bfgs = True
-        else:
-            optimizers["ppo"] = torch.optim.Adam(
-                [
-                    {"params": optionPolicy.parameters(), "lr": args.op_policy_lr},
-                    {"params": optionCritic.parameters(), "lr": args.op_critic_lr},
-                ]
-            )
-            is_bfgs = False
-
     use_psi_action = True if args.Psi_epoch > 0 else False
 
     policy = OP_Controller(
@@ -590,10 +559,8 @@ def call_opNetwork(
         minibatch_size=args.op_batch_size,
         alpha=alpha,
         normalizer=normalizer,
-        optimizers=optimizers,
         options=options,
         option_vals=option_vals,
-        is_bfgs=is_bfgs,
         use_psi_action=use_psi_action,
         args=args,
     )
@@ -661,7 +628,6 @@ def call_hcNetwork(sf_network, op_network, args):
         policy_lr=args.hc_policy_lr,
         critic_lr=args.hc_critic_lr,
         entropy_scaler=args.hc_entropy_scaler,
-        bfgs_iter=args.bfgs_iter,
         eps=args.eps_clip,
         tau=args.tau,
         gamma=args.gamma,
