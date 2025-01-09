@@ -320,7 +320,7 @@ class HC_Controller(BasePolicy):
             surr1 = ratios * mb_advantages
             surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
             actor_loss = -torch.min(surr1, surr2).mean()
-            entropy_loss = -self.entropy_scaler * entropy.mean()
+            entropy_loss = -self._entropy_scaler * entropy.mean()
             policy_loss = actor_loss + entropy_loss
 
             # Track policy loss for logging
@@ -336,7 +336,7 @@ class HC_Controller(BasePolicy):
             # Check if KL divergence exceeds target KL for early stopping
             kl_div = torch.mean(mb_old_logprobs - logprobs)
             target_kl.append(kl_div.item())
-            if kl_div.item() > self.target_kl:
+            if kl_div.item() > self._target_kl:
                 print(f"Early stopping due to target KL divergence: {kl_div.item()}")
                 break
 

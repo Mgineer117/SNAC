@@ -244,7 +244,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-critic-lr",
         type=float,
-        default=None,
+        default=5e-4,
         help="Option policy (PPO-based) critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
@@ -256,7 +256,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--hc-critic-lr",
         type=float,
-        default=None,
+        default=5e-4,
         help="Hierarchical Policy policy (PPO-based) critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
@@ -265,7 +265,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--ppo-critic-lr",
         type=float,
-        default=None,
+        default=5e-4,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
 
@@ -578,7 +578,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-op-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(

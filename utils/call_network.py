@@ -556,6 +556,8 @@ def call_opNetwork(
         sf_network=sf_network,
         optionPolicy=optionPolicy,
         optionCritic=optionCritic,
+        policy_lr=args.op_policy_lr,
+        critic_lr=args.op_critic_lr,
         minibatch_size=args.op_batch_size,
         alpha=alpha,
         normalizer=normalizer,

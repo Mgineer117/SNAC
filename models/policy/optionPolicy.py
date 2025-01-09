@@ -34,7 +34,6 @@ class OP_Controller(BasePolicy):
         minibatch_size: int,
         alpha: torch.Tensor | None,
         normalizer: ObservationNormalizer,
-        optimizers: dict,
         options: nn.Module,
         option_vals: torch.Tensor,
         use_psi_action: bool,
@@ -82,7 +81,7 @@ class OP_Controller(BasePolicy):
 
             if self.tune_alpha:
                 self.log_alpha = nn.Parameter(torch.log(self.alpha))
-                optimizers["alpha"] = torch.optim.Adam(
+                self.alpha_optimizer = torch.optim.Adam(
                     [self.log_alpha], lr=args.sac_alpha_lr
                 )
 
@@ -278,9 +277,9 @@ class OP_Controller(BasePolicy):
                 ).mean()
             )
 
-            self.optimizers["alpha"].zero_grad()
+            self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
-            self.optimizers["alpha"].step()
+            self.alpha_optimizer.step()
 
             self.alpha = self.log_alpha.exp()
         else:
