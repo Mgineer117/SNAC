@@ -36,7 +36,7 @@
         "trj_per_iter": 32,
         "post_process": "nonzero_rewards",
         "feature_fc_dim": 512,
-        "option_fc_dim": 64,
+        "option_fc_dim": 32,
         "fc_dim": 64,
         "sf_dim": 64,
         "render_fps": 10,
