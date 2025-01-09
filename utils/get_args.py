@@ -339,7 +339,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-batch-for-worker",
         type=int,
-        default=2048,
+        default=1024,
         help="Minimum batch size assgined for one worker (thread)",
     )
     parser.add_argument(
@@ -554,7 +554,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--rendering",
         type=bool,
-        default=True,
+        default=False,
         help="saves the rendering during evaluation",
     )
     parser.add_argument(
