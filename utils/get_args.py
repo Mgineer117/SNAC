@@ -215,7 +215,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--bfgs-iter",
         type=int,
-        default=10,
+        default=15,
         help="Number of bfgs iterations for one minibatch",
     )
 
