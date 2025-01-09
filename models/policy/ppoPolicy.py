@@ -181,8 +181,8 @@ class PPO_Learner(BasePolicy):
             surr1 = ratios * mb_advantages
             surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
             actor_loss = -torch.min(surr1, surr2).mean()
-            entropy_loss = -self._entropy_scaler * entropy.mean()
-            policy_loss = actor_loss + entropy_loss
+            entropy_loss = self._entropy_scaler * entropy.mean()
+            policy_loss = actor_loss - entropy_loss
 
             # Track policy loss for logging
             policy_losses.append(policy_loss.item())

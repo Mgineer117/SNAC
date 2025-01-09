@@ -242,7 +242,7 @@ class OP_Controller(BasePolicy):
         q1, q2, _ = self.optionCritic(states, actions, z)
         critic_loss = nn.MSELoss()(q1, target_q) + nn.MSELoss()(q2, target_q)
 
-        self.optimizers["critic"].zero_grad()
+        self.critic_optimizer.zero_grad()
         critic_loss.backward()
         grad_dict1 = self.compute_gradient_norm(
             [self.optionCritic],
@@ -250,7 +250,7 @@ class OP_Controller(BasePolicy):
             dir="OP_SAC",
             device=self.device,
         )
-        self.optimizers["critic"].step()
+        self.critic_optimizer.step()
 
         # Policy Loss
         new_actions, new_meta = self.optionPolicy(states, z)
@@ -258,7 +258,7 @@ class OP_Controller(BasePolicy):
         q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
         policy_loss = (self.alpha[z] * new_meta["logprobs"] - q_new).mean()
 
-        self.optimizers["policy"].zero_grad()
+        self.policy_optimizer.zero_grad()
         policy_loss.backward()
         grad_dict2 = self.compute_gradient_norm(
             [self.optionPolicy],
@@ -266,7 +266,7 @@ class OP_Controller(BasePolicy):
             dir="OP_SAC",
             device=self.device,
         )
-        self.optimizers["policy"].step()
+        self.policy_optimizer.step()
 
         # Alpha Loss
         if self.tune_alpha:
@@ -426,8 +426,8 @@ class OP_Controller(BasePolicy):
             surr1 = ratios * mb_advantages
             surr2 = torch.clamp(ratios, 1 - self.eps, 1 + self.eps) * mb_advantages
             actor_loss = -torch.min(surr1, surr2).mean()
-            entropy_loss = -self.entropy_scaler * entropy.mean()
-            policy_loss = actor_loss + entropy_loss
+            entropy_loss = self.entropy_scaler * entropy.mean()
+            policy_loss = actor_loss - entropy_loss
 
             # Track policy loss for logging
             policy_losses.append(policy_loss.item())
