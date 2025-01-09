@@ -29,13 +29,13 @@ class OP_Controller(BasePolicy):
         sf_network: BasePolicy,
         optionPolicy: OptionPolicy,
         optionCritic: OP_Critic,
-        policy_lr: float,
-        critic_lr: float,
         minibatch_size: int,
         alpha: torch.Tensor | None,
         normalizer: ObservationNormalizer,
+        optimizers: dict,
         options: nn.Module,
         option_vals: torch.Tensor,
+        is_bfgs: bool,
         use_psi_action: bool,
         args,
     ):
@@ -49,6 +49,7 @@ class OP_Controller(BasePolicy):
         self.option_vals = option_vals.to(self._dtype).to(self.device)
         self.num_options = options.shape[0]
         self.use_psi_action = use_psi_action
+        self.is_bfgs = is_bfgs
         self.a_dim = args.a_dim
         self.entropy_scaler = args.op_entropy_scaler
         self.eps = args.eps_clip
@@ -56,7 +57,7 @@ class OP_Controller(BasePolicy):
         self.tau = args.tau
         self.K = args.OP_K_epochs
         self.l2_reg = 1e-6
-        self.target_kl = 0.03
+        self.bfgs_iter = args.bfgs_iter
         self.is_discrete = args.is_discrete
 
         self.normalizer = normalizer
@@ -81,7 +82,7 @@ class OP_Controller(BasePolicy):
 
             if self.tune_alpha:
                 self.log_alpha = nn.Parameter(torch.log(self.alpha))
-                self.alpha_optimizer = torch.optim.Adam(
+                optimizers["alpha"] = torch.optim.Adam(
                     [self.log_alpha], lr=args.sac_alpha_lr
                 )
 
@@ -89,12 +90,7 @@ class OP_Controller(BasePolicy):
 
             self.num_update = 1
 
-        self.policy_optimizer = torch.optim.Adam(
-            self.optionPolicy.parameters(), lr=policy_lr
-        )
-        self.critic_optimizer = torch.optim.Adam(
-            self.optionCritic.parameters(), lr=critic_lr
-        )
+        self.optimizers = optimizers
 
         # inherent variable
         self._forward_steps = 0
@@ -242,7 +238,7 @@ class OP_Controller(BasePolicy):
         q1, q2, _ = self.optionCritic(states, actions, z)
         critic_loss = nn.MSELoss()(q1, target_q) + nn.MSELoss()(q2, target_q)
 
-        self.critic_optimizer.zero_grad()
+        self.optimizers["critic"].zero_grad()
         critic_loss.backward()
         grad_dict1 = self.compute_gradient_norm(
             [self.optionCritic],
@@ -250,7 +246,7 @@ class OP_Controller(BasePolicy):
             dir="OP_SAC",
             device=self.device,
         )
-        self.critic_optimizer.step()
+        self.optimizers["critic"].step()
 
         # Policy Loss
         new_actions, new_meta = self.optionPolicy(states, z)
@@ -258,7 +254,7 @@ class OP_Controller(BasePolicy):
         q_new = torch.min(q1_new, q2_new)  # Ensure this is out-of-place
         policy_loss = (self.alpha[z] * new_meta["logprobs"] - q_new).mean()
 
-        self.policy_optimizer.zero_grad()
+        self.optimizers["policy"].zero_grad()
         policy_loss.backward()
         grad_dict2 = self.compute_gradient_norm(
             [self.optionPolicy],
@@ -266,7 +262,7 @@ class OP_Controller(BasePolicy):
             dir="OP_SAC",
             device=self.device,
         )
-        self.policy_optimizer.step()
+        self.optimizers["policy"].step()
 
         # Alpha Loss
         if self.tune_alpha:
@@ -277,9 +273,9 @@ class OP_Controller(BasePolicy):
                 ).mean()
             )
 
-            self.alpha_optimizer.zero_grad()
+            self.optimizers["alpha"].zero_grad()
             alpha_loss.backward()
-            self.alpha_optimizer.step()
+            self.optimizers["alpha"].step()
 
             self.alpha = self.log_alpha.exp()
         else:
@@ -347,10 +343,13 @@ class OP_Controller(BasePolicy):
 
         states = states.reshape(states.shape[0], -1)
 
+        # Minibatch setup
+        batch_size = states.size(0)
+
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
             values, _ = self.optionCritic(states, z)
-            _, returns = estimate_advantages(
+            advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
                 values,
@@ -359,130 +358,105 @@ class OP_Controller(BasePolicy):
                 device=self.device,
             )
 
-        # Minibatch setup
-        batch_size = states.size(0)
-
-        clip_fractions = []  # List to track clip fractions during training
-        target_kl = []  # List to track target KL divergence values for early stopping
-
-        policy_losses = []  # List to track policy loss over minibatches
-        value_losses = []  # List to track value loss over minibatches
-        entropy_losses = []
-
-        actor_grads = []
-        critic_grads = []
-
         # K - Loop
         for _ in range(self.K):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
-            mb_states, mb_actions = states[indices], actions[indices]
-            mb_rewards, mb_terminals = rewards[indices], terminals[indices]
-            mb_old_logprobs, mb_returns = old_logprobs[indices], returns[indices]
-            mb_values = values[indices]
+            mb_states = states[indices]
+            mb_actions = actions[indices]
+            mb_rewards = rewards[indices]
+            mb_terminals = terminals[indices]
+            mb_old_logprobs = old_logprobs[indices]
 
-            # Recompute advantages for the minibatch
-            with torch.no_grad():
-                mb_advantages, _ = estimate_advantages(
-                    mb_rewards,
-                    mb_terminals,
-                    mb_values,
-                    gamma=self.gamma,
-                    tau=self.tau,
-                    device=self.device,
-                )
+            # global batch normalization and target return
+            mb_returns = returns[indices]
+            mb_advantages = advantages[indices]
 
             mb_values, _ = self.optionCritic(mb_states, z)
-            valueLoss = self.mse_loss(mb_values, mb_returns)
+            valueLoss = self.mse_loss(mb_returns, mb_values)
 
-            # Add optional critic regularization
-            l2_reg = (
-                sum(param.pow(2).sum() for param in self.optionCritic.parameters())
-                * self.l2_reg
-            )
-            valueLoss += l2_reg
+            if self.is_bfgs:
+                # L-BFGS-F value network update
+                def closure(flat_params):
+                    set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
+                    for param in self.optionCritic.parameters():
+                        if param.grad is not None:
+                            param.grad.data.fill_(0)
+                    mb_values, _ = self.optionCritic(mb_states, z)
+                    valueLoss = self.mse_loss(mb_values, mb_returns)
+                    for param in self.optionCritic.parameters():
+                        valueLoss += param.pow(2).sum() * self.l2_reg
+                    valueLoss.backward()
+                    torch.nn.utils.clip_grad_norm_(
+                        self.optionCritic.parameters(), max_norm=1.0
+                    )
 
-            # Update critic parameters
-            self.critic_optimizer.zero_grad()
-            valueLoss.backward()
-            torch.nn.utils.clip_grad_norm_(self.optionCritic.parameters(), max_norm=0.5)
-            critic_grad_dict = self.compute_gradient_norm(
-                [self.optionCritic],
-                ["critic"],
-                dir="OP_PPO",
-                device=self.device,
-            )
-            critic_grads.append(critic_grad_dict)
-            self.critic_optimizer.step()
+                    return (
+                        valueLoss.item(),
+                        get_flat_grad_from(self.optionCritic.parameters())
+                        .cpu()
+                        .numpy(),
+                    )
 
-            # Track value loss for logging
-            value_losses.append(valueLoss.item())
+                flat_params, _, opt_info = bfgs(
+                    closure,
+                    get_flat_params_from(self.optionCritic).detach().cpu().numpy(),
+                    maxiter=self.bfgs_iter,
+                )
+                set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
 
-            # 2. Policy Update
             _, metaData = self.optionPolicy(mb_states, z)
+
             logprobs = self.optionPolicy.log_prob(metaData["dist"], mb_actions)
             entropy = self.optionPolicy.entropy(metaData["dist"])
+
             ratios = torch.exp(logprobs - mb_old_logprobs)
 
             surr1 = ratios * mb_advantages
             surr2 = torch.clamp(ratios, 1 - self.eps, 1 + self.eps) * mb_advantages
-            actor_loss = -torch.min(surr1, surr2).mean()
-            entropy_loss = self.entropy_scaler * entropy.mean()
-            policy_loss = actor_loss - entropy_loss
 
-            # Track policy loss for logging
-            policy_losses.append(policy_loss.item())
-            entropy_losses.append(entropy_loss.item())
+            actorLoss = -torch.min(surr1, surr2)
+            entropyLoss = self.entropy_scaler * entropy
 
-            # Compute clip fraction (for logging)
-            clip_fraction = torch.mean(
-                (torch.abs(ratios - 1) > self.eps).float()
-            ).item()
-            clip_fractions.append(clip_fraction)
+            loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
 
-            # Check if KL divergence exceeds target KL for early stopping
-            kl_div = torch.mean(mb_old_logprobs - logprobs)
-            target_kl.append(kl_div.item())
-            if kl_div.item() > self.target_kl:
-                print(f"Early stopping due to target KL divergence: {kl_div.item()}")
-                break
-
-            # Update policy parameters
-            self.policy_optimizer.zero_grad()
-            policy_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.optionPolicy.parameters(), max_norm=0.5)
-            actor_grad_dict = self.compute_gradient_norm(
-                [self.optionPolicy],
-                ["policy"],
+            self.optimizers["ppo"].zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+            grad_dict = self.compute_gradient_norm(
+                [self.optionPolicy, self.optionCritic],
+                ["optionPolicy", "optionCritic"],
                 dir="OP_PPO",
                 device=self.device,
             )
-            actor_grads.append(actor_grad_dict)
-            self.policy_optimizer.step()
+            self.optimizers["ppo"].step()
 
-        # Logging
-        loss_dict = {
-            "OP_PPO/actorLoss": np.mean(policy_losses),
-            "OP_PPO/valueLoss": np.mean(value_losses),
-            "OP_PPO/entropyLoss": np.mean(entropy_losses),
-            "OP_PPO/avg_reward": rewards.mean().item(),
-            "OP_PPO/clip_fraction": np.mean(clip_fractions),
-            "OP_PPO/target_kl": np.mean(target_kl),
-        }
-        actor_grad_norm = self.average_dict_values(actor_grads)
-        critic_grad_norm = self.average_dict_values(critic_grads)
         norm_dict = self.compute_weight_norm(
-            [self.policy, self.primitivePolicy, self.critic],
-            ["policy", "primitivePolicy", "critic"],
-            dir="OP",
+            [self.optionPolicy, self.optionCritic],
+            ["policy", "critic"],
+            dir="OP_PPO",
             device=self.device,
         )
 
-        loss_dict.update(actor_grad_norm)
-        loss_dict.update(critic_grad_norm)
+        loss_dict = {
+            "OP_PPO/loss": loss.item(),
+            "OP_PPO/actorLoss": torch.mean(actorLoss).item(),
+            "OP_PPO/valueLoss": torch.mean(valueLoss).item(),
+            "OP_PPO/entropyLoss": torch.mean(entropyLoss).item(),
+            f"OP_PPO/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
+        }
+        loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
 
-        # Cleanup
-        del states, actions, rewards, terminals, old_logprobs
+        del (
+            states,
+            actions,
+            agent_pos,
+            next_agent_pos,
+            next_states,
+            rewards,
+            terminals,
+            old_logprobs,
+        )
         torch.cuda.empty_cache()
 
         t1 = time.time()
@@ -491,28 +465,6 @@ class OP_Controller(BasePolicy):
             loss_dict,
             t1 - t0,
         )
-
-    def average_dict_values(self, dict_list):
-        if not dict_list:
-            return {}
-
-        # Initialize a dictionary to hold the sum of values and counts for each key
-        sum_dict = {}
-        count_dict = {}
-
-        # Iterate over each dictionary in the list
-        for d in dict_list:
-            for key, value in d.items():
-                if key not in sum_dict:
-                    sum_dict[key] = 0
-                    count_dict[key] = 0
-                sum_dict[key] += value
-                count_dict[key] += 1
-
-        # Calculate the average for each key
-        avg_dict = {key: sum_val / count_dict[key] for key, sum_val in sum_dict.items()}
-
-        return avg_dict
 
     def save_model(self, logdir, epoch=None, is_best=False, mode="ppo"):
         self.optionPolicy = self.optionPolicy.cpu()

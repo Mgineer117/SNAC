@@ -12,6 +12,7 @@ from copy import deepcopy
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils import estimate_advantages
 from models.layers.building_blocks import MLP
+from utils.normalizer import ObservationNormalizer
 from models.layers.ppo_networks import PPO_Policy, PPO_Critic
 from models.policy.base_policy import BasePolicy
 
@@ -21,14 +22,15 @@ class PPO_Learner(BasePolicy):
         self,
         policy: PPO_Policy,
         critic: PPO_Critic,
+        normalizer: ObservationNormalizer,
         policy_lr: float = 3e-4,
         critic_lr: float = 5e-4,
         minibatch_size: int = 256,
         eps: float = 0.2,
         entropy_scaler: float = 1e-3,
-        target_kl: float = 0.03,
+        bfgs_iter: int = 5,
         gamma: float = 0.99,
-        gae: float = 0.9,
+        tau: float = 0.9,
         K: int = 5,
         device: str = "cpu",
     ):
@@ -41,18 +43,29 @@ class PPO_Learner(BasePolicy):
         self._entropy_scaler = entropy_scaler
         self._eps = eps
         self._gamma = gamma
-        self._gae = gae
+        self._tau = tau
         self._K = K
         self._l2_reg = 1e-6
-        self._target_kl = target_kl
+        self._bfgs_iter = bfgs_iter
         self._forward_steps = 0
+
+        self.normalizer = normalizer
 
         # trainable networks
         self.policy = policy
         self.critic = critic
 
-        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=critic_lr)
+        if critic_lr is None:
+            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
+            self.is_bfgs = True
+        else:
+            self.optimizer = torch.optim.Adam(
+                [
+                    {"params": self.policy.parameters(), "lr": policy_lr},
+                    {"params": self.critic.parameters(), "lr": critic_lr},
+                ]
+            )
+            self.is_bfgs = False
 
         #
         self.dummy = torch.tensor(0.0)
@@ -65,6 +78,9 @@ class PPO_Learner(BasePolicy):
     def preprocess_obs(self, obs):
         observation = obs["observation"]
         agent_pos = obs["agent_pos"]
+
+        if self.normalizer is not None:
+            observation = self.normalizer.normalize(observation)
 
         # preprocessing
         observation = torch.from_numpy(observation).to(self._dtype).to(self.device)
@@ -92,147 +108,138 @@ class PPO_Learner(BasePolicy):
         }
 
     def learn(self, batch, z=0):
-        """Performs a single training step using PPO, incorporating all reference training steps."""
         self.train()
         t0 = time.time()
 
-        # Ingredients: Convert batch data to tensors
-        def to_tensor(data):
-            return torch.from_numpy(data).to(self._dtype).to(self.device)
+        # normalization
+        if self.normalizer is not None:
+            batch["states"] = self.normalizer.normalize(batch["states"], update=False)
 
-        states = to_tensor(batch["states"]).reshape(batch["states"].shape[0], -1)
-        actions = to_tensor(batch["actions"])
-        rewards = to_tensor(batch["rewards"])
-        terminals = to_tensor(batch["terminals"])
-        old_logprobs = to_tensor(batch["logprobs"])
+        # Ingredients
+        states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
+        states = states.reshape(states.shape[0], -1)
+        actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)
+        rewards = torch.from_numpy(batch["rewards"]).to(self._dtype).to(self.device)
+        terminals = torch.from_numpy(batch["terminals"]).to(self._dtype).to(self.device)
+        old_logprobs = (
+            torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
+        )
 
-        # Compute advantages and returns
+        # Compute Advantage and returns of the current batch
         with torch.no_grad():
             values = self.critic(states)
-            _, returns = estimate_advantages(
+            advantages, returns = estimate_advantages(
                 rewards,
                 terminals,
                 values,
                 gamma=self._gamma,
-                tau=self._gae,
+                tau=self._tau,
                 device=self.device,
             )
 
+        # Minibatch setup
         batch_size = states.size(0)
 
-        # Mini-batch training
-        clip_fractions = []  # List to track clip fractions during training
-        target_kl = []  # List to track target KL divergence values for early stopping
-
-        policy_losses = []  # List to track policy loss over minibatches
-        value_losses = []  # List to track value loss over minibatches
-        entropy_losses = []
-
+        # K - Loop with minibatch training
         for _ in range(self._K):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
-            mb_states, mb_actions = states[indices], actions[indices]
-            mb_rewards, mb_terminals = rewards[indices], terminals[indices]
-            mb_old_logprobs, mb_returns = old_logprobs[indices], returns[indices]
-            mb_values = values[indices]
+            mb_states = states[indices]
+            mb_actions = actions[indices]
+            mb_rewards = rewards[indices]
+            mb_terminals = terminals[indices]
+            mb_old_logprobs = old_logprobs[indices]
 
-            # Recompute advantages for the minibatch
-            with torch.no_grad():
-                mb_advantages, _ = estimate_advantages(
-                    mb_rewards,
-                    mb_terminals,
-                    mb_values,
-                    gamma=self._gamma,
-                    tau=self._gae,
-                    device=self.device,
+            # global batch normalization and target return
+            mb_returns = returns[indices]
+            mb_advantages = advantages[indices]
+
+            mb_values = self.critic(mb_states)
+            valueLoss = self.mse_loss(mb_returns, mb_values)
+
+            # Update value function (critic)
+            if self.is_bfgs:
+                # L-BFGS-F value network update
+                def closure(flat_params):
+                    set_flat_params_to(self.critic, torch.tensor(flat_params))
+                    for param in self.critic.parameters():
+                        if param.grad is not None:
+                            param.grad.data.fill_(0)
+                    mb_values_for_bfgs = self.critic(mb_states)
+                    valueLoss = self.mse_loss(mb_values_for_bfgs, mb_returns)
+                    for param in self.critic.parameters():
+                        valueLoss += param.pow(2).sum() * self._l2_reg
+                    valueLoss.backward()
+                    torch.nn.utils.clip_grad_norm_(
+                        self.critic.parameters(), max_norm=1.0
+                    )
+
+                    return (
+                        valueLoss.item(),
+                        get_flat_grad_from(self.critic.parameters()).cpu().numpy(),
+                    )
+
+                flat_params, _, opt_info = bfgs(
+                    closure,
+                    get_flat_params_from(self.critic).detach().cpu().numpy(),
+                    maxiter=self._bfgs_iter,
                 )
+                set_flat_params_to(self.critic, torch.tensor(flat_params))
 
-            # 1. Critic Update (with optional regularization)
-            mb_values_pred = self.critic(mb_states)
-            value_loss = self.mse_loss(mb_values_pred, mb_returns)
-
-            # Add optional critic regularization
-            l2_reg = (
-                sum(param.pow(2).sum() for param in self.critic.parameters())
-                * self._l2_reg
-            )
-            value_loss += l2_reg
-
-            # Update critic parameters
-            self.critic_optimizer.zero_grad()
-            value_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.5)
-            critic_grad_dict = self.compute_gradient_norm(
-                [self.critic],
-                ["critic"],
-                dir="PPO",
-                device=self.device,
-            )
-            self.critic_optimizer.step()
-
-            # Track value loss for logging
-            value_losses.append(value_loss.item())
-
-            # 2. Policy Update
+            # policy ingredients
             _, metaData = self.policy(mb_states)
             logprobs = self.policy.log_prob(metaData["dist"], mb_actions)
             entropy = self.policy.entropy(metaData["dist"])
             ratios = torch.exp(logprobs - mb_old_logprobs)
 
+            # policy loss
             surr1 = ratios * mb_advantages
             surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
-            actor_loss = -torch.min(surr1, surr2).mean()
-            entropy_loss = self._entropy_scaler * entropy.mean()
-            policy_loss = actor_loss - entropy_loss
+            actorLoss = -torch.min(surr1, surr2)
+            entropyLoss = self._entropy_scaler * entropy
+            loss = torch.mean(actorLoss - entropyLoss)
 
-            # Track policy loss for logging
-            policy_losses.append(policy_loss.item())
-            entropy_losses.append(entropy_loss.item())
-
-            # Compute clip fraction (for logging)
-            clip_fraction = torch.mean(
-                (torch.abs(ratios - 1) > self._eps).float()
-            ).item()
-            clip_fractions.append(clip_fraction)
-
-            # Check if KL divergence exceeds target KL for early stopping
-            kl_div = torch.mean(mb_old_logprobs - logprobs)
-            target_kl.append(kl_div.item())
-            if kl_div.item() > self._target_kl:
-                print(f"Early stopping due to target KL divergence: {kl_div.item()}")
-                break
-
-            # Update policy parameters
-            self.policy_optimizer.zero_grad()
-            policy_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=0.5)
-            actor_grad_dict = self.compute_gradient_norm(
-                [self.policy],
-                ["policy"],
+            self.optimizer.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+            grad_dict = self.compute_gradient_norm(
+                [self.policy, self.critic],
+                ["policy", "critic"],
                 dir="PPO",
                 device=self.device,
             )
-            self.policy_optimizer.step()
+            norm_dict = self.compute_weight_norm(
+                [self.policy, self.critic],
+                ["policy", "critic"],
+                dir="PPO",
+                device=self.device,
+            )
+            self.optimizer.step()
 
-        # Logging
         loss_dict = {
-            "PPO/actorLoss": np.mean(policy_losses),
-            "PPO/valueLoss": np.mean(value_losses),
-            "PPO/entropyLoss": np.mean(entropy_losses),
-            "PPO/avg_reward": rewards.mean().item(),
-            "PPO/clip_fraction": np.mean(clip_fractions),
-            "PPO/target_kl": np.mean(target_kl),
+            "PPO/loss": loss.item(),
+            "PPO/actorLoss": torch.mean(actorLoss).item(),
+            "PPO/valueLoss": torch.mean(valueLoss).item(),
+            "PPO/entropyLoss": torch.mean(entropyLoss).item(),
+            "PPO/trainAvgReward": (torch.sum(rewards) / rewards.shape[0]).item(),
         }
+        loss_dict.update(grad_dict)
+        loss_dict.update(norm_dict)
 
-        loss_dict.update(actor_grad_dict)
-        loss_dict.update(critic_grad_dict)
-
-        # Cleanup
-        del states, actions, rewards, terminals, old_logprobs
+        del (
+            states,
+            actions,
+            rewards,
+            terminals,
+            old_logprobs,
+        )
         torch.cuda.empty_cache()
 
         t1 = time.time()
         self.eval()
-        return loss_dict, t1 - t0
+        return (
+            loss_dict,
+            t1 - t0,
+        )
 
     def save_model(self, logdir, epoch=None, is_best=False):
         self.policy = self.policy.cpu()
@@ -244,7 +251,7 @@ class PPO_Learner(BasePolicy):
         else:
             path = os.path.join(logdir, "model_" + str(epoch) + ".p")
         pickle.dump(
-            (self.policy, self.critic),
+            (self.policy, self.critic, self.normalizer),
             open(path, "wb"),
         )
         self.policy = self.policy.to(self.device)
