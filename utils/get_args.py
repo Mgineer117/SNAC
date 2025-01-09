@@ -215,7 +215,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--bfgs-iter",
         type=int,
-        default=5,
+        default=10,
         help="Number of bfgs iterations for one minibatch",
     )
 
@@ -468,7 +468,7 @@ def get_args(verbose=True):
         "--K-epochs", type=int, default=10, help="PPO update per one iter"
     )
     parser.add_argument(
-        "--OP-K-epochs", type=int, default=15, help="Option policy update per one iter"
+        "--OP-K-epochs", type=int, default=10, help="Option policy update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"

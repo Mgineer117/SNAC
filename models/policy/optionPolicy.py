@@ -367,6 +367,34 @@ class OP_Controller(BasePolicy):
         vl_losses = []
         ent_losses = []
 
+        if self.is_bfgs:
+            # L-BFGS-F value network update
+            def closure(flat_params):
+                set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
+                for param in self.optionCritic.parameters():
+                    if param.grad is not None:
+                        param.grad.data.fill_(0)
+                values, _ = self.optionCritic(states, z)
+                valueLoss = self.mse_loss(values, returns)
+                for param in self.optionCritic.parameters():
+                    valueLoss += param.pow(2).sum() * self.l2_reg
+                valueLoss.backward()
+                torch.nn.utils.clip_grad_norm_(
+                    self.optionCritic.parameters(), max_norm=1.0
+                )
+
+                return (
+                    valueLoss.item(),
+                    get_flat_grad_from(self.optionCritic.parameters()).cpu().numpy(),
+                )
+
+            flat_params, _, opt_info = bfgs(
+                closure,
+                get_flat_params_from(self.optionCritic).detach().cpu().numpy(),
+                maxiter=self.bfgs_iter,
+            )
+            set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
+
         # K - Loop
         for k in range(self.K):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
@@ -379,36 +407,6 @@ class OP_Controller(BasePolicy):
             mb_advantages = advantages[indices]
 
             # 1. Critic Update
-            if self.is_bfgs:
-                # L-BFGS-F value network update
-                def closure(flat_params):
-                    set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
-                    for param in self.optionCritic.parameters():
-                        if param.grad is not None:
-                            param.grad.data.fill_(0)
-                    mb_values, _ = self.optionCritic(mb_states, z)
-                    valueLoss = self.mse_loss(mb_values, mb_returns)
-                    for param in self.optionCritic.parameters():
-                        valueLoss += param.pow(2).sum() * self.l2_reg
-                    valueLoss.backward()
-                    torch.nn.utils.clip_grad_norm_(
-                        self.optionCritic.parameters(), max_norm=1.0
-                    )
-
-                    return (
-                        valueLoss.item(),
-                        get_flat_grad_from(self.optionCritic.parameters())
-                        .cpu()
-                        .numpy(),
-                    )
-
-                flat_params, _, opt_info = bfgs(
-                    closure,
-                    get_flat_params_from(self.optionCritic).detach().cpu().numpy(),
-                    maxiter=self.bfgs_iter,
-                )
-                set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
-
             mb_values, _ = self.optionCritic(mb_states, z)
             valueLoss = self.mse_loss(mb_returns, mb_values)
             vl_losses.append(valueLoss.item())
