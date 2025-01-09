@@ -57,6 +57,7 @@ class OP_Controller(BasePolicy):
         self.tau = args.tau
         self.K = args.OP_K_epochs
         self.l2_reg = 1e-6
+        self.target_kl = 0.03
         self.bfgs_iter = args.bfgs_iter
         self.is_discrete = args.is_discrete
 
@@ -343,9 +344,6 @@ class OP_Controller(BasePolicy):
 
         states = states.reshape(states.shape[0], -1)
 
-        # Minibatch setup
-        batch_size = states.size(0)
-
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
             values, _ = self.optionCritic(states, z)
@@ -358,22 +356,29 @@ class OP_Controller(BasePolicy):
                 device=self.device,
             )
 
+        # Minibatch setup
+        batch_size = states.size(0)
+
+        clip_fractions = []
+        target_kl = []
+
+        losses = []
+        pg_losses = []
+        vl_losses = []
+        ent_losses = []
+
         # K - Loop
-        for _ in range(self.K):
+        for k in range(self.K):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
-            mb_rewards = rewards[indices]
-            mb_terminals = terminals[indices]
             mb_old_logprobs = old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
             mb_advantages = advantages[indices]
 
-            mb_values, _ = self.optionCritic(mb_states, z)
-            valueLoss = self.mse_loss(mb_returns, mb_values)
-
+            # 1. Critic Update
             if self.is_bfgs:
                 # L-BFGS-F value network update
                 def closure(flat_params):
@@ -404,20 +409,37 @@ class OP_Controller(BasePolicy):
                 )
                 set_flat_params_to(self.optionCritic, torch.tensor(flat_params))
 
+            mb_values, _ = self.optionCritic(mb_states, z)
+            valueLoss = self.mse_loss(mb_returns, mb_values)
+            vl_losses.append(valueLoss.item())
+
+            # 2. Policy Update
             _, metaData = self.optionPolicy(mb_states, z)
 
             logprobs = self.optionPolicy.log_prob(metaData["dist"], mb_actions)
             entropy = self.optionPolicy.entropy(metaData["dist"])
-
             ratios = torch.exp(logprobs - mb_old_logprobs)
 
             surr1 = ratios * mb_advantages
             surr2 = torch.clamp(ratios, 1 - self.eps, 1 + self.eps) * mb_advantages
 
-            actorLoss = -torch.min(surr1, surr2)
-            entropyLoss = self.entropy_scaler * entropy
+            actorLoss = -torch.min(surr1, surr2).mean()
+            entropyLoss = self.entropy_scaler * entropy.mean()
+            pg_losses.append(actorLoss.item())
+            ent_losses.append(entropyLoss.item())
 
-            loss = torch.mean(actorLoss + 0.5 * valueLoss - entropyLoss)
+            loss = actorLoss + 0.5 * valueLoss - entropyLoss
+            losses.append(loss.item())
+
+            # Compute clip fraction (for logging)
+            clip_fraction = torch.mean((torch.abs(ratios - 1) > self.eps).float())
+            clip_fractions.append(clip_fraction.item())
+
+            # Check if KL divergence exceeds target KL for early stopping
+            kl_div = torch.mean(mb_old_logprobs - logprobs)
+            target_kl.append(kl_div.item())
+            if kl_div.item() > self.target_kl:
+                break
 
             self.optimizers["ppo"].zero_grad()
             loss.backward()
@@ -438,11 +460,16 @@ class OP_Controller(BasePolicy):
         )
 
         loss_dict = {
-            "OP_PPO/loss": loss.item(),
-            "OP_PPO/actorLoss": torch.mean(actorLoss).item(),
-            "OP_PPO/valueLoss": torch.mean(valueLoss).item(),
-            "OP_PPO/entropyLoss": torch.mean(entropyLoss).item(),
-            f"OP_PPO/IntEpRew:{z}": (torch.sum(rewards) / torch.sum(terminals)).item(),
+            "OP_PPO/loss": np.mean(losses),
+            "OP_PPO/actorLoss": np.mean(pg_losses),
+            "OP_PPO/valueLoss": np.mean(vl_losses),
+            "OP_PPO/entropyLoss": np.mean(ent_losses),
+            "OP_PPO/klDivergence": np.mean(target_kl),
+            "OP_PPO/clipFraction": np.mean(clip_fractions),
+            "OP_PPO/K-epoch": k + 1,
+            f"OP_PPO/EpisodicReward:{z}": (
+                torch.sum(rewards) / torch.sum(terminals)
+            ).item(),
         }
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)

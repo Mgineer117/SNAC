@@ -79,7 +79,9 @@ class HCTrainer:
                 batch, sample_time = self.sampler.collect_samples(
                     self.policy, grid_type=self.grid_type, is_option=True
                 )
-                loss, update_time = self.policy.learn(batch, prefix=self._prefix)
+                loss, env_steps, update_time = self.policy.learn(
+                    batch, prefix=self._prefix
+                )
 
                 # Calculate expected remaining time
                 completed_iterations += 1
@@ -90,7 +92,7 @@ class HCTrainer:
                 )
 
                 # Update environment steps and calculate time metrics
-                self.num_env_steps += len(batch["rewards"])
+                self.num_env_steps += env_steps
                 loss[self._prefix + "/sample_time"] = sample_time
                 loss[self._prefix + "/update_time"] = update_time
                 loss[self._prefix + "/remaining_time (hr)"] = (

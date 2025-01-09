@@ -79,7 +79,7 @@ class PPOTrainer:
                 batch, sample_time = self.sampler.collect_samples(
                     self.policy, grid_type=self.grid_type, deterministic=False
                 )
-                loss_dict, update_time = self.policy.learn(batch)
+                loss_dict, env_steps, update_time = self.policy.learn(batch)
 
                 # Calculate expected remaining time
                 completed_iterations += 1
@@ -90,7 +90,7 @@ class PPOTrainer:
                 )
 
                 # Update environment steps and calculate time metrics
-                self.num_env_steps += len(batch["rewards"])
+                self.num_env_steps += env_steps
                 loss_dict["PPO/sample_time"] = sample_time
                 loss_dict["PPO/update_time"] = update_time
                 loss_dict["PPO/remaining_time (hr)"] = (

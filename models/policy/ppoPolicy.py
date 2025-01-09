@@ -46,6 +46,7 @@ class PPO_Learner(BasePolicy):
         self._tau = tau
         self._K = K
         self._l2_reg = 1e-6
+        self._target_kl = 0.03
         self._bfgs_iter = bfgs_iter
         self._forward_steps = 0
 
@@ -140,23 +141,26 @@ class PPO_Learner(BasePolicy):
         # Minibatch setup
         batch_size = states.size(0)
 
+        clip_fractions = []
+        target_kl = []
+
+        losses = []
+        pg_losses = []
+        vl_losses = []
+        ent_losses = []
+
         # K - Loop with minibatch training
-        for _ in range(self._K):
+        for k in range(self._K):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
-            mb_rewards = rewards[indices]
-            mb_terminals = terminals[indices]
             mb_old_logprobs = old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
             mb_advantages = advantages[indices]
 
-            mb_values = self.critic(mb_states)
-            valueLoss = self.mse_loss(mb_returns, mb_values)
-
-            # Update value function (critic)
+            # 1. Critic Update
             if self.is_bfgs:
                 # L-BFGS-F value network update
                 def closure(flat_params):
@@ -185,7 +189,11 @@ class PPO_Learner(BasePolicy):
                 )
                 set_flat_params_to(self.critic, torch.tensor(flat_params))
 
-            # policy ingredients
+            mb_values = self.critic(mb_states)
+            valueLoss = self.mse_loss(mb_values, mb_returns)
+            vl_losses.append(valueLoss.item())
+
+            # 2. Policy Update
             _, metaData = self.policy(mb_states)
             logprobs = self.policy.log_prob(metaData["dist"], mb_actions)
             entropy = self.policy.entropy(metaData["dist"])
@@ -194,9 +202,23 @@ class PPO_Learner(BasePolicy):
             # policy loss
             surr1 = ratios * mb_advantages
             surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
-            actorLoss = -torch.min(surr1, surr2)
-            entropyLoss = self._entropy_scaler * entropy
-            loss = torch.mean(actorLoss - entropyLoss)
+            actorLoss = -torch.min(surr1, surr2).mean()
+            entropyLoss = self._entropy_scaler * entropy.mean()
+            pg_losses.append(actorLoss.item())
+            ent_losses.append(entropyLoss.item())
+
+            loss = actorLoss + 0.5 * valueLoss - entropyLoss
+            losses.append(loss.item())
+
+            # Compute clip fraction (for logging)
+            clip_fraction = torch.mean((torch.abs(ratios - 1) > self._eps).float())
+            clip_fractions.append(clip_fraction.item())
+
+            # Check if KL divergence exceeds target KL for early stopping
+            kl_div = torch.mean(mb_old_logprobs - logprobs)
+            target_kl.append(kl_div.item())
+            if kl_div.item() > self._target_kl:
+                break
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -216,28 +238,28 @@ class PPO_Learner(BasePolicy):
             self.optimizer.step()
 
         loss_dict = {
-            "PPO/loss": loss.item(),
-            "PPO/actorLoss": torch.mean(actorLoss).item(),
-            "PPO/valueLoss": torch.mean(valueLoss).item(),
-            "PPO/entropyLoss": torch.mean(entropyLoss).item(),
-            "PPO/trainAvgReward": (torch.sum(rewards) / rewards.shape[0]).item(),
+            "PPO/loss": np.mean(losses),
+            "PPO/actorLoss": np.mean(pg_losses),
+            "PPO/valueLoss": np.mean(vl_losses),
+            "PPO/entropyLoss": np.mean(ent_losses),
+            "PPO/klDivergence": np.mean(target_kl),
+            "PPO/clipFraction": np.mean(clip_fractions),
+            "PPO/K-epoch": k + 1,
+            "PPO/EpisodicReward": (torch.sum(rewards) / torch.sum(terminals)).item(),
         }
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
 
-        del (
-            states,
-            actions,
-            rewards,
-            terminals,
-            old_logprobs,
-        )
+        env_steps = (k + 1) * self.minibatch_size
+
+        del states, actions, rewards, terminals, old_logprobs
         torch.cuda.empty_cache()
 
         t1 = time.time()
         self.eval()
         return (
             loss_dict,
+            env_steps,
             t1 - t0,
         )
 
