@@ -182,7 +182,6 @@ class HC_Evaluator(Evaluator):
                         successes[num_episodes], infos["success"]
                     )
 
-                print(self.external_t, rew, done)
                 ep_reward += rew
                 option_indices["x"].append(self.external_t)
                 option_indices["y"].append(metaData["z_argmax"].numpy())
