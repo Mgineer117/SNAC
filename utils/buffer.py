@@ -108,10 +108,10 @@ class TrajectoryBuffer:
                     # Find indices where rewards are non-zero
                     nonzero_indices = np.nonzero(trj["rewards"])[0]
 
-                    # Append values at the non-zero indices to the result_dict
-                    for idx in nonzero_indices:
+                    if nonzero_indices != 0:
+                        # Append values at the non-zero indices to the result_dict
                         for key in trj.keys():
-                            result_dict[key].append(trj[key][idx])
+                            result_dict[key] = trj[key][nonzero_indices]
 
                 # Convert lists in result_dict to numpy arrays for consistency
                 result_dict = {
@@ -120,6 +120,7 @@ class TrajectoryBuffer:
                 trajs = [result_dict]
 
             for traj in trajs:
+                print(traj['states'].shape)
                 if self.num_trj() < self.max_num_trj:
                     self.trajectories.append(traj)
                 else:
