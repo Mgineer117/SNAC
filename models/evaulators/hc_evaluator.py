@@ -114,8 +114,11 @@ class HC_Evaluator(Evaluator):
 
         def env_step(a):
             next_obs, rew, term, trunc1, infos = env.step(a)
-            self.external_t += 1
 
+            if self.gridCriteria:
+                self.get_agent_pos(env)
+
+            self.external_t += 1
             trunc2 = True if self.external_t == self.episode_len else False
             done = term or trunc1 or trunc2
 
@@ -134,6 +137,7 @@ class HC_Evaluator(Evaluator):
 
             if self.gridCriteria:
                 self.init_grid(env)
+                self.get_agent_pos(env)
 
             option_indices = {"x": [], "y": []}
             done = False
@@ -145,10 +149,6 @@ class HC_Evaluator(Evaluator):
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
-                    # Update the grid
-                    if self.gridCriteria:
-                        self.get_agent_pos(env)
-
                     next_obs, rew, done, infos = env_step(a)
                     if not done:
                         for o_t in range(1, self.min_option_length):
@@ -168,11 +168,6 @@ class HC_Evaluator(Evaluator):
 
                 else:
                     ### Conventional Loop
-                    if self.gridCriteria:
-                        # Update the grid
-                        self.get_agent_pos(env)
-
-                    # env stepping
                     next_obs, rew, done, infos = env_step(a)
 
                 obs = next_obs
