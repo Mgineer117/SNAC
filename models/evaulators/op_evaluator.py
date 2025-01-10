@@ -88,7 +88,7 @@ class OP_Evaluator(Evaluator):
             ep_reward, ep_length = 0, 0
 
             # env initialization
-            options = {"random_init_pos": False}
+            options = {"random_init_pos": True}
             obs, _ = env.reset(seed=grid_type, options=options)
 
             if self.gridCriteria:

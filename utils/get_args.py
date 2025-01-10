@@ -345,7 +345,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-entropy-scaler",
         type=float,
-        default=5e-2,
+        default=1e-2,
         help="Option policy entropy scaler",
     )
     parser.add_argument(
