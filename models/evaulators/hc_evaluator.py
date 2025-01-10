@@ -192,6 +192,11 @@ class HC_Evaluator(Evaluator):
                     self.recorded_frames.append(img)
 
                 if done:
+                    # save option indices
+                    self.plotter.plotOptionIndices(
+                        option_indices, dir=self.plotter.hc_path, epoch=epoch
+                    )
+
                     if self.gridCriteria:
                         # final agent pos
                         self.get_agent_pos(env)
@@ -217,11 +222,6 @@ class HC_Evaluator(Evaluator):
                             fps=self.render_fps,
                         )
                         self.recorded_frames = []
-
-                        # save option indices
-                        self.plotter.plotOptionIndices(
-                            option_indices, dir=self.plotter.hc_path, epoch=epoch
-                        )
 
                     dist, ep_entropy = compute_categorical_entropy(
                         option_indices["y"], policy._a_dim
