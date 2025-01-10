@@ -108,8 +108,8 @@ class TrajectoryBuffer:
                     # Find indices where rewards are non-zero
                     nonzero_indices = np.nonzero(trj["rewards"])[0]
 
-                    if nonzero_indices != 0:
-                        # Append values at the non-zero indices to the result_dict
+                    # Append values at the non-zero indices to the result_dict
+                    if len(nonzero_indices) != 0:
                         for key in trj.keys():
                             result_dict[key] = trj[key][nonzero_indices]
 
@@ -120,11 +120,12 @@ class TrajectoryBuffer:
                 trajs = [result_dict]
 
             for traj in trajs:
-                print(traj['states'].shape)
-                if self.num_trj() < self.max_num_trj:
-                    self.trajectories.append(traj)
-                else:
-                    self.trajectories[self.num_trj() % self.max_num_trj] = traj
+                batch_length = traj['states'].shape[0]
+                if batch_length != 0:
+                    if self.num_trj() < self.max_num_trj:
+                        self.trajectories.append(traj)
+                    else:
+                        self.trajectories[self.num_trj() % self.max_num_trj] = traj
 
     def sample(self, batch_size: int) -> Dict[str, torch.Tensor]:
         """
