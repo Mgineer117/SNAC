@@ -198,6 +198,8 @@ class OP_Evaluator2(Evaluator):
         render_fps: int = 10,
         eval_ep_num: int = 1,
         log_interval: int = 1,
+        gamma: float = 0.99,
+        episode_len: int = 100,
     ):
         super(OP_Evaluator2, self).__init__(
             logger=logger,
@@ -208,7 +210,9 @@ class OP_Evaluator2(Evaluator):
             log_interval=log_interval,
         )
         self.plotter = plotter
+        self.gamma = gamma
         self.render_fps = render_fps
+        self.episode_len = episode_len
 
         if dir is not None:
             if gridPlot:
