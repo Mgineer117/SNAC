@@ -160,7 +160,7 @@ class HC_Evaluator(Evaluator):
                                 option_a, _ = policy(
                                     next_obs,
                                     metaData["z_argmax"],
-                                    deterministic=True,
+                                    deterministic=False,
                                 )
                                 option_a = option_a.cpu().numpy().squeeze()
 
