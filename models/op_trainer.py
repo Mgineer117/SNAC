@@ -245,7 +245,7 @@ class OPTrainer:
 
                 self.write_log(loss, iter_idx=int(e * self._step_per_epoch + it))
 
-            if e % self.log_interval == 0:
+            if (e + 1) % self.log_interval == 0:
                 ### Eval Loop
                 self.policy.eval()
                 rew_mean = np.zeros((self.policy.num_options,))
@@ -515,33 +515,34 @@ class OPTrainer2:
                 self.write_log(loss_dict, iter_idx=int(e * self._step_per_epoch + it))
                 torch.cuda.empty_cache()
 
-            # Eval Loop
-            eval_dict = self.evaluator(
-                self.policy,
-                epoch=e + 1,
-                iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
-                idx=z,
-                name1=self.policy.option_vals[z],
-                dir_name=self.prefix,
-                write_log=False,  # since OP needs to write log of average of all options
-                grid_type=self.grid_type,
-            )
+            if (e + 1) % self.log_interval == 0:
+                # Eval Loop
+                eval_dict = self.evaluator(
+                    self.policy,
+                    epoch=e + 1,
+                    iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                    idx=z,
+                    name1=self.policy.option_vals[z],
+                    dir_name=self.prefix,
+                    write_log=False,  # since OP needs to write log of average of all options
+                    grid_type=self.grid_type,
+                )
 
-            summary_dict = {}
-            for k, v in eval_dict.items():
-                summary_dict[self.prefix + "_" + k] = v
+                summary_dict = {}
+                for k, v in eval_dict.items():
+                    summary_dict[self.prefix + "_" + k] = v
 
-            # manual logging
-            self.evaluator.write_log(
-                summary_dict,
-                iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
-            )
+                # manual logging
+                self.evaluator.write_log(
+                    summary_dict,
+                    iter_idx=int(e * self._step_per_epoch + self._step_per_epoch),
+                )
 
-            self.last_reward_mean.append(eval_dict["rew_mean"])
-            self.last_reward_std.append(eval_dict["rew_std"])
+                self.last_reward_mean.append(eval_dict["rew_mean"])
+                self.last_reward_std.append(eval_dict["rew_std"])
 
-            self.save_model(e)
-            # torch.cuda.empty_cache()
+                self.save_model(e)
+                # torch.cuda.empty_cache()
 
         self.logger.print(
             "total OP2 training time: {:.2f} hours".format(
