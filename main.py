@@ -126,6 +126,9 @@ def override_args():
 if __name__ == "__main__":
     temp_args = get_args(verbose=False)
     unique_id = str(uuid.uuid4())[:4]
+    print(f"----------------------------")
+    print(f"    Running ID: {unique_id}")
+    print(f"----------------------------")
 
     for seed in temp_args.seeds:
         args = override_args()

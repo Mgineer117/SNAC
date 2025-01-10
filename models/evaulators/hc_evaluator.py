@@ -77,6 +77,7 @@ class HC_Evaluator(Evaluator):
                 self.gridDir = os.path.join(dir, "grid")
                 os.mkdir(self.gridDir)
                 self.path = []
+                self.path_marker = []
             else:
                 self.gridPlot = False
             if renderPlot:
@@ -112,11 +113,11 @@ class HC_Evaluator(Evaluator):
         if queue is not None:
             self.set_any_seed(grid_type, seed)
 
-        def env_step(a):
+        def env_step(a, is_option: bool = False):
             next_obs, rew, term, trunc1, infos = env.step(a)
 
             if self.gridCriteria:
-                self.get_agent_pos(env)
+                self.get_agent_pos(env, is_option=is_option)
 
             self.external_t += 1
             trunc2 = True if self.external_t == self.episode_len else False
@@ -144,12 +145,14 @@ class HC_Evaluator(Evaluator):
             self.external_t = 1
             while not done:
                 with torch.no_grad():
-                    a, metaData = policy(obs, idx, deterministic=True)
+                    a, metaData = policy(obs, idx, deterministic=False)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
-                    next_obs, rew, done, infos = env_step(a)
+                    next_obs, rew, done, infos = env_step(
+                        a, is_option=metaData["is_option"]
+                    )
                     if not done:
                         for o_t in range(1, self.min_option_length):
                             # env stepping
@@ -201,8 +204,10 @@ class HC_Evaluator(Evaluator):
                             self.path,
                             dir=self.gridDir,
                             epoch=str(epoch),
+                            path_marker=self.path_marker,
                         )
                         self.path = []
+                        self.path_marker = []
 
                     if self.renderCriteria:
                         # save rendering
@@ -263,7 +268,8 @@ class HC_Evaluator(Evaluator):
     def init_grid(self, env):
         self.grid = np.copy(env.render()).astype(np.float32) / 255.0
 
-    def get_agent_pos(self, env):
+    def get_agent_pos(self, env, is_option: bool = False):
         # Update the grid
         if self.gridCriteria:
             self.path.append(env.get_agent_pos())
+            self.path_marker.append(is_option)

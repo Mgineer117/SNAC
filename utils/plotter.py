@@ -179,9 +179,10 @@ class Plotter:
     def plotPath(
         self,
         grid: np.ndarray,
-        path: List,
+        path: list,
         dir: str,
         epoch: int,
+        path_marker: list | None = None,
     ):
         img_size = grid.shape[0]
 
@@ -209,6 +210,9 @@ class Plotter:
                 plt.scatter(x[0], y[0], color="red", s=30)
             if idx == path_length:
                 plt.scatter(x[1], y[1], color="blue", s=30)
+            if path_marker is not None:
+                if path_marker[idx] == True:
+                    plt.scatter(x[0], y[0], color="yellow", marker="*", s=30)
 
             # list bool comparison is error
             if not isinstance(i_point, tuple):
