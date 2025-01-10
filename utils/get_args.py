@@ -215,7 +215,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--bfgs-iter",
         type=int,
-        default=15,
+        default=10,
         help="Number of bfgs iterations for one minibatch",
     )
 
@@ -345,7 +345,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-entropy-scaler",
         type=float,
-        default=5e-3,
+        default=5e-2,
         help="Option policy entropy scaler",
     )
     parser.add_argument(

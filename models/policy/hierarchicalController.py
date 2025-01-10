@@ -167,7 +167,6 @@ class HC_Controller(BasePolicy):
         normalized_obs = self.preprocess_obs(obs)
 
         if idx is None:
-
             # sample a from the Hierarchical Policy
             z, z_argmax, metaData = self.policy(
                 normalized_obs["observation"], deterministic=deterministic
