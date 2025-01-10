@@ -46,7 +46,7 @@
     "Maze": {
         "SF_epoch": 400,
         "Psi_epoch": 0,
-        "OP_epoch": 5,
+        "OP_epoch": 3,
         "HC_epoch": 50,
         "PPO_epoch": 50,
         "SAC_epoch": 5000,
