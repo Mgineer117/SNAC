@@ -62,7 +62,7 @@
         "PM_policy": "RW",
         "feature_lr": 5e-5,
         "option_lr": 5e-5,
-        "op_policy_lr": 1e-3,
+        "op_policy_lr": 5e-5,
         "phi_loss_r_scaler": 1.0,
         "phi_loss_s_scaler": 0.1,
         "phi_loss_kl_scaler": 10.0,
