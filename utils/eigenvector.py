@@ -260,51 +260,68 @@ def discover_options(
             num_top_vector = ceil(num * 0.25)
             num_cluster_vector = num - num_top_vector
 
-            S_list = [evals_r, evals_s]
-            V_list = [evecs_r, evecs_s]
+            S_list = [evals_s]
+            V_list = [evecs_s]
 
             # F x T (Num options (row) and rewards (column))
-            r_rewards = evecs_r @ phi_r.T
             s_rewards = evecs_s @ phi_s.T
 
             # S_r, S_s are the dummy input since we just want clustered indicies
             _, _, metaData = cluster_vecvtors(
-                [evals_r[num_top_vector:], evals_s[num_top_vector:]],
-                [r_rewards[num_top_vector:], s_rewards[num_top_vector:]],
+                [evals_s[num_top_vector:]],
+                [s_rewards[num_top_vector:]],
                 k=num,
             )
 
             val_list = []
             vec_list = []
             raw_vec_list = []
-            for i, label in enumerate(metaData["labels_list"]):
-                values = torch.empty(num)
-                vectors = torch.empty(num, option_dim)
 
-                values[:num_top_vector] = S_list[i][:num_top_vector]
-                vectors[:num_top_vector] = V_list[i][:num_top_vector]
+            ### top reward vector ###
+            S_r, V_r = vector(
+                evals_r, evecs_r, option_dim=option_dim, num=num, classification="top"
+            )
 
-                evals = S_list[i][num_top_vector:]
-                evecs = V_list[i][num_top_vector:]
+            S_r = torch.cat((S_r, -S_r), axis=0)
+            V_r = torch.cat((V_r, -V_r), axis=0)
 
-                for k in range(num - num_top_vector):
-                    idx = label == k
-                    values[k + num_top_vector] = torch.mean(evals[idx])
-                    vectors[k + num_top_vector, :] = torch.mean(evecs[idx, :], axis=0)
+            val_list.append(S_r)
+            vec_list.append(V_r)
 
-                clustered_S, indices = torch.sort(values, descending=True)
-                clustered_V = vectors[indices]
+            ### TRS state vector ###
+            # placeholder
+            values = torch.empty(num)
+            vectors = torch.empty(num, option_dim)
 
-                S = torch.cat((clustered_S, -clustered_S), axis=0)
-                V = torch.cat((clustered_V, -clustered_V), axis=0)
+            # insert top 25% vector to the placeholder
+            values[:num_top_vector] = evals_s[:num_top_vector]
+            vectors[:num_top_vector] = evecs_s[:num_top_vector]
 
-                val_list.append(S)
-                vec_list.append(V)
-                raw_vec_list.append(clustered_V)
+            # average the clustered vector
+            evals = evals_s[num_top_vector:]
+            evecs = evecs_s[num_top_vector:]
+            for k in range(num - num_top_vector):
+                idx = metaData["labels_list"][0] == k
+                values[k + num_top_vector] = torch.mean(evals[idx])
+                vectors[k + num_top_vector, :] = torch.mean(evecs[idx, :], axis=0)
 
+            # sort in descending order
+            clustered_S, indices = torch.sort(values, descending=True)
+            clustered_V = vectors[indices]
+
+            # include both directions
+            S_s = torch.cat((clustered_S, -clustered_S), axis=0)
+            V_s = torch.cat((clustered_V, -clustered_V), axis=0)
+
+            val_list.append(S_s)
+            vec_list.append(V_s)
+            raw_vec_list.append(clustered_V)
+
+            # convert to option
             option_vals = torch.cat(val_list, dim=0)
             options = torch.cat(vec_list, dim=0)
 
+            # for clustering plotting purpose
             for i, label in enumerate(metaData["labels_list"]):
                 metaData["labels_list"][i] = np.concatenate(
                     (
@@ -315,6 +332,65 @@ def discover_options(
                         label,
                     )
                 )
+            # ##### cluster in action-value space + top #####
+            # num_top_vector = ceil(num * 0.25)
+            # num_cluster_vector = num - num_top_vector
+
+            # S_list = [evals_r, evals_s]
+            # V_list = [evecs_r, evecs_s]
+
+            # # F x T (Num options (row) and rewards (column))
+            # r_rewards = evecs_r @ phi_r.T
+            # s_rewards = evecs_s @ phi_s.T
+
+            # # S_r, S_s are the dummy input since we just want clustered indicies
+            # _, _, metaData = cluster_vecvtors(
+            #     [evals_r[num_top_vector:], evals_s[num_top_vector:]],
+            #     [r_rewards[num_top_vector:], s_rewards[num_top_vector:]],
+            #     k=num,
+            # )
+
+            # val_list = []
+            # vec_list = []
+            # raw_vec_list = []
+            # for i, label in enumerate(metaData["labels_list"]):
+            #     values = torch.empty(num)
+            #     vectors = torch.empty(num, option_dim)
+
+            #     values[:num_top_vector] = S_list[i][:num_top_vector]
+            #     vectors[:num_top_vector] = V_list[i][:num_top_vector]
+
+            #     evals = S_list[i][num_top_vector:]
+            #     evecs = V_list[i][num_top_vector:]
+
+            #     for k in range(num - num_top_vector):
+            #         idx = label == k
+            #         values[k + num_top_vector] = torch.mean(evals[idx])
+            #         vectors[k + num_top_vector, :] = torch.mean(evecs[idx, :], axis=0)
+
+            #     clustered_S, indices = torch.sort(values, descending=True)
+            #     clustered_V = vectors[indices]
+
+            #     S = torch.cat((clustered_S, -clustered_S), axis=0)
+            #     V = torch.cat((clustered_V, -clustered_V), axis=0)
+
+            #     val_list.append(S)
+            #     vec_list.append(V)
+            #     raw_vec_list.append(clustered_V)
+
+            # option_vals = torch.cat(val_list, dim=0)
+            # options = torch.cat(vec_list, dim=0)
+
+            # for i, label in enumerate(metaData["labels_list"]):
+            #     metaData["labels_list"][i] = np.concatenate(
+            #         (
+            #             np.arange(
+            #                 start=num_cluster_vector,
+            #                 stop=num_cluster_vector + num_top_vector,
+            #             ),
+            #             label,
+            #         )
+            #     )
 
         if algo_name in ("SNAC+", "SNAC++", "SNAC+++") and draw_map:
             plotter.plotClusteredVectors(
