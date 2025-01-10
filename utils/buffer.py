@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import torch
 
@@ -128,68 +129,15 @@ class TrajectoryBuffer:
         """
         Sample a batch of trajectories from the buffer, ensuring the batch matches the given size.
         """
-        num_traj = ceil(batch_size / self.episode_len)
+        
+        sampled_batch = self.sample_all()
 
-        enough_data = True
-        if num_traj > self.num_trj():
-            enough_data = False
-            print(f"Warning: Not enough data in buffer. Adjusting to available data.")
-            num_traj = self.num_trj()
-
-        sampled_indices = np.random.choice(
-            min(self.num_trj(), self.max_num_trj), num_traj, replace=False
-        )
-        sampled_data = [self.trajectories[idx] for idx in sampled_indices]
-
-        if enough_data:
-            actual_size = np.concatenate(
-                [traj["rewards"] for traj in sampled_data], axis=0
-            ).shape[0]
-            while actual_size < batch_size:
-                additional_needed = batch_size - actual_size
-                num_traj += ceil(additional_needed / self.episode_len)
-                new_indices = np.random.choice(
-                    min(self.num_trj(), self.max_num_trj),
-                    num_traj,
-                    replace=False,
-                )
-                sampled_data = [self.trajectories[idx] for idx in new_indices]
-                actual_size = np.concatenate(
-                    [traj["rewards"] for traj in sampled_data], axis=0
-                ).shape[0]
-
-        # Concatenate data for the sampled trajectories
-        sampled_batch = {
-            "states": np.concatenate([traj["states"] for traj in sampled_data], axis=0),
-            "actions": np.concatenate(
-                [traj["actions"] for traj in sampled_data], axis=0
-            ),
-            "next_states": np.concatenate(
-                [traj["next_states"] for traj in sampled_data], axis=0
-            ),
-            "agent_pos": np.concatenate(
-                [traj["agent_pos"] for traj in sampled_data], axis=0
-            ),
-            "next_agent_pos": np.concatenate(
-                [traj["next_agent_pos"] for traj in sampled_data], axis=0
-            ),
-            "rewards": np.concatenate(
-                [traj["rewards"] for traj in sampled_data], axis=0
-            ),
-            "terminals": np.concatenate(
-                [traj["terminals"] for traj in sampled_data], axis=0
-            ),
-            "logprobs": np.concatenate(
-                [traj["logprobs"] for traj in sampled_data], axis=0
-            ),
-            "entropys": np.concatenate(
-                [traj["entropys"] for traj in sampled_data], axis=0
-            ),
-        }
-
-        # Check if the batch size matches and truncate if necessary
         for key in sampled_batch.keys():
-            sampled_batch[key] = sampled_batch[key][:batch_size]
+            batch = sampled_batch[key]
+            # Shuffle batch along axis 0
+            indices = np.random.permutation(batch.shape[0])
+            batch = batch[indices]
+            sampled_batch[key] = batch[:batch_size]
 
         return sampled_batch
 
