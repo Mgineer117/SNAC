@@ -327,60 +327,63 @@ def call_ocNetwork(args):
 def call_sfNetwork(args, sf_path: str | None = None):
     from models.policy import SF_Combined, SF_Split
 
-    if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-        if args.import_sf_model:
-            print("Loading previous SF parameters....")
-            feaNet, psiNet, options = pickle.load(
-                open(f"log/eval_log/model_for_eval/{args.env_name}/sf_SNAC.p", "rb")
+    if args.import_sf_model:
+        print("Loading previous SF parameters....")
+        feaNet, psiNet, options = pickle.load(
+            open(
+                f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/sf_network.p",
+                "rb",
+            )
+        )
+    else:
+        if args.env_name in ("PointNavigation"):
+            msg = colorize(
+                "\nVAE Feature Extractor is selected!!!",
+                "yellow",
+                bold=True,
+            )
+            print(msg)
+            feaNet = VAE(
+                state_dim=args.s_dim,
+                action_dim=args.a_dim,
+                fc_dim=args.feature_fc_dim,
+                sf_dim=args.sf_dim,
+                decoder_inpuit_dim=int(args.sf_dim / 2),
+                is_snac=True,
+                activation=nn.Tanh(),
             )
         else:
-            if args.env_name in ("PointNavigation"):
-                msg = colorize(
-                    "\nVAE Feature Extractor is selected!!!",
-                    "yellow",
-                    bold=True,
-                )
-                print(msg)
-                feaNet = VAE(
-                    state_dim=args.s_dim,
-                    action_dim=args.a_dim,
-                    fc_dim=args.feature_fc_dim,
-                    sf_dim=args.sf_dim,
-                    decoder_inpuit_dim=int(args.sf_dim / 2),
-                    is_snac=True,
-                    activation=nn.Tanh(),
-                )
-            else:
-                msg = colorize(
-                    "\nCNN Feature Extractor is selected!!!",
-                    "yellow",
-                    bold=True,
-                )
-                print(msg)
+            msg = colorize(
+                "\nCNN Feature Extractor is selected!!!",
+                "yellow",
+                bold=True,
+            )
+            print(msg)
 
-                encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
-                feaNet = ConvNetwork(
-                    state_dim=args.s_dim,
-                    action_dim=args.a_dim,
-                    agent_num=args.agent_num,
-                    grid_size=args.grid_size,
-                    encoder_conv_layers=encoder_conv_layers,
-                    decoder_conv_layers=decoder_conv_layers,
-                    fc_dim=args.feature_fc_dim,
-                    sf_dim=args.sf_dim,
-                    decoder_inpuit_dim=int(args.sf_dim / 2),
-                    activation=nn.Tanh(),
-                )
-
-            psiNet = PsiCritic(
-                fc_dim=args.fc_dim,
+            encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
+            feaNet = ConvNetwork(
+                state_dim=args.s_dim,
+                action_dim=args.a_dim,
+                agent_num=args.agent_num,
+                grid_size=args.grid_size,
+                encoder_conv_layers=encoder_conv_layers,
+                decoder_conv_layers=decoder_conv_layers,
+                fc_dim=args.feature_fc_dim,
                 sf_dim=args.sf_dim,
-                a_dim=args.a_dim,
+                decoder_inpuit_dim=int(args.sf_dim / 2),
                 activation=nn.Tanh(),
             )
 
-            options = None
+        psiNet = PsiCritic(
+            fc_dim=args.fc_dim,
+            sf_dim=args.sf_dim,
+            a_dim=args.a_dim,
+            activation=nn.Tanh(),
+        )
 
+        options = None
+
+    if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
         policy = SF_Split(
             feaNet=feaNet,
             psiNet=psiNet,
@@ -399,58 +402,6 @@ def call_sfNetwork(args, sf_path: str | None = None):
             device=args.device,
         )
     else:
-        if args.import_sf_model:
-            print("Loading previous SF parameters....")
-            feaNet, psiNet, options = pickle.load(
-                open(f"log/eval_log/model_for_eval/{args.env_name}/sf_Spatial.p", "rb")
-            )
-        else:
-            if args.env_name in ("PointNavigation"):
-                msg = colorize(
-                    "\nVAE Feature Extractor is selected!!!",
-                    "yellow",
-                    bold=True,
-                )
-                print(msg)
-                feaNet = VAE(
-                    state_dim=args.s_dim,
-                    action_dim=args.a_dim,
-                    fc_dim=args.feature_fc_dim,
-                    sf_dim=args.sf_dim,
-                    decoder_inpuit_dim=args.sf_dim,
-                    is_snac=False,
-                    activation=nn.Tanh(),
-                )
-            else:
-                msg = colorize(
-                    "\nCNN Feature Extractor is selected!!!",
-                    "yellow",
-                    bold=True,
-                )
-                print(msg)
-                encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
-                feaNet = ConvNetwork(
-                    state_dim=args.s_dim,
-                    action_dim=args.a_dim,
-                    agent_num=args.agent_num,
-                    grid_size=args.grid_size,
-                    encoder_conv_layers=encoder_conv_layers,
-                    decoder_conv_layers=decoder_conv_layers,
-                    fc_dim=args.feature_fc_dim,
-                    sf_dim=args.sf_dim,
-                    decoder_inpuit_dim=args.sf_dim,
-                    activation=nn.Tanh(),
-                )
-
-            psiNet = PsiCritic(
-                fc_dim=args.fc_dim,
-                sf_dim=args.sf_dim,
-                a_dim=args.a_dim,
-                activation=nn.Tanh(),
-            )
-
-            options = None
-
         policy = SF_Combined(
             feaNet=feaNet,
             psiNet=psiNet,
@@ -482,44 +433,22 @@ def call_opNetwork(
     if args.import_op_model:
         print("Loading previous OP parameters....")
         if args.op_mode == "sac":
-            if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-                optionPolicy, optionCritic, option_vals, options, alpha, normalizer = (
-                    pickle.load(
-                        open(
-                            f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p",
-                            "rb",
-                        )
+            optionPolicy, optionCritic, option_vals, options, alpha, normalizer = (
+                pickle.load(
+                    open(
+                        f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/op_network.p",
+                        "rb",
                     )
                 )
-            else:
-                optionPolicy, optionCritic, option_vals, options, alpha, normalizer = (
-                    pickle.load(
-                        open(
-                            f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
-                            "rb",
-                        )
-                    )
-                )
+            )
         elif args.op_mode == "ppo":
             alpha = None
-            if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-                optionPolicy, optionCritic, option_vals, options, normalizer = (
-                    pickle.load(
-                        open(
-                            f"log/eval_log/model_for_eval/{args.env_name}/op_SNAC.p",
-                            "rb",
-                        )
-                    )
+            optionPolicy, optionCritic, option_vals, options, normalizer = pickle.load(
+                open(
+                    f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/op_network.p",
+                    "rb",
                 )
-            else:
-                optionPolicy, optionCritic, option_vals, options, normalizer = (
-                    pickle.load(
-                        open(
-                            f"log/eval_log/model_for_eval/{args.env_name}/op_Spatial.p",
-                            "rb",
-                        )
-                    )
-                )
+            )
     else:
         if args.op_mode == "sac":
             optionPolicy = OptionPolicy(
@@ -606,15 +535,12 @@ def call_hcNetwork(sf_network, op_network, args):
 
     if args.import_hc_model:
         print("Loading previous HC parameters....")
-
-        if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
-            policy, primitivePolicy, critic, normalizer = pickle.load(
-                open(f"log/eval_log/model_for_eval/{args.env_name}/hc_SNAC.p", "rb")
+        policy, primitivePolicy, critic, normalizer = pickle.load(
+            open(
+                f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/hc_network.p",
+                "rb",
             )
-        else:
-            policy, primitivePolicy, critic, normalizer = pickle.load(
-                open(f"log/eval_log/model_for_eval/{args.env_name}/hc_Spatial.p", "rb")
-            )
+        )
 
     else:
         policy = HC_Policy(

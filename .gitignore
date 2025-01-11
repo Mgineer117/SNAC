@@ -144,7 +144,7 @@ __pycache__/
 *.log
 wandb
 
-# log/eval_log/*
+log/eval_log/result/*
 log/train_log/*
 
 # Old test files

@@ -850,6 +850,8 @@ class CtfMvNEnv(MultiGridEnv):
 
         info = {
             "success": self.game_stats["red_flag_captured"],
+            "failures": self.game_stats["blue_agent_defeated"]
+            or self.game_stats["blue_flag_captured"],
             "d_ba_ra": distance_points(self.agents[0].pos, self.agents[1].pos),
             "d_ba_bf": distance_points(self.agents[0].pos, self.blue_flag),
             "d_ba_rf": distance_points(self.agents[0].pos, self.red_flag),

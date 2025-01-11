@@ -212,7 +212,15 @@ class Plotter:
                 plt.scatter(x[1], y[1], color="blue", s=30)
             if path_marker is not None:
                 if path_marker[idx] == True:
-                    plt.scatter(x[0], y[0], color="yellow", marker="*", s=30)
+                    plt.scatter(
+                        x[0],
+                        y[0],
+                        color="yellow",
+                        marker="*",
+                        s=100,
+                        edgecolors="black",
+                        linewidths=0.5,
+                    )
 
             # list bool comparison is error
             if not isinstance(i_point, tuple):
@@ -323,11 +331,46 @@ class Plotter:
 
     def plotOptionIndices(self, option_indices: list, dir: str, epoch: int):
         sns.set_theme()
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(10, 6))
         option_figure_path = os.path.join(dir, "option_figure")
         if not os.path.exists(option_figure_path):
             os.mkdir(option_figure_path)
-        plt.scatter(option_indices["x"], option_indices["y"])
+
+        ### PLOT
+        # Ensure data is in the correct format
+        option_indices["x"] = np.array(option_indices["x"]).flatten()
+        option_indices["y"] = np.array(option_indices["y"]).flatten()
+
+        # Validate lengths
+        if len(option_indices["x"]) != len(option_indices["y"]):
+            raise ValueError("X and Y must have the same length.")
+
+        # Extract x and y
+        x = option_indices["x"]
+        y = option_indices["y"]
+
+        # Create the scatter plot
+        plt.scatter(x, y, color="blue", marker="o", s=50, label="Data Points")
+
+        # Plot the dotted lines and add ticks on the x-axis
+        for xi, yi in zip(x, y):
+            # Vertical dotted line to x-axis
+            plt.plot([xi, xi], [0, yi], color="gray", linestyle="dotted")
+
+        # Set ticks every 5 units
+        tick_range = range(
+            int(min(x)), int(max(x)) + 1, 5
+        )  # Range from min(x) to max(x) with step 5
+        plt.xticks(tick_range)
+
+        # Add labels and title
+        plt.xlabel("Timestep")
+        plt.ylabel("Option Index")
+        plt.legend()
+
+        # Show the plot
+        plt.grid(True, linestyle="--", alpha=0.7)
+        plt.tight_layout()
         plt.savefig(f"{option_figure_path}/{epoch}.png")
         plt.close()
 

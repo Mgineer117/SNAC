@@ -11,6 +11,48 @@ from models.evaulators.base_evaluator import Evaluator
 from torch.utils.tensorboard import SummaryWriter
 
 
+from PIL import Image, ImageDraw, ImageFont
+
+
+def add_number_to_raw_image(
+    image: np.ndarray,
+    number: int,
+    position=(10, 30),
+    font_scale=1,
+    color=(0, 0, 255),
+    thickness=2,
+):
+    """
+    Adds a number to the top-left corner of a raw NumPy array image.
+
+    Args:
+    - image: A NumPy array representing the image.
+    - number: The number to add to the image.
+    - position: Tuple (x, y) for the text position in pixels.
+    - font_scale: Scale of the text.
+    - color: Color of the text in BGR (e.g., (0, 0, 255) for red).
+    - thickness: Thickness of the text.
+
+    Returns:
+    - The modified NumPy array image with the number added.
+    """
+    # Make a copy of the image to avoid modifying the original
+    annotated_image = image.copy()
+
+    # Add the number to the image using OpenCV's putText function
+    cv2.putText(
+        annotated_image,
+        str(number),  # The text to add
+        position,  # Position of the text
+        fontFace=cv2.FONT_HERSHEY_SIMPLEX,  # Font type
+        fontScale=font_scale,  # Font size
+        color=color,  # Text color in BGR format
+        thickness=thickness,  # Text thickness
+        lineType=cv2.LINE_AA,  # Line type for smooth text
+    )
+    return annotated_image
+
+
 def compute_categorical_entropy(indices, num_categories):
     """
     Computes the categorical distribution and its entropy for a given list of indices.
@@ -75,7 +117,8 @@ class HC_Evaluator(Evaluator):
             if gridPlot:
                 self.gridPlot = True
                 self.gridDir = os.path.join(dir, "grid")
-                os.mkdir(self.gridDir)
+                if not os.path.exists(self.gridDir):
+                    os.mkdir(self.gridDir)
                 self.path = []
                 self.path_marker = []
             else:
@@ -83,7 +126,8 @@ class HC_Evaluator(Evaluator):
             if renderPlot:
                 self.renderPlot = True
                 self.renderDir = os.path.join(dir, "render")
-                os.mkdir(self.renderDir)
+                if not os.path.exists(self.renderDir):
+                    os.mkdir(self.renderDir)
                 self.recorded_frames = []
             else:
                 self.renderPlot = False
@@ -118,6 +162,17 @@ class HC_Evaluator(Evaluator):
 
             if self.gridCriteria:
                 self.get_agent_pos(env, is_option=is_option)
+            if self.renderCriteria:
+                img = env.render()
+                img = add_number_to_raw_image(
+                    img,
+                    number=self.external_t,
+                    position=(10, 30),
+                    font_scale=1,
+                    color=(255, 0, 0),
+                    thickness=2,
+                )
+                self.recorded_frames.append(img)
 
             self.external_t += 1
             trunc2 = True if self.external_t == self.episode_len else False
@@ -126,6 +181,7 @@ class HC_Evaluator(Evaluator):
             return next_obs, rew, done, infos
 
         successes = np.zeros((self.eval_ep_num,))
+        failures = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
@@ -147,6 +203,9 @@ class HC_Evaluator(Evaluator):
                 with torch.no_grad():
                     a, metaData = policy(obs, idx, deterministic=False)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
+
+                option_indices["x"].append(self.external_t)
+                option_indices["y"].append(metaData["z_argmax"].numpy())
 
                 ### Create an Option Loop
                 if metaData["is_option"]:
@@ -179,20 +238,24 @@ class HC_Evaluator(Evaluator):
                     successes[num_episodes] = np.maximum(
                         successes[num_episodes], infos["success"]
                     )
+                if "failures" in infos:
+                    failures[num_episodes] = np.maximum(
+                        failures[num_episodes], infos["failures"]
+                    )
 
                 ep_reward += rew
-                option_indices["x"].append(self.external_t)
-                option_indices["y"].append(metaData["z_argmax"].numpy())
-
-                # Update the render
-                if self.renderCriteria:
-                    img = env.render()
-                    self.recorded_frames.append(img)
 
                 if done:
-                    # save option indices
-                    self.plotter.plotOptionIndices(
-                        option_indices, dir=self.plotter.hc_path, epoch=epoch
+                    dist, ep_entropy = compute_categorical_entropy(
+                        option_indices["y"], policy._a_dim
+                    )
+
+                    ep_buffer.append(
+                        {
+                            "ep_reward": ep_reward,
+                            "ep_length": self.external_t,
+                            "ep_entropy": ep_entropy,
+                        }
                     )
 
                     if self.gridCriteria:
@@ -209,6 +272,11 @@ class HC_Evaluator(Evaluator):
                         self.path = []
                         self.path_marker = []
 
+                        # save option indices
+                        self.plotter.plotOptionIndices(
+                            option_indices, dir=self.plotter.hc_path, epoch=epoch
+                        )
+
                     if self.renderCriteria:
                         # save rendering
                         width = self.recorded_frames[0].shape[0]
@@ -223,18 +291,6 @@ class HC_Evaluator(Evaluator):
                         )
                         self.recorded_frames = []
 
-                    dist, ep_entropy = compute_categorical_entropy(
-                        option_indices["y"], policy._a_dim
-                    )
-
-                    ep_buffer.append(
-                        {
-                            "ep_reward": ep_reward,
-                            "ep_length": self.external_t,
-                            "ep_entropy": ep_entropy,
-                        }
-                    )
-
         reward_list = [ep_info["ep_reward"] for ep_info in ep_buffer]
         length_list = [ep_info["ep_length"] for ep_info in ep_buffer]
         entropy_list = [ep_info["ep_entropy"] for ep_info in ep_buffer]
@@ -243,6 +299,7 @@ class HC_Evaluator(Evaluator):
         ln_mean, ln_std = np.mean(length_list), np.std(length_list)
         ent_mean, ent_std = np.mean(entropy_list), np.std(entropy_list)
         winRate_mean, winRate_std = np.mean(successes), np.std(successes)
+        failRate_mean, failRate_std = np.mean(failures), np.std(failures)
 
         eval_dict = {
             "rew_mean": rew_mean,
@@ -253,6 +310,8 @@ class HC_Evaluator(Evaluator):
             "ent_std": ent_std,
             "winRate_mean": winRate_mean,
             "winRate_std": winRate_std,
+            "failRate_mean": failRate_mean,
+            "failRate_std": failRate_std,
         }
 
         if queue is not None:

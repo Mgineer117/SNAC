@@ -82,7 +82,6 @@ def call_env(args):
                 observation_option=observation_option,
                 territory_adv_rate=1.0,
                 max_steps=args.episode_len,
-                step_penalty_ratio=0.0,
             )
         else:
             raise NotImplementedError(f"{args.env_name} not implemented")
