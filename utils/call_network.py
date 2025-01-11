@@ -328,10 +328,11 @@ def call_sfNetwork(args, sf_path: str | None = None):
     from models.policy import SF_Combined, SF_Split
 
     if args.import_sf_model:
-        print("Loading previous SF parameters....")
+        path = f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/sf_network.p"
+        print(f"Loading previous SF parameters from {path}....")
         feaNet, psiNet, options = pickle.load(
             open(
-                f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/sf_network.p",
+                path,
                 "rb",
             )
         )
@@ -431,12 +432,13 @@ def call_opNetwork(
     from models.policy import OP_Controller
 
     if args.import_op_model:
-        print("Loading previous OP parameters....")
+        path = f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/op_network.p"
+        print(f"Loading previous OP parameters from {path}....")
         if args.op_mode == "sac":
             optionPolicy, optionCritic, option_vals, options, alpha, normalizer = (
                 pickle.load(
                     open(
-                        f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/op_network.p",
+                        path,
                         "rb",
                     )
                 )
@@ -445,7 +447,7 @@ def call_opNetwork(
             alpha = None
             optionPolicy, optionCritic, option_vals, options, normalizer = pickle.load(
                 open(
-                    f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/op_network.p",
+                    path,
                     "rb",
                 )
             )
@@ -534,10 +536,11 @@ def call_hcNetwork(sf_network, op_network, args):
     from models.policy import HC_Controller
 
     if args.import_hc_model:
-        print("Loading previous HC parameters....")
+        path = f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/hc_network.p"
+        print(f"Loading previous HC parameters from {path}....")
         policy, primitivePolicy, critic, normalizer = pickle.load(
             open(
-                f"log/eval_log/model_for_eval/{args.env_name}/{args.algo_name}/{args.running_seed}/hc_network.p",
+                path,
                 "rb",
             )
         )
