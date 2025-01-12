@@ -82,6 +82,7 @@ def call_env(args):
                 observation_option=observation_option,
                 territory_adv_rate=1.0,
                 battle_reward_ratio=0.5,
+                step_penalty_ratio=0.0,
                 max_steps=args.episode_len,
             )
         else:
