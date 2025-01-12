@@ -320,7 +320,7 @@ class HC_Controller(BasePolicy):
             actor_loss = -torch.min(surr1, surr2).mean()
             entropy_loss = self._entropy_scaler * entropy.mean()
 
-            if pm_mask.shape[0] != 0:
+            if isinstance(self.primitivePolicy, HC_PPO) and pm_mask.shape[0] != 0:
                 _, pm_metaData = self.primitivePolicy(mb_states[pm_mask])
 
                 pm_logprobs = self.policy.log_prob(
