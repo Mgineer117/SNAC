@@ -227,11 +227,12 @@ class HC_Controller(BasePolicy):
         )
 
         # pm ingredients
-        with torch.no_grad():
-            actions, pm_metaData = self.primitivePolicy(states)
-            pm_old_logprobs = self.primitivePolicy.log_prob(
-                pm_metaData["dist"], actions
-            )
+        if isinstance(self.primitivePolicy, HC_PPO):
+            with torch.no_grad():
+                actions, pm_metaData = self.primitivePolicy(states)
+                pm_old_logprobs = self.primitivePolicy.log_prob(
+                    pm_metaData["dist"], actions
+                )
 
         # Compute Advantage and returns of the current batch
         with torch.no_grad():
@@ -291,7 +292,6 @@ class HC_Controller(BasePolicy):
             mb_option_actions = option_actions[indices]
 
             mb_old_logprobs = old_logprobs[indices]
-            mb_pm_old_logprobs = pm_old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
@@ -321,6 +321,7 @@ class HC_Controller(BasePolicy):
 
             if isinstance(self.primitivePolicy, HC_PPO) and pm_mask.shape[0] != 0:
                 mb_actions = actions[indices]
+                mb_pm_old_logprobs = pm_old_logprobs[indices]
 
                 _, pm_metaData = self.primitivePolicy(mb_states[pm_mask])
 
