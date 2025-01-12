@@ -288,7 +288,6 @@ class HC_Controller(BasePolicy):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
 
             mb_states = states[indices]
-            mb_actions = actions[indices]
             mb_option_actions = option_actions[indices]
 
             mb_old_logprobs = old_logprobs[indices]
@@ -321,6 +320,8 @@ class HC_Controller(BasePolicy):
             entropy_loss = self._entropy_scaler * entropy.mean()
 
             if isinstance(self.primitivePolicy, HC_PPO) and pm_mask.shape[0] != 0:
+                mb_actions = actions[indices]
+
                 _, pm_metaData = self.primitivePolicy(mb_states[pm_mask])
 
                 pm_logprobs = self.policy.log_prob(
