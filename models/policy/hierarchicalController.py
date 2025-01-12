@@ -340,12 +340,6 @@ class HC_Controller(BasePolicy):
             clip_fraction = torch.mean((torch.abs(ratios - 1) > self._eps).float())
             clip_fractions.append(clip_fraction.item())
 
-            # Check if KL divergence exceeds target KL for early stopping
-            kl_div = torch.mean(mb_old_logprobs - logprobs)
-            target_kl.append(kl_div.item())
-            if kl_div.item() > self._target_kl:
-                break
-
             self.optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
@@ -355,6 +349,11 @@ class HC_Controller(BasePolicy):
                 dir=prefix,
                 device=self.device,
             )
+            # Check if KL divergence exceeds target KL for early stopping
+            kl_div = torch.mean(mb_old_logprobs - logprobs)
+            target_kl.append(kl_div.item())
+            if kl_div.item() > self._target_kl:
+                break
             self.optimizer.step()
 
         norm_dict = self.compute_weight_norm(
