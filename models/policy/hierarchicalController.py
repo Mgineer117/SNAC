@@ -91,7 +91,7 @@ class HC_Controller(BasePolicy):
         self._tau = tau
         self._K = K
         self._l2_reg = 1e-6
-        self._target_kl = 0.03
+        self._target_kl = 0.1
         self._bfgs_iter = bfgs_iter
         self._forward_steps = 0
 
@@ -342,6 +342,7 @@ class HC_Controller(BasePolicy):
 
             self.optimizer.zero_grad()
             loss.backward()
+            ##### Update Verifications #####
             torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
             grad_dict = self.compute_gradient_norm(
                 [self.policy, self.primitivePolicy, self.critic],
@@ -354,6 +355,7 @@ class HC_Controller(BasePolicy):
             target_kl.append(kl_div.item())
             if kl_div.item() > self._target_kl:
                 break
+            ##### Update Verifications #####
             self.optimizer.step()
 
         norm_dict = self.compute_weight_norm(
