@@ -250,7 +250,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--hc-policy-lr",
         type=float,
-        default=3e-4,
+        default=5e-4,
         help="Hierarchical Controller network lr",
     )
     parser.add_argument(
@@ -260,7 +260,7 @@ def get_args(verbose=True):
         help="Hierarchical Policy policy (PPO-based) critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--ppo-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+        "--ppo-policy-lr", type=float, default=5e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--ppo-critic-lr",

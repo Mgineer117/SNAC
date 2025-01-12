@@ -81,6 +81,7 @@ def call_env(args):
                 map_path=map_path,
                 observation_option=observation_option,
                 territory_adv_rate=1.0,
+                battle_reward_ratio=0.5,
                 max_steps=args.episode_len,
             )
         else:
