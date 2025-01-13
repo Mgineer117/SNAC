@@ -189,19 +189,27 @@ class ConvNetwork(nn.Module):
         self.de_conv = nn.ModuleList()
         i = 0
         for layer in decoder_conv_layers[::-1]:
-            if layer["type"] == "conv":
+            if layer["type"] == "conv_transpose":
                 element = DeConv(
                     in_channels=in_channels,
                     out_channels=layer["in_filters"],
                     kernel_size=layer["kernel_size"],
                     stride=layer["stride"],
                     padding=layer["padding"],
-                    output_padding=self.output_paddings[i],
+                    output_padding=layer["output_padding"],
                     activation=layer["activation"],
                 )
                 in_channels = layer["in_filters"]
-                i += 1
-
+            elif layer["type"] == "conv":
+                element = Conv(
+                    in_channels=in_channels,
+                    out_channels=layer["out_filters"],
+                    kernel_size=layer["kernel_size"],
+                    stride=layer["stride"],
+                    padding=layer["padding"],
+                    activation=layer["activation"],
+                )
+                in_channels = layer["out_filters"]
             elif layer["type"] == "pool":
                 element = MaxUnpool2d(
                     kernel_size=layer["kernel_size"],

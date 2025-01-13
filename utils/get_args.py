@@ -399,13 +399,13 @@ def get_args(verbose=True):
         help="Number of trajectory to decompose via SVD for option discovery",
     )
     parser.add_argument(
-        "--max-num-traj",
+        "--max-batch-size",
         type=int,
         default=None,
         help="Maximum number of trajectories the buffer can store. Exceeding it will refresh the oldest trajectory",
     )
     parser.add_argument(
-        "--min-num-traj",
+        "--min-batch-size",
         type=int,
         default=None,
         help="Minimum number of trajectory to start training.",
@@ -572,13 +572,13 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=True,
+        default=False,
         help="it imports previously trained model",
     )
     parser.add_argument(
         "--import-op-model",
         type=bool,
-        default=True,
+        default=False,
         help="it imports previously trained model",
     )
     parser.add_argument(
