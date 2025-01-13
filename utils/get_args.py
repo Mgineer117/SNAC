@@ -283,12 +283,6 @@ def get_args(verbose=True):
         help="ema / cma. ema: Explonential / Cumulative moving average. Observation normalization for each network.",
     )
     parser.add_argument(
-        "--min-option-length",
-        type=int,
-        default=5,
-        help="Minimum time step for one option duration of SNAC / EigenOption",
-    )
-    parser.add_argument(
         "--min-cover-option-length",
         type=int,
         default=25,
@@ -572,7 +566,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(
