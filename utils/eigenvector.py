@@ -408,7 +408,7 @@ def discover_options(
                     names=["R-feature", "S-feature"],
                     dir=plotter.sf_path,
                 )
-            elif algo_name in ("SNAC+++"):
+            elif algo_name == "SNAC+++":
                 plotter.plotClusteredVectors(
                     V_list=[evecs_s],
                     centroids=raw_vec_list,
