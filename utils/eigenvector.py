@@ -91,6 +91,7 @@ def discover_options(
     idx: int | None = None,
     draw_map: bool = False,
     device=torch.device("cpu"),
+    args=None,
 ):
     """
     policy: sf_network
@@ -109,24 +110,31 @@ def discover_options(
 
     ### Collect batch to compute phi for psi
     is_covering_option = idx is not None  # Simplified conditional
+    batch_size = num_trj * episode_len
     option_buffer = TrajectoryBuffer(
-        episode_len=episode_len, min_num_trj=0, max_num_trj=num_trj
+        state_dim=args.s_dim,
+        action_dim=args.a_dim,
+        hc_action_dim=args.num_vector + 1,
+        num_agent=args.agent_num,
+        episode_len=episode_len,
+        min_batch_size=0,
+        max_batch_size=batch_size,
     )
     # Collecting samples to meet the minimum trajectory count
     count = 0
-    while option_buffer.num_trj() < option_buffer.max_num_trj:
+    while not option_buffer.full:
         batch, sample_time = sampler.collect_samples(
             policy, grid_type=grid_type, idx=idx, is_covering_option=is_covering_option
         )
         option_buffer.push(batch)
         if (count + 1) % 5 == 0:
             print(
-                f"\nWarming buffer {option_buffer.num_trj()}/{option_buffer.max_num_trj} | sample_time = {sample_time:.2f}s",
+                f"\nWarming buffer {option_buffer.num_samples}/{option_buffer.max_batch_size} | sample_time = {sample_time:.2f}s",
                 end="",
             )
         count += 1
     print(
-        f"\nWarming Complete! {option_buffer.num_trj()}/{option_buffer.max_num_trj}",
+        f"\nWarming Complete! {option_buffer.num_samples}/{option_buffer.max_batch_size}",
         end="",
     )
 
@@ -581,6 +589,7 @@ def get_eigenvectors(
             draw_map=draw_map,
             gamma=args.gamma,
             device=args.device,
+            args=args,
         )
         print_option_info(option_vals, options, args.algo_name, args.num_vector)
     elif args.algo_name in (
@@ -602,6 +611,7 @@ def get_eigenvectors(
             draw_map=draw_map,
             gamma=args.gamma,
             device=args.device,
+            args=args,
         )
         print_option_info(option_vals, options, args.algo_name, args.num_vector)
     elif args.algo_name == "CoveringOption":

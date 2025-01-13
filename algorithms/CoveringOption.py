@@ -153,7 +153,9 @@ class CoveringOption:
         )
         print_model_summary(self.op_network, model_name="OP model")
         if not self.args.import_op_model:
-            app_trj_num = int(self.args.num_traj_decomp / self.args.num_vector)
+            app_trj_num = int(
+                self.args.num_traj_decomp * self.args.episode_len / self.args.num_vector
+            )
 
             ### get first vector with random walk
             batch = self.collect_batch(
@@ -264,10 +266,16 @@ class CoveringOption:
                 - To concat the batch to improve the diffusion SF matrix
         """
         option_buffer = TrajectoryBuffer(
-            episode_len=self.args.episode_len, min_num_trj=0, max_num_trj=app_trj_num
+            state_dim=self.args.s_dim,
+            action_dim=self.args.a_dim,
+            hc_action_dim=self.args.num_vector + 1,
+            num_agent=self.args.agent_num,
+            episode_len=self.args.episode_len,
+            min_batch_size=0,
+            max_batch_size=app_trj_num,
         )
 
-        while option_buffer.num_trj() < option_buffer.max_num_trj:
+        while not option_buffer.full:
             batch, sample_time = self.sampler.collect_samples(
                 policy,
                 grid_type=self.args.grid_type,
