@@ -478,10 +478,10 @@ class OnlineSampler(Base):
                     next_obs, rew, done, infos = env_step(a)
                     if not done:
                         if metaData["is_hc_controller"]:
-                            for o_t in range(1, self.min_option_length):
+                            for o_t in range(1, self.episode_len):
                                 # env stepping
                                 with torch.no_grad():
-                                    option_a, _ = policy(
+                                    option_a, option_dict = policy(
                                         next_obs,
                                         metaData["z_argmax"],
                                         deterministic=deterministic,
@@ -490,8 +490,22 @@ class OnlineSampler(Base):
 
                                 next_obs, op_rew, done, infos = env_step(option_a)
                                 rew += self.gamma**o_t * op_rew
-                                if done:
+                                if done or option_dict["option_termination"]:
                                     break
+                            # for o_t in range(1, self.min_option_length):
+                            #     # env stepping
+                            #     with torch.no_grad():
+                            #         option_a, _ = policy(
+                            #             next_obs,
+                            #             metaData["z_argmax"],
+                            #             deterministic=deterministic,
+                            #         )
+                            #         option_a = option_a.cpu().numpy().squeeze()
+
+                            #     next_obs, op_rew, done, infos = env_step(option_a)
+                            #     rew += self.gamma**o_t * op_rew
+                            #     if done:
+                            #         break
                         else:
                             o_t = 1
                             option_termination = False

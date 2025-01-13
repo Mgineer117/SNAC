@@ -1083,16 +1083,26 @@ class CtfMvNEnv(MultiGridEnv):
 
                 blue_win: bool
                 match (blue_agent_in_blue_territory, red_agent_in_red_territory):
+                    # case (True, True):
+                    #     blue_win = self.np_random.choice([True, False])
+                    # case (True, False):
+                    #     blue_win = self.np_random.choice(
+                    #         [True, False], p=[self.randomness, 1 - self.randomness]
+                    #     )
+                    # case (False, True):
+                    #     blue_win = self.np_random.choice(
+                    #         [True, False], p=[1 - self.randomness, self.randomness]
+                    #     )
+                    # case (False, False):
+                    #     blue_win = self.np_random.choice([True, False])
                     case (True, True):
-                        blue_win = self.np_random.choice([True, False])
+                        blue_win = self.np_random.choice([False, True])
                     case (True, False):
-                        blue_win = self.np_random.choice(
-                            [True, False], p=[self.randomness, 1 - self.randomness]
-                        )
+                        blue_win = self.np_random.choice([False, True])
                     case (False, True):
-                        blue_win = self.np_random.choice([True, False], p=[0, 1])
+                        blue_win = self.np_random.choice([False, True])
                     case (False, False):
-                        blue_win = self.np_random.choice([True, False])
+                        blue_win = self.np_random.choice([False, True])
                     case (_, _):
                         raise ValueError(
                             f"Invalid combination of blue_agent_in_blue_territory: {blue_agent_in_blue_territory} and red_agent_in_red_territory: {red_agent_in_red_territory}"

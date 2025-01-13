@@ -213,10 +213,10 @@ class HC_Evaluator(Evaluator):
                         a, is_option=metaData["is_option"]
                     )
                     if not done:
-                        for o_t in range(1, self.min_option_length):
+                        for o_t in range(1, self.episode_len):
                             # env stepping
                             with torch.no_grad():
-                                option_a, _ = policy(
+                                option_a, option_dict = policy(
                                     next_obs,
                                     metaData["z_argmax"],
                                     deterministic=False,
@@ -225,7 +225,7 @@ class HC_Evaluator(Evaluator):
 
                             next_obs, op_rew, done, infos = env_step(option_a)
                             rew += self.gamma**o_t * op_rew
-                            if done:
+                            if done or option_dict["option_termination"]:
                                 break
 
                 else:

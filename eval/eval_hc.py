@@ -29,7 +29,7 @@ def train(eval_ep_num=10):
     seed_all(seed)
 
     # call configs
-    model_dir = f"log/eval_log/model_for_eval/{env_name}/{algo_name}"
+    model_dir = f"log/eval_log/model_for_eval/{env_name}/{algo_name}/"
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)

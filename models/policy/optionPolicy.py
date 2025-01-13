@@ -127,6 +127,7 @@ class OP_Controller(BasePolicy):
         obs = self.preprocess_obs(obs)
 
         if self.use_psi_action:
+            # deprecated
             with torch.no_grad():
                 psi, _ = self.sf_network.get_cumulative_features(obs)
             psi_logits = self._intrinsicValue(psi, z)
@@ -144,11 +145,15 @@ class OP_Controller(BasePolicy):
             a, metaData = self.optionPolicy(
                 obs["observation"], z=z, deterministic=deterministic
             )
+            option_termination = (
+                True if self.optionCritic(obs["observation"], z=z) < 0.0 else False
+            )
 
         return a, {
             "probs": metaData["probs"],
             "logprobs": metaData["logprobs"],
             "entropy": metaData["entropy"],
+            "option_termination": option_termination,
         }
 
     def random_walk(self, obs):
