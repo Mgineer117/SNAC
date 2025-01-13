@@ -7,7 +7,12 @@ import seaborn as sns
 
 sns.set_theme()
 
-from utils import *
+# from utils import *
+from utils.call_network import call_sfNetwork
+from utils.get_all_states import get_grid_tensor
+from utils.plotter import Plotter
+from utils.sampler import OnlineSampler
+from utils.eigenvector import get_eigenvectors
 from utils.call_env import call_env
 from models.evaulators.base_evaluator import DotDict
 
@@ -74,6 +79,7 @@ def init_args(algo_name: str, num_vector: str):
     args.import_sf_model = True
     args.s_dim = tuple(args.s_dim)
     args.algo_name = algo_name
+    args.env_name = "Maze"
     args.device = torch.device("cpu")
 
     args.num_vector = num_vector
@@ -101,8 +107,11 @@ def get_vectors(args):
         min_option_length=args.min_option_length,
         min_cover_option_length=args.min_cover_option_length,
         episode_len=args.episode_len,
-        episode_num=args.episode_num,
+        batch_size=4096,
+        min_batch_for_worker=args.min_batch_for_worker,
+        cpu_preserve_rate=args.cpu_preserve_rate,
         num_cores=args.num_cores,
+        gamma=args.gamma,
         verbose=False,
     )
 
@@ -130,7 +139,7 @@ def get_feature_matrix(feaNet, grid, pos, args):
     for x, y in zip(pos[0], pos[1]):
         # # Load the image as a NumPy array
         img = grid.copy()
-        if args.env_name == "FourRooms" or args.env_name == "LavaRooms":
+        if args.env_name in ("FourRooms", "Maze"):
             img[x, y, :] = 10  # 10 is an agent
         else:
             img[x, y, 1] = 1  # 1 is blue agent
