@@ -78,14 +78,15 @@ def init_args(algo_name: str, num_vector: str):
     args = DotDict(config)
     args.import_sf_model = True
     args.s_dim = tuple(args.s_dim)
+
     args.algo_name = algo_name
     args.env_name = "Maze"
-    args.device = torch.device("cpu")
-
     args.num_vector = num_vector
+    args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")
     print(f"Env name: {args.env_name}")
+    print(f"Num vector: {args.num_vector}")
 
     return args
 
@@ -253,7 +254,7 @@ if __name__ == "__main__":
             grid, pos = get_grid(args)
             feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
 
-            n = 10
+            n = 3
             mean_diss = 0
             dict_list = []
             for i in range(n):

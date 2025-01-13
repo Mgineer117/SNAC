@@ -1090,9 +1090,7 @@ class CtfMvNEnv(MultiGridEnv):
                             [True, False], p=[self.randomness, 1 - self.randomness]
                         )
                     case (False, True):
-                        blue_win = self.np_random.choice(
-                            [True, False], p=[1 - self.randomness, self.randomness]
-                        )
+                        blue_win = self.np_random.choice([True, False], p=[0, 1])
                     case (False, False):
                         blue_win = self.np_random.choice([True, False])
                     case (_, _):

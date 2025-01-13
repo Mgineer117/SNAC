@@ -80,9 +80,9 @@ def call_env(args):
             env = CtF(
                 map_path=map_path,
                 observation_option=observation_option,
-                territory_adv_rate=1.0,
+                territory_adv_rate=0.5,
                 battle_reward_ratio=0.5,
-                step_penalty_ratio=0.0,
+                step_penalty_ratio=0.003,
                 max_steps=args.episode_len,
             )
         else:
