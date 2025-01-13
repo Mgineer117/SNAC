@@ -198,7 +198,6 @@ class OnlineSampler(Base):
         action_dim: int,
         hc_action_dim: int,
         agent_num: int,
-        min_option_length: int,
         min_cover_option_length: int,
         episode_len: int,
         batch_size: int,
@@ -228,7 +227,6 @@ class OnlineSampler(Base):
         self.gamma = gamma
 
         # Misc params
-        self.min_option_length = min_option_length
         self.min_cover_option_length = min_cover_option_length
 
         # sampling params
