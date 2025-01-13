@@ -112,7 +112,6 @@ class EigenOption:
         self.hc_evaluator = HC_Evaluator(
             dir=self.hc_path,
             log_interval=args.hc_log_interval,
-            min_option_length=args.min_option_length,
             **evaluator_params,
         )
 

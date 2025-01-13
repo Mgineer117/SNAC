@@ -93,7 +93,6 @@ class HC_Evaluator(Evaluator):
         gridPlot: bool = True,
         renderPlot: bool = False,
         render_fps: int = 10,
-        min_option_length: int = 3,
         gamma: float = 0.99,
         eval_ep_num: int = 1,
         episode_len: int = 100,
@@ -110,7 +109,6 @@ class HC_Evaluator(Evaluator):
         self.plotter = plotter
         self.render_fps = render_fps
         self.gamma = gamma
-        self.min_option_length = min_option_length
         self.episode_len = episode_len
 
         if dir is not None:
