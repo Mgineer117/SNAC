@@ -399,23 +399,23 @@ def discover_options(
             #             label,
             #         )
             #     )
-
-        if algo_name in ("SNAC+", "SNAC++") and draw_map:
-            plotter.plotClusteredVectors(
-                V_list=[evecs_r, evecs_s],
-                centroids=raw_vec_list,
-                labels=metaData["labels_list"],
-                names=["R-feature", "S-feature"],
-                dir=plotter.sf_path,
-            )
-        elif algo_name in ("SNAC+++") and draw_map:
-            plotter.plotClusteredVectors(
-                V_list=[evecs_s],
-                centroids=raw_vec_list,
-                labels=metaData["labels_list"],
-                names=["S-feature"],
-                dir=plotter.sf_path,
-            )
+        if draw_map:
+            if algo_name in ("SNAC+", "SNAC++"):
+                plotter.plotClusteredVectors(
+                    V_list=[evecs_r, evecs_s],
+                    centroids=raw_vec_list,
+                    labels=metaData["labels_list"],
+                    names=["R-feature", "S-feature"],
+                    dir=plotter.sf_path,
+                )
+            elif algo_name in ("SNAC+++"):
+                plotter.plotClusteredVectors(
+                    V_list=[evecs_s],
+                    centroids=raw_vec_list,
+                    labels=metaData["labels_list"],
+                    names=["S-feature"],
+                    dir=plotter.sf_path,
+                )
 
     elif algo_name in (
         "EigenOption",
