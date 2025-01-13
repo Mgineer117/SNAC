@@ -416,6 +416,8 @@ def discover_options(
                     names=["S-feature"],
                     dir=plotter.sf_path,
                 )
+            else:
+                pass
 
     elif algo_name in (
         "EigenOption",
