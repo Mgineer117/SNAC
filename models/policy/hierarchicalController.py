@@ -403,7 +403,7 @@ class HC_Controller(BasePolicy):
 
         env_steps = (k + 1) * self.minibatch_size
 
-        del states, actions, option_actions, rewards, terminals, old_logprobs
+        del states, option_actions, rewards, terminals, old_logprobs
         torch.cuda.empty_cache()
 
         t1 = time.time()
