@@ -49,23 +49,21 @@ class OptionPolicy(nn.Module):
 
     def create_model(self, input_dim, fc_dim, output_dim):
         if self.is_discrete:
-            return MLP(
-                input_dim, (fc_dim, fc_dim), output_dim, activation=self.act
-            )
+            return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
         else:
             return MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
 
     def create_mu_model(self, input_dim, fc_dim, output_dim):
-        return MLP(fc_dim , (output_dim,), activation=nn.Identity())
+        return MLP(fc_dim, (output_dim,), activation=nn.Identity())
 
     def create_logstd_model(self, input_dim, fc_dim, output_dim):
-        return MLP(fc_dim , (output_dim,), activation=nn.Identity())
+        return MLP(fc_dim, (output_dim,), activation=nn.Identity())
 
     def forward(self, state: torch.Tensor, z: int, deterministic=False):
         # when the input is raw by forawrd() not learn()
         if len(state.shape) == 3 or len(state.shape) == 1:
             state = state.unsqueeze(0)
-            state = state.reshape(state.shape[0], -1)
+        state = state.reshape(state.shape[0], -1)
 
         logits = self.models[z](state)
 
@@ -153,8 +151,11 @@ class OP_Critic(nn.Module):
     def create_model(self, input_dim, fc_dim, output_dim):
         return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
 
-    def forward(self, x: torch.Tensor, z: int):
-        value = self.models[z](x)
+    def forward(self, state: torch.Tensor, z: int):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+        state = state.reshape(state.shape[0], -1)
+        value = self.models[z](state)
         return value, {"z": z}
 
 
@@ -187,6 +188,9 @@ class OP_Q_Critic(nn.Module):
         return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
 
     def forward(self, states: torch.Tensor, actions: torch.Tensor, z: int):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+            state = state.reshape(state.shape[0], -1)
         x = torch.cat([states, actions], dim=-1)
         value = self.models[z](x)
         return value
@@ -213,6 +217,9 @@ class OP_CriticTwin(nn.Module):
         self.critic2 = OP_Q_Critic(input_dim, fc_dim, num_options, activation)
 
     def forward(self, states: torch.Tensor, actions: torch.Tensor, z: int):
+        if len(state.shape) == 3 or len(state.shape) == 1:
+            state = state.unsqueeze(0)
+            state = state.reshape(state.shape[0], -1)
         value1 = self.critic1(states, actions, z)
         value2 = self.critic2(states, actions, z)
         return value1, value2, {"z": z}
