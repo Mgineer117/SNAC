@@ -32,9 +32,13 @@ class CoveringOption:
 
         # define buffers and sampler for Monte-Carlo sampling
         self.buffer = TrajectoryBuffer(
+            state_dim=args.s_dim,
+            action_dim=args.a_dim,
+            hc_action_dim=args.num_vector + 1,
+            num_agent=args.agent_num,
             episode_len=args.episode_len,
-            min_num_trj=args.min_num_traj,
-            max_num_trj=args.max_num_traj,
+            min_batch_size=args.min_batch_size,
+            max_batch_size=args.max_batch_size,
         )
         self.sampler = OnlineSampler(
             training_envs=self.env,

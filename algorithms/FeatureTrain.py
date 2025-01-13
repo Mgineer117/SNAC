@@ -42,8 +42,8 @@ class FeatureTrain:
             hc_action_dim=args.num_vector + 1,
             num_agent=args.agent_num,
             episode_len=args.episode_len,
-            min_batch_size=25000,
-            max_batch_size=100000,
+            min_batch_size=args.min_batch_size,
+            max_batch_size=args.max_batch_size,
         )
         self.sampler = OnlineSampler(
             training_envs=self.env,
