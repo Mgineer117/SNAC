@@ -145,9 +145,8 @@ class OP_Controller(BasePolicy):
             a, metaData = self.optionPolicy(
                 obs["observation"], z=z, deterministic=deterministic
             )
-            option_termination = (
-                True if self.optionCritic(obs["observation"], z=z) < 0.0 else False
-            )
+            state_value, _ = self.optionCritic(obs["observation"], z=z)
+            option_termination = True if state_value < 0.0 else False
 
         return a, {
             "probs": metaData["probs"],
