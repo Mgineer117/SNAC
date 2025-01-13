@@ -441,6 +441,11 @@ def call_sfNetwork(args, sf_path: str | None = None):
             print(msg)
 
             encoder_conv_layers, decoder_conv_layers = get_conv_layer(args)
+            decoder_inpuit_dim = (
+                int(args.sf_dim / 2)
+                if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++")
+                else args.sf_dim
+            )
             feaNet = ConvNetwork(
                 state_dim=args.s_dim,
                 action_dim=args.a_dim,
@@ -450,7 +455,7 @@ def call_sfNetwork(args, sf_path: str | None = None):
                 decoder_conv_layers=decoder_conv_layers,
                 fc_dim=args.feature_fc_dim,
                 sf_dim=args.sf_dim,
-                decoder_inpuit_dim=int(args.sf_dim / 2),
+                decoder_inpuit_dim=decoder_inpuit_dim,
                 activation=nn.Tanh(),
             )
 
