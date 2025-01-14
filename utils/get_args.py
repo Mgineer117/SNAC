@@ -256,7 +256,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--hc-critic-lr",
         type=float,
-        default=None,
+        default=3e-4,
         help="Hierarchical Policy policy (PPO-based) critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
