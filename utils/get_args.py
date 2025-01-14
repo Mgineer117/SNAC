@@ -265,7 +265,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--ppo-critic-lr",
         type=float,
-        default=None,
+        default=3e-4,
         help="PPO-critic learning rate. If none, BFGS is used.",
     )
 
