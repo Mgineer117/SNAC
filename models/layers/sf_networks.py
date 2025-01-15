@@ -363,6 +363,7 @@ class ConvNetwork(nn.Module):
                 i += 1
             else:
                 out, _ = fn(out)
+                print(out.shape)
         out = self.de_last_act(out)
         reconstructed_state = self.de_pmt(out)
         return reconstructed_state
