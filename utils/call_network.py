@@ -75,24 +75,14 @@ def get_conv_layer(args):
         decoder_conv_layers = [
             {
                 "type": "conv_transpose",
-                "kernel_size": 2,
-                "stride": 2,
-                "padding": 0,
-                "output_padding": 0,
-                "activation": nn.ELU(),
-                "in_filters": 128,
-                "out_filters": 128,
-            },  # (2, 2, 128) -> (5, 5, 128)
-            {
-                "type": "conv_transpose",
                 "kernel_size": 3,
-                "stride": 2,
+                "stride": 1,
                 "padding": 1,
-                "output_padding": 1,
-                "activation": nn.ELU(),
-                "in_filters": 128,
-                "out_filters": 64,
-            },  # (5, 5, 128) -> (10, 10, 64)
+                "output_padding": 0,
+                "activation": nn.ELU(),  # Final activation
+                "in_filters": 32,
+                "out_filters": in_channels,
+            },  # (20, 20, 32) -> (20, 20, 1)
             {
                 "type": "conv_transpose",
                 "kernel_size": 3,
@@ -106,12 +96,23 @@ def get_conv_layer(args):
             {
                 "type": "conv_transpose",
                 "kernel_size": 3,
-                "stride": 1,
+                "stride": 2,
                 "padding": 1,
-                "activation": nn.ELU(),  # Final activation
-                "in_filters": 32,
-                "out_filters": 1,
-            },  # (20, 20, 32) -> (20, 20, 1)
+                "output_padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 64,
+            },  # (5, 5, 128) -> (10, 10, 64)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 2,
+                "stride": 2,
+                "padding": 0,
+                "output_padding": 0,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 128,
+            },  # (2, 2, 128) -> (5, 5, 128)
         ]
 
     elif args.env_name in ("CtF1v1", "CtF1v2"):
