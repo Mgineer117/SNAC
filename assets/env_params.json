@@ -161,7 +161,7 @@
         "oc_batch_size": 512,
         "batch_size": 2048,
         "eval_episodes": 10,
-        "num_traj_decomp": 300,
+        "num_traj_decomp": 500,
         "max_batch_size": 200000,
         "min_batch_size": 25000,
         "post_process": "nonzero_rewards_only",
