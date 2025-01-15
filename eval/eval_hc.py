@@ -88,7 +88,6 @@ def train(eval_ep_num=10):
     hc_evaluator = HC_Evaluator(
         dir=hc_path,
         log_interval=1,
-        min_option_length=args.min_option_length,
         **evaluator_params,
     )
 

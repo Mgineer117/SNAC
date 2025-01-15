@@ -1096,13 +1096,13 @@ class CtfMvNEnv(MultiGridEnv):
                     # case (False, False):
                     #     blue_win = self.np_random.choice([True, False])
                     case (True, True):
-                        blue_win = self.np_random.choice([False, True])
+                        blue_win = self.np_random.choice([False, False])
                     case (True, False):
-                        blue_win = self.np_random.choice([False, True])
+                        blue_win = self.np_random.choice([True, True])
                     case (False, True):
-                        blue_win = self.np_random.choice([False, True])
+                        blue_win = self.np_random.choice([False, False])
                     case (False, False):
-                        blue_win = self.np_random.choice([False, True])
+                        blue_win = self.np_random.choice([False, False])
                     case (_, _):
                         raise ValueError(
                             f"Invalid combination of blue_agent_in_blue_territory: {blue_agent_in_blue_territory} and red_agent_in_red_territory: {red_agent_in_red_territory}"
