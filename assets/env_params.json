@@ -1,6 +1,6 @@
 {
     "FourRooms": {
-        "SF_epoch": 2500,
+        "SF_epoch": 1500,
         "Psi_epoch": 0,
         "OP_epoch": 15,
         "HC_epoch": 200,
@@ -43,7 +43,7 @@
         "gamma": 0.99
     },
     "Maze": {
-        "SF_epoch": 2500,
+        "SF_epoch": 1500,
         "Psi_epoch": 0,
         "OP_epoch": 20,
         "HC_epoch": 200,
@@ -86,7 +86,7 @@
         "gamma": 0.99
     },
     "CtF1v1": {
-        "SF_epoch": 2500,
+        "SF_epoch": 1500,
         "Psi_epoch": 0,
         "OP_epoch": 25,
         "HC_epoch": 200,
@@ -130,7 +130,7 @@
         "ctf_map": "regular"
     },
     "CtF1v2": {
-        "SF_epoch": 2500,
+        "SF_epoch": 1500,
         "Psi_epoch": 0,
         "OP_epoch": 25,
         "HC_epoch": 200,
