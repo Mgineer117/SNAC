@@ -159,7 +159,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--seeds",
         type=list_of_ints,
-        default=[1, 2, 3, 4, 5],  # 0, 2
+        default=[1, 2, 3],  # 0, 2
         help="seeds for computational stochasticity --seeds 1,3,5,7,9 # without space",
     )
 
@@ -244,7 +244,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-critic-lr",
         type=float,
-        default=None,
+        default=3e-4,
         help="Option policy (PPO-based) critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(

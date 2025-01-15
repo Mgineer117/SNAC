@@ -169,7 +169,7 @@ class OC_Evaluator(Evaluator):
                         successes[num_episodes], infos["success"]
                     )
                 ep_reward += rew
-                ep_length += 1
+                ep_length += step_count
                 option_indices["x"].append(t)
                 option_indices["y"].append(metaData["z_argmax"].numpy())
                 t += step_count
