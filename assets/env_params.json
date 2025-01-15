@@ -2,7 +2,7 @@
     "FourRooms": {
         "SF_epoch": 1500,
         "Psi_epoch": 0,
-        "OP_epoch": 15,
+        "OP_epoch": 20,
         "HC_epoch": 200,
         "PPO_epoch": 200,
         "SAC_epoch": 5000,
