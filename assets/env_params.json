@@ -2,7 +2,7 @@
     "FourRooms": {
         "SF_epoch": 1500,
         "Psi_epoch": 0,
-        "OP_epoch": 10,
+        "OP_epoch": 15,
         "HC_epoch": 200,
         "PPO_epoch": 200,
         "SAC_epoch": 5000,
@@ -88,7 +88,7 @@
     "CtF1v1": {
         "SF_epoch": 1500,
         "Psi_epoch": 0,
-        "OP_epoch": 20,
+        "OP_epoch": 25,
         "HC_epoch": 200,
         "PPO_epoch": 200,
         "SAC_epoch": 10000,
@@ -132,7 +132,7 @@
     "CtF1v2": {
         "SF_epoch": 1500,
         "Psi_epoch": 0,
-        "OP_epoch": 20,
+        "OP_epoch": 25,
         "HC_epoch": 200,
         "PPO_epoch": 200,
         "SAC_epoch": 10000,
