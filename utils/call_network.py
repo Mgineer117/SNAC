@@ -198,57 +198,60 @@ def get_conv_layer(args):
                 "stride": 1,
                 "padding": 1,
                 "activation": nn.ELU(),
-                "in_filters": in_channels,
+                "in_filters": in_channels,  # Single input channel
                 "out_filters": 32,
-            },  # Halve the spatial dimensions
+            },  # (13, 13, 1) -> (13, 13, 32)
             {
                 "type": "conv",
                 "kernel_size": 3,
-                "stride": 1,
+                "stride": 2,
                 "padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": 32,
                 "out_filters": 64,
-            },  # Halve spatial dimensions again
+            },  # (13, 13, 32) -> (7, 7, 64)
             {
                 "type": "conv",
-                "kernel_size": 2,
+                "kernel_size": 3,
                 "stride": 2,
-                "padding": 0,
+                "padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": 64,
                 "out_filters": 128,
-            },  # Halve spatial dimensions again
+            },  # (7, 7, 64) -> (4, 4, 128)
         ]
 
         decoder_conv_layers = [
             {
-                "type": "conv",
+                "type": "conv_transpose",
                 "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.ELU(),
-                "in_filters": in_channels,
-                "out_filters": 32,
-            },  # Halve the spatial dimensions
-            {
-                "type": "conv",
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "activation": nn.ELU(),
-                "in_filters": 32,
-                "out_filters": 64,
-            },  # Halve spatial dimensions again
-            {
-                "type": "conv",
-                "kernel_size": 2,
                 "stride": 2,
-                "padding": 0,
+                "padding": 1,
+                "output_padding": 0,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 64,
+            },  # (4, 4, 128) -> (7, 7, 64)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 3,
+                "stride": 2,
+                "padding": 1,
+                "output_padding": 0,
                 "activation": nn.ELU(),
                 "in_filters": 64,
-                "out_filters": 128,
-            },  # Halve spatial dimensions again
+                "out_filters": 32,
+            },  # (7, 7, 64) -> (13, 13, 32)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
+                "output_padding": 0,
+                "activation": nn.ELU(),  # Use Sigmoid for final output
+                "in_filters": 32,
+                "out_filters": in_channels,
+            },  # (13, 13, 32) -> (13, 13, 1)
         ]
 
     return encoder_conv_layers, decoder_conv_layers
