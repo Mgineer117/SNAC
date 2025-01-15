@@ -632,11 +632,11 @@ class RoombaPolicy(CtfPolicy):
     def __init__(
         self,
         enemy_range: int = 3,
-        flag_range: int = 3,
+        flag_range: int = 2,
         field_map: NDArray | None = None,
         action_set: ActionsT = MazeActions,
         random_generator: Generator | None = None,
-        randomness: float = 0.15,
+        randomness: float = 0.25,
         ego_agent: Literal["red", "blue"] = "red",
         world: WorldT = CtfWorld,
         avoided_objects: list[str] = ["obstacle", "red_agent", "blue_agent"],
@@ -658,7 +658,7 @@ class RoombaPolicy(CtfPolicy):
         random_generator : numpy.random.Generator | None = None
             Random number generator.
             Replace it with the environment's random number generator if needed.
-        randomness : float = 0.15
+        randomness : float = 0.25
             Probability of taking a random action instead of an optimal action.
         ego_agent : Literal["red", "blue"] = "red"
             Controlled agent.
