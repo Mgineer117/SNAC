@@ -459,10 +459,7 @@ class OnlineSampler(Base):
         current_step = 0
         while current_step < self.min_batch_for_worker:
             # env initialization
-            if random_init_pos:
-                options = {"random_init_pos": True}
-            else:
-                options = {"random_init_pos": False}
+            options = {"random_init_pos": False}
             obs, _ = env.reset(seed=grid_type, options=options)
 
             self.external_t = 0
