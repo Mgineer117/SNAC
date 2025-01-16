@@ -159,7 +159,7 @@ if __name__ == "__main__":
     args = DotDict(config)
     args.algo_name = algo_name
     args.env_name = env_name
-    args.num_vector = 8
+    args.num_vector = 24
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")
