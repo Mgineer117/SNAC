@@ -199,7 +199,7 @@ class HC_Evaluator(Evaluator):
             self.external_t = 1
             while not done:
                 with torch.no_grad():
-                    a, metaData = policy(obs, idx, deterministic=False)
+                    a, metaData = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
 
                 option_indices["x"].append(self.external_t)
