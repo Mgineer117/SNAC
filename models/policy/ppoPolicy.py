@@ -186,18 +186,18 @@ class PPO_Learner(BasePolicy):
 
             # global batch normalization and target return
             mb_returns = returns[indices]
-            # mb_advantages = advantages[indices]
+            mb_advantages = advantages[indices]
 
             mb_values = self.critic(mb_states)
-            with torch.no_grad():
-                mb_advantages, _ = estimate_advantages(
-                    mb_rewards,
-                    mb_terminals,
-                    mb_values,
-                    gamma=self._gamma,
-                    tau=self._tau,
-                    device=self.device,
-                )
+            # with torch.no_grad():
+            #     mb_advantages, _ = estimate_advantages(
+            #         mb_rewards,
+            #         mb_terminals,
+            #         mb_values,
+            #         gamma=self._gamma,
+            #         tau=self._tau,
+            #         device=self.device,
+            #     )
 
             # 1. Critic Update
             valueLoss = self.mse_loss(mb_values, mb_returns)
