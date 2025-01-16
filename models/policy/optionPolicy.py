@@ -404,14 +404,27 @@ class OP_Controller(BasePolicy):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
+            mb_rewards = rewards[indices]
+            mb_terminals = terminals[indices]
+
             mb_old_logprobs = old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
-            mb_advantages = advantages[indices]
+            # mb_advantages = advantages[indices]
+
+            mb_values, _ = self.optionCritic(mb_states, z)
+            with torch.no_grad():
+                mb_advantages, _ = estimate_advantages(
+                    mb_rewards,
+                    mb_terminals,
+                    mb_values,
+                    gamma=self.gamma,
+                    tau=self.tau,
+                    device=self.device,
+                )
 
             # 1. Critic Update
-            mb_values, _ = self.optionCritic(mb_states, z)
             valueLoss = self.mse_loss(mb_returns, mb_values)
             vl_losses.append(valueLoss.item())
 

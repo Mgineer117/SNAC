@@ -294,14 +294,26 @@ class HC_Controller(BasePolicy):
 
             mb_states = states[indices]
             mb_option_actions = option_actions[indices]
+            mb_rewards = rewards[indices]
+            mb_terminals = terminals[indices]
 
             mb_old_logprobs = old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
-            mb_advantages = advantages[indices]
+            # mb_advantages = advantages[indices]
 
             mb_values, _ = self.critic(mb_states)
+            with torch.no_grad():
+                mb_advantages, _ = estimate_advantages(
+                    mb_rewards,
+                    mb_terminals,
+                    mb_values,
+                    gamma=self._gamma,
+                    tau=self._tau,
+                    device=self.device,
+                )
+
             valueLoss = self.mse_loss(mb_returns, mb_values)
             vl_losses.append(valueLoss.item())
 
