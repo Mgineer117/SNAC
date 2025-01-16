@@ -360,6 +360,7 @@ class OnlineSampler(Base):
         seed: int | None = None,
         deterministic: bool = False,
     ):
+
         # estimate the batch size to hava a large batch
         data = self.get_reset_data(batch_size=self.thread_batch_size)  # allocate memory
 
@@ -408,7 +409,6 @@ class OnlineSampler(Base):
                 data["entropys"][current_step + t] = (
                     metaData["entropy"].detach().numpy()
                 )
-
                 if done:
                     # clear log
                     current_step += t + 1
@@ -435,6 +435,7 @@ class OnlineSampler(Base):
         seed: int | None = None,
         deterministic: bool = False,
     ):
+
         # estimate the batch size to hava a large batch
         data = self.get_reset_data(batch_size=self.thread_batch_size)  # allocate memory
 
@@ -476,7 +477,7 @@ class OnlineSampler(Base):
                     next_obs, rew, done, infos = env_step(a)
                     if not done:
                         if metaData["is_hc_controller"]:
-                            for o_t in range(1, self.episode_len):
+                            for o_t in range(1, 10):
                                 # env stepping
                                 with torch.no_grad():
                                     option_a, option_dict = policy(
