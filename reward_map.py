@@ -149,13 +149,17 @@ def run_loop(env, option_vals, options, args):
 
 
 if __name__ == "__main__":
+    algo_name = "SNAC+++"
+    env_name = "CtF1v2"
+    seed = 1
     # call json
-    model_dir = "log/eval_log/model_for_eval/"
+    model_dir = f"log/eval_log/model_for_eval/{env_name}/{algo_name}/"
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
-    args.algo_name = "SNAC"
-    args.num_vector = 12
+    args.algo_name = algo_name
+    args.env_name = env_name
+    args.num_vector = 8
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")
@@ -181,11 +185,14 @@ if __name__ == "__main__":
         action_dim=args.a_dim,
         hc_action_dim=args.num_vector + 1,
         agent_num=args.agent_num,
-        min_option_length=args.min_option_length,
         min_cover_option_length=args.min_cover_option_length,
         episode_len=args.episode_len,
-        episode_num=args.episode_num,
+        batch_size=args.batch_size,
+        min_batch_for_worker=args.min_batch_for_worker,
+        cpu_preserve_rate=args.cpu_preserve_rate,
         num_cores=args.num_cores,
+        gamma=args.gamma,
+        verbose=False,
     )
 
     option_vals, options, _ = get_eigenvectors(
