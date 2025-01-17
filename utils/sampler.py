@@ -488,20 +488,6 @@ class OnlineSampler(Base):
                                 rew += self.gamma**o_t * op_rew
                                 if done or option_dict["option_termination"]:
                                     break
-                            # for o_t in range(1, self.min_option_length):
-                            #     # env stepping
-                            #     with torch.no_grad():
-                            #         option_a, _ = policy(
-                            #             next_obs,
-                            #             metaData["z_argmax"],
-                            #             deterministic=deterministic,
-                            #         )
-                            #         option_a = option_a.cpu().numpy().squeeze()
-
-                            #     next_obs, op_rew, done, infos = env_step(option_a)
-                            #     rew += self.gamma**o_t * op_rew
-                            #     if done:
-                            #         break
                         else:
                             o_t = 1
                             option_termination = False
@@ -601,35 +587,33 @@ class OnlineSampler(Base):
         current_step = 0
         while current_step < self.min_batch_for_worker:
             # env initialization
-            if random_init_pos:
-                options = {"random_init_pos": True}
-            else:
-                options = {"random_init_pos": False}
+            options = {"random_init_pos": False}
             obs, _ = env.reset(seed=grid_type, options=options)
 
             is_first_iter = True
             self.external_t = 0
             for t in range(self.episode_len):
-                with torch.no_grad():
-                    # sample action
-                    a, metaData = policy(obs, idx, deterministic=deterministic)
-                    a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
-
                 ### Create an Option Loop
                 if is_first_iter:
+                    with torch.no_grad():
+                        # sample action
+                        a, metaData = policy(obs, idx, deterministic=deterministic)
+                        a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
+
                     next_obs, rew, done, infos = env_step(a)
+
                     if not done:
-                        for o_t in range(self.min_cover_option_length - 1):
+                        for o_t in range(1, self.min_cover_option_length):
                             # env stepping
                             with torch.no_grad():
-                                option_a, _ = policy(
+                                option_a, option_dict = policy(
                                     next_obs, idx, deterministic=deterministic
                                 )
                                 option_a = option_a.cpu().numpy().squeeze()
 
                             next_obs, op_rew, done, infos = env_step(option_a)
-                            rew += self.gamma ** (o_t + 1) * op_rew
-                            if done:
+                            rew += self.gamma**o_t * op_rew
+                            if done or option_dict["option_termination"]:
                                 break
                     is_first_iter = False
                 else:

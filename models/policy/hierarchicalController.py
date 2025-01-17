@@ -230,6 +230,9 @@ class HC_Controller(BasePolicy):
             torch.from_numpy(batch["logprobs"]).to(self._dtype).to(self.device)
         )
 
+        if torch.isnan(states).any():
+            print("states include Nan!!!")
+
         # pm ingredients
         if isinstance(self.primitivePolicy, HC_PPO):
             with torch.no_grad():
