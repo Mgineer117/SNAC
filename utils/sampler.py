@@ -606,14 +606,14 @@ class OnlineSampler(Base):
                         for o_t in range(1, self.min_cover_option_length):
                             # env stepping
                             with torch.no_grad():
-                                option_a, option_dict = policy(
+                                option_a, _ = policy(
                                     next_obs, idx, deterministic=deterministic
                                 )
                                 option_a = option_a.cpu().numpy().squeeze()
 
                             next_obs, op_rew, done, infos = env_step(option_a)
                             rew += self.gamma**o_t * op_rew
-                            if done or option_dict["option_termination"]:
+                            if done:
                                 break
                     is_first_iter = False
                 else:
