@@ -538,6 +538,10 @@ class OnlineSampler(Base):
 
         for k in data:
             data[k] = data[k][:current_step]
+            if np.isnan(data[k]).any():
+                print("includes nan")
+                print("includes nan")
+                print("includes nan")
 
         if queue is not None:
             queue.put([pid, data])

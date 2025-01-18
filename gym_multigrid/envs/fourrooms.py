@@ -12,7 +12,7 @@ from gym_multigrid.core.constants import *
 from gym_multigrid.utils.window import Window
 from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, MazeActions
 from gym_multigrid.core.grid import Grid
-from gym_multigrid.core.object import Goal
+from gym_multigrid.core.object import Goal, Wall
 from gym_multigrid.core.world import RoomWorld
 from gym_multigrid.multigrid import MultiGridEnv
 from gym_multigrid.typing import Position
@@ -93,10 +93,7 @@ class FourRooms(MultiGridEnv):
             )
         ]
 
-        self.doorway_positions = [(3, 6), (6, 2), (10, 6), (7, 9)]
-        self.vert_wall_positions = [(6, 0), (7, 6)]
-        self.hor_wall_positions = [(0, 6), (6, 6)]
-
+        # Define positions for goals and agents
         self.goal_positions = [
             (3, 9),
             (7, 9),
@@ -106,9 +103,22 @@ class FourRooms(MultiGridEnv):
             (11, 1),
         ]
 
-        self.grids = {}
-        self.grid_imgs = {}
-
+        # Explicit maze structure based on the image
+        self.room_structure = [
+            "#############",
+            "#    #      #",
+            "#    #      #",
+            "#           #",
+            "#    #      #",
+            "#    #      #",
+            "## ###### ###",
+            "#     #     #",
+            "#     #     #",
+            "#     #     #",
+            "#           #",
+            "#     #     #",
+            "#############",
+        ]
         super().__init__(
             width=self.width,
             height=self.height,
@@ -128,25 +138,13 @@ class FourRooms(MultiGridEnv):
         # Create the grid
         self.grid = Grid(width, height, self.world)
 
-        # Generate the surrounding walls
-        self.grid.horz_wall(0, 0)
-        self.grid.horz_wall(0, height - 1)
-        self.grid.vert_wall(0, 0)
-        self.grid.vert_wall(width - 1, 0)
-
-        room_w = width // 2
-        room_h = height // 2
-
-        # Bottom wall and door
-        for coord in self.vert_wall_positions:
-            self.grid.vert_wall(coord[0], coord[1], room_h)
-
-        # Bottom wall and door
-        for coord in self.hor_wall_positions:
-            self.grid.horz_wall(coord[0], coord[1], room_w)
-
-        for pos in self.doorway_positions:
-            self.grid.set(*pos, None)
+        # Translate the maze structure into the grid
+        for y, row in enumerate(self.room_structure):
+            for x, cell in enumerate(row):
+                if cell == "#":
+                    self.grid.set(x, y, Wall(self.world))
+                elif cell == " ":
+                    self.grid.set(x, y, None)
 
         # place goal
         goal = Goal(self.world, 0)
