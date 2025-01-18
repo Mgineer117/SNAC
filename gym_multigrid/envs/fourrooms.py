@@ -106,17 +106,17 @@ class FourRooms(MultiGridEnv):
         # Explicit maze structure based on the image
         self.room_structure = [
             "#############",
-            "#    #      #",
-            "#    #      #",
+            "#     #     #",
+            "#     #     #",
             "#           #",
-            "#    #      #",
-            "#    #      #",
+            "#     #     #",
+            "#     #     #",
             "## ###### ###",
-            "#     #     #",
-            "#     #     #",
-            "#     #     #",
+            "#      #    #",
+            "#      #    #",
+            "#      #    #",
             "#           #",
-            "#     #     #",
+            "#      #    #",
             "#############",
         ]
         super().__init__(
