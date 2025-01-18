@@ -490,8 +490,7 @@ class OnlineSampler(Base):
                                     break
                         else:
                             o_t = 1
-                            option_termination = False
-                            while not option_termination:
+                            for o_t in range(1, 10):
                                 # env stepping
                                 with torch.no_grad():
                                     option_a, _ = policy(
@@ -507,7 +506,7 @@ class OnlineSampler(Base):
                                 )
                                 rew += self.gamma**o_t * op_rew
                                 o_t += 1
-                                if done:
+                                if done or option_termination:
                                     break
                 else:
                     ### Conventional Loop

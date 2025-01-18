@@ -58,6 +58,7 @@ class OC_Evaluator(Evaluator):
         render_fps: int = 10,
         eval_ep_num: int = 1,
         log_interval: int = 1,
+        gamma: float = 0.99,
     ):
         super().__init__(
             logger=logger,
@@ -69,6 +70,7 @@ class OC_Evaluator(Evaluator):
         )
         self.plotter = plotter
         self.render_fps = render_fps
+        self.gamma = gamma
 
         if dir is not None:
             if gridPlot:
@@ -135,32 +137,35 @@ class OC_Evaluator(Evaluator):
                 ns, rew, term, trunc, infos = env.step(a)
                 done = term or trunc
 
-                option_termination = False
                 step_count = 1
-                while not (done or option_termination):
-                    with torch.no_grad():
-                        option_a, _ = policy(
-                            ns, metaData["z_argmax"], deterministic=True
+                if not done:
+                    for _ in range(1, 10):
+                        with torch.no_grad():
+                            option_a, _ = policy(
+                                ns, metaData["z_argmax"], deterministic=True
+                            )
+                            option_a = (
+                                option_a.cpu().numpy().squeeze()
+                                if a.shape[-1] > 1
+                                else [a.item()]
+                            )
+
+                        # Update the grid
+                        if self.gridCriteria:
+                            self.get_agent_pos(env)
+
+                        ns, op_rew, term, trunc, infos = env.step(option_a)
+
+                        rew += self.gamma**step_count * op_rew
+                        step_count += 1
+
+                        option_termination = policy.predict_option_termination(
+                            ns, metaData["z_argmax"]
                         )
-                        option_a = (
-                            option_a.cpu().numpy().squeeze()
-                            if a.shape[-1] > 1
-                            else [a.item()]
-                        )
+                        done = term or trunc
 
-                    # Update the grid
-                    if self.gridCriteria:
-                        self.get_agent_pos(env)
-
-                    ns, op_rew, term, trunc, infos = env.step(option_a)
-
-                    option_termination = policy.predict_option_termination(
-                        ns, metaData["z_argmax"]
-                    )
-                    done = term or trunc
-
-                    rew += 0.99**step_count * op_rew
-                    step_count += 1
+                        if done or option_termination:
+                            break
 
                 s = ns
 
