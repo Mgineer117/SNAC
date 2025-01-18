@@ -323,7 +323,14 @@ class HC_Controller(BasePolicy):
             vl_losses.append(valueLoss.item())
 
             # 2. Policy Update
-            _, _, metaData = self.policy(mb_states)
+            try:
+                _, _, metaData = self.policy(mb_states)
+            except:
+                print(mb_states)
+                print(mb_states.shape)
+                print(indices.shape, states.shape)
+                print(torch.isnan(mb_states).any())
+
             # Compute hierarchical policy logprobs and entropy
             logprobs = self.policy.log_prob(metaData["dist"], mb_option_actions)
             entropy = self.policy.entropy(metaData["dist"])
