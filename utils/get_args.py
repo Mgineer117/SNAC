@@ -424,6 +424,12 @@ def get_args(verbose=True):
         default=0.95,
         help="For multiple run of experiments, one can set this to restrict the cpu threads the one exp uses for sampling.",
     )
+    parser.add_argument(
+        "--division-rate",
+        type=float,
+        default=0.25,
+        help="Scaler to SFs network weight to prevent overfitting",
+    )
 
     ### Dimensional params
     parser.add_argument(

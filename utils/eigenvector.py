@@ -88,6 +88,7 @@ def discover_options(
     gamma: int = 0.99,
     num_trj: int = 100,
     episode_len: int = 100,
+    division_rate: float = 0.25,
     idx: int | None = None,
     draw_map: bool = False,
     device=torch.device("cpu"),
@@ -265,7 +266,7 @@ def discover_options(
 
         elif algo_name == "SNAC+++":
             ##### cluster in action-value space + top #####
-            num_top_vector = ceil(num * 0.25)
+            num_top_vector = ceil(num * division_rate)
             num_cluster_vector = num - num_top_vector
 
             S_list = [evals_s]
@@ -472,7 +473,7 @@ def discover_options(
 
         elif algo_name == "EigenOption+++":
             ##### cluster in action-value space + top #####
-            num_top_vector = ceil(num * 0.25)
+            num_top_vector = ceil(num * division_rate)
             num_cluster_vector = num - num_top_vector
 
             rewards = evecs @ features.T  # (num options) x T
@@ -596,6 +597,7 @@ def get_eigenvectors(
             num=int(args.num_vector / 2),
             num_trj=args.num_traj_decomp,
             episode_len=args.episode_len,
+            division_rate=args.division_rate,
             draw_map=draw_map,
             gamma=args.gamma,
             device=args.device,
@@ -618,6 +620,7 @@ def get_eigenvectors(
             num=args.num_vector,
             num_trj=args.num_traj_decomp,
             episode_len=args.episode_len,
+            division_rate=args.division_rate,
             draw_map=draw_map,
             gamma=args.gamma,
             device=args.device,
