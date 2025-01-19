@@ -78,6 +78,7 @@ class PPO_Evaluator(Evaluator):
             self.set_any_seed(grid_type, seed)
 
         successes = np.zeros((self.eval_ep_num,))
+        failures = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
@@ -109,6 +110,11 @@ class PPO_Evaluator(Evaluator):
                     successes[num_episodes] = np.maximum(
                         successes[num_episodes], infos["success"]
                     )
+                if "failures" in infos:
+                    failures[num_episodes] = np.maximum(
+                        failures[num_episodes], infos["failures"]
+                    )
+
                 ep_reward += rew
                 ep_length += 1
 
@@ -151,6 +157,7 @@ class PPO_Evaluator(Evaluator):
         rew_mean, rew_std = np.mean(reward_list), np.std(reward_list)
         ln_mean, ln_std = np.mean(length_list), np.std(length_list)
         winRate_mean, winRate_std = np.mean(successes), np.std(successes)
+        failRate_mean, failRate_std = np.mean(failures), np.std(failures)
 
         eval_dict = {
             "rew_mean": rew_mean,
@@ -159,6 +166,8 @@ class PPO_Evaluator(Evaluator):
             "ln_std": ln_std,
             "winRate_mean": winRate_mean,
             "winRate_std": winRate_std,
+            "failRate_mean": failRate_mean,
+            "failRate_std": failRate_std,
         }
 
         if queue is not None:

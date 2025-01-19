@@ -109,6 +109,7 @@ class OC_Evaluator(Evaluator):
             self.set_any_seed(grid_type, seed)
 
         successes = np.zeros((self.eval_ep_num,))
+        failures = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             self.update_render_criteria(epoch, num_episodes)
 
@@ -173,6 +174,12 @@ class OC_Evaluator(Evaluator):
                     successes[num_episodes] = np.maximum(
                         successes[num_episodes], infos["success"]
                     )
+
+                if "failures" in infos:
+                    failures[num_episodes] = np.maximum(
+                        failures[num_episodes], infos["failures"]
+                    )
+
                 ep_reward += rew
                 ep_length += step_count
                 option_indices["x"].append(t)
@@ -235,6 +242,7 @@ class OC_Evaluator(Evaluator):
         ln_mean, ln_std = np.mean(length_list), np.std(length_list)
         ent_mean, ent_std = np.mean(entropy_list), np.std(entropy_list)
         winRate_mean, winRate_std = np.mean(successes), np.std(successes)
+        failRate_mean, failRate_std = np.mean(failures), np.std(failures)
 
         eval_dict = {
             "rew_mean": rew_mean,
@@ -245,6 +253,8 @@ class OC_Evaluator(Evaluator):
             "ent_std": ent_std,
             "winRate_mean": winRate_mean,
             "winRate_std": winRate_std,
+            "failRate_mean": failRate_mean,
+            "failRate_std": failRate_std,
         }
 
         if queue is not None:
