@@ -187,7 +187,6 @@ class HC_Controller(BasePolicy):
 
         if is_option:
             # option selection
-            # obs should be unnormalized
             with torch.no_grad():
                 a, option_dict = self.op_network(obs, z_argmax, deterministic=True)
 
