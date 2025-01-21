@@ -474,7 +474,8 @@ class OnlineSampler(Base):
                     next_obs, rew, done, infos = env_step(a)
                     if not done:
                         if metaData["is_hc_controller"]:
-                            for o_t in range(1, 5):
+                            # limit option duration for computational reason
+                            for o_t in range(1, 10):
                                 # env stepping
                                 with torch.no_grad():
                                     option_a, option_dict = policy(
@@ -486,7 +487,7 @@ class OnlineSampler(Base):
 
                                 next_obs, op_rew, done, infos = env_step(option_a)
                                 rew += self.gamma**o_t * op_rew
-                                if done:  # or option_dict["option_termination"]:
+                                if done or option_dict["option_termination"]:
                                     break
                         else:
                             o_t = 1
