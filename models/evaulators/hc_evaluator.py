@@ -211,7 +211,7 @@ class HC_Evaluator(Evaluator):
                         a, is_option=metaData["is_option"]
                     )
                     if not done:
-                        for o_t in range(1, 15):
+                        for o_t in range(1, 10):
                             # env stepping
                             with torch.no_grad():
                                 option_a, option_dict = policy(

@@ -17,16 +17,13 @@ from utils.call_env import call_env
 from models.evaulators.base_evaluator import DotDict
 
 COLORS = {
-    "SNAC": "red",
-    "SNAC+": "red",
-    "SNAC++": "red",
-    "SNAC+++": "red",
-    "EigenOption": "blue",
-    "EigenOption+": "blue",
-    "EigenOption++": "blue",
-    "EigenOption+++": "blue",
-    "CoveringOption": "green",
-    "PPO": "magenta",
+    "EigenOption": "#da0000",  # Muted Red
+    "EigenOption+": "#ff8000",  # Deep Orange
+    "EigenOption++": "#00c9ff",  # Cyan
+    "EigenOption+++": "#1565C0",  # Medium Blue
+    "CoveringOption": "#388E3C",  # Forest Green
+    "OptionCritic": "#8700ff",  # Rich Purple
+    "PPO": "#ff80ff",  # Pale Magenta
 }
 
 LINESTYLES = {
@@ -37,42 +34,64 @@ LINESTYLES = {
 }
 
 MARKERS = {
-    "EigenOption": {
+    "PPO": {
         "marker": "o",
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
-        "markersize": 15,
+        "markersize": 10,
     },
-    "EigenOption+": {
+    "EigenOption": {
         "marker": "s",
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
-        "markersize": 15,
+        "markersize": 10,
+    },
+    "EigenOption+": {
+        "marker": "D",
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 10,
     },
     "EigenOption++": {
         "marker": "X",
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
-        "markersize": 15,
+        "markersize": 10,
     },
     "EigenOption+++": {
+        "marker": "P",
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 10,
+    },
+    "CoveringOption": {
         "marker": "^",
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
-        "markersize": 15,
+        "markersize": 10,
+    },
+    "OptionCritic": {
+        "marker": "v",
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 10,
     },
 }
 
-LABEL = {
-    "EigenOption": f"Top n",
-    "EigenOption+": f"CVS",
-    "EigenOption++": f"CRS",
-    "EigenOption+++": f"TRS",
+LABELS = {
+    "EigenOption": "Top n",
+    "EigenOption+": "CVS",
+    "EigenOption++": "CRS",
+    "EigenOption+++": "TRS (ours)",
+    "CoveringOption": "Successive Top n",
+    "OptionCritic": "OptionCritic",
+    "PPO": "PPO",
 }
 
 
 def init_args(algo_name: str, num_vector: str):
-    model_dir = "log/eval_log/model_for_eval/"
+    env_name = "Maze"
+    model_dir = f"log/eval_log/model_for_eval/{env_name}/EigenOption/"
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
@@ -80,7 +99,7 @@ def init_args(algo_name: str, num_vector: str):
     args.s_dim = tuple(args.s_dim)
 
     args.algo_name = algo_name
-    args.env_name = "Maze"
+    args.env_name = env_name
     args.num_vector = num_vector
     args.device = torch.device("cpu")
 
@@ -239,7 +258,7 @@ def get_similarity_metric(features, option_vals, options, pos, args):
 
 if __name__ == "__main__":
     algo_names = ["EigenOption", "EigenOption+", "EigenOption++", "EigenOption+++"]
-    num_vectors = [6, 12, 24, 36, 48, 60, 72, 84]  # , 24, 48]
+    num_vectors = [6, 12, 18, 24, 30]  # , 24, 48]
 
     mean_diss_dict = {}
     for algo_name in algo_names:
@@ -253,7 +272,7 @@ if __name__ == "__main__":
             grid, pos = get_grid(args)
             feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
 
-            n = 3
+            n = 5
             mean_diss = 0
             dict_list = []
             for i in range(n):
@@ -295,17 +314,17 @@ if __name__ == "__main__":
         plt.plot(
             num_vectors,
             v,
-            label=f"{LABEL[k]}",
+            label=f"{LABELS[k]}",
             color=COLORS[k],
             linestyle=LINESTYLES[k],
             **MARKERS[k],
         )
 
     plt.xlabel("Number of Vectors/ Clusters", fontsize=20)
-    plt.ylabel("Mean Dissimilarity per State", fontsize=16)
-    plt.xticks(num_vectors, labels=[str(x) for x in num_vectors], fontsize=14)
-    plt.yticks(fontsize=14)
-    plt.legend(fontsize=12)
+    plt.ylabel("Mean Dissimilarity", fontsize=20)
+    plt.xticks(num_vectors, labels=[str(x) for x in num_vectors], fontsize=18)
+    plt.yticks(fontsize=18)
+    # plt.legend(fontsize=12)
     # plt.xscale("log")
     plt.tight_layout()
     plt.savefig(f"FourRooms cluster.png")

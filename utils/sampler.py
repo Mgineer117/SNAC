@@ -475,7 +475,7 @@ class OnlineSampler(Base):
                     if not done:
                         if metaData["is_hc_controller"]:
                             # limit option duration for computational reason
-                            for o_t in range(1, 15):
+                            for o_t in range(1, 10):
                                 # env stepping
                                 with torch.no_grad():
                                     option_a, option_dict = policy(

@@ -427,9 +427,9 @@ def discover_options(
         "EigenOption+++",
     ):
         option_dim = psi.shape[-1]
-        if option_dim < 3 * num:
+        if option_dim < 2 * num:
             raise ValueError(
-                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{3*num}"
+                f"The number of eigenvectors smaller than what you are to sample!!{option_dim}<{2*num}"
             )
 
         _, evals, evecs = torch.svd(psi)  # S: max - min
