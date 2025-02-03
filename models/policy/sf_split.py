@@ -277,9 +277,9 @@ class SF_Split(BasePolicy):
         plt.stem(
             x,
             reward_pred_np,
-            linefmt="b-",
-            markerfmt="bo",
-            basefmt="k-",
+            linefmt="k-",       # Keep the line black
+            markerfmt="o",      # Use default circular marker
+            basefmt="k-",       # Keep the base line black
             label="Predicted Rewards",
         )
 
@@ -327,14 +327,9 @@ class SF_Split(BasePolicy):
             self.plot_rewards(reward_pred, rewards)
 
         state_pred = self.decode(phi_s, actions, conv_dict)
-        if isinstance(self.feaNet, VAE):
-            phi_s_loss = (
-                5 * self._phi_loss_s_scaler * self.mse_loss(state_pred, next_states)
-            )
-        else:
-            phi_s_loss = self._phi_loss_s_scaler * self.mqe4D_loss(
-                next_states, state_pred
-            )
+        phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(
+            next_states, state_pred
+        )
 
         option_loss_scaler = 1.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)

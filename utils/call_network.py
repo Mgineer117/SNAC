@@ -431,12 +431,18 @@ def call_sfNetwork(args, sf_path: str | None = None):
                 bold=True,
             )
             print(msg)
+
+            decoder_inpuit_dim = (
+                int(args.sf_dim / 2)
+                if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++")
+                else args.sf_dim
+            )
             feaNet = VAE(
                 state_dim=args.s_dim,
                 action_dim=args.a_dim,
                 fc_dim=args.feature_fc_dim,
                 sf_dim=args.sf_dim,
-                decoder_inpuit_dim=int(args.sf_dim / 2),
+                decoder_inpuit_dim=decoder_inpuit_dim,
                 is_snac=True,
                 activation=nn.Tanh(),
             )
@@ -560,6 +566,10 @@ def call_opNetwork(
                 activation=nn.ReLU(),
             )
         else:
+            print(args.s_flat_dim)
+            print(args.option_fc_dim)
+            print(args.a_dim)
+
             optionPolicy = OptionPolicy(
                 input_dim=args.s_flat_dim,
                 fc_dim=args.option_fc_dim,

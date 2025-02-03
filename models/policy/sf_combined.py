@@ -229,14 +229,9 @@ class SF_Combined(BasePolicy):
         phi, conv_dict = self.feaNet(states, agent_pos, deterministic=False)
 
         state_pred = self.decode(phi, actions, conv_dict)
-        if isinstance(self.feaNet, VAE):
-            phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(
-                state_pred, next_states
-            )
-        else:
-            phi_s_loss = self._phi_loss_s_scaler * self.mqe4D_loss(
-                next_states, state_pred
-            )
+        phi_s_loss = self._phi_loss_s_scaler * self.mqe4D_loss(
+            next_states, state_pred
+        )
 
         option_loss_scaler = 1e-10
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)

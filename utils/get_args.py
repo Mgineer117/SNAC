@@ -554,7 +554,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--rendering",
         type=bool,
-        default=False,
+        default=True,
         help="saves the rendering during evaluation",
     )
     parser.add_argument(

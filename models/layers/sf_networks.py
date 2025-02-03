@@ -408,7 +408,7 @@ class VAE(nn.Module):
         self._sf_dim = sf_dim
         self._is_snac = is_snac
 
-        self.logstd_range = (-10, 2)
+        self.logstd_range = (-5, 2)
 
         # Activation functions
         self.act = activation
@@ -474,33 +474,50 @@ class VAE(nn.Module):
         out = self.flatter(state)
         out = self.encoder(out)
 
-        mu = F.tanh(self.mu(out))
-        logstd = torch.clamp(
-            self.logstd(out),
-            min=self.logstd_range[0],
-            max=self.logstd_range[1],
-        )
-
-        std = torch.exp(logstd)
-        cov = torch.diag_embed(std**2)
-
-        dist = MultivariateNormal(loc=mu, covariance_matrix=cov)
-
-        feature = mu if deterministic else dist.rsample()
-
-        if self._is_snac:
-            # Sum over latent dimensions, then mean over batch
-            # Only for spatial features
-            dim_half = mu.size(-1) // 2  # Half the dimension
-            mu_half = mu[..., :dim_half]
-            std_half = std[..., :dim_half]
-
-            kl = -0.5 * torch.sum(
-                1 + torch.log(std_half**2) - mu_half**2 - std_half**2, dim=-1
-            )
+        if deterministic:
+            feature = F.tanh(self.mu(out))
         else:
-            # Sum over latent dimensions, then mean over batch
-            kl = -0.5 * torch.sum(1 + torch.log(std**2) - mu**2 - std**2, dim=-1)
+            if self._is_snac:
+                mu = F.tanh(self.mu(out))
+                logstd = torch.clamp(
+                    self.logstd(out),
+                    min=self.logstd_range[0],
+                    max=self.logstd_range[1],
+                )
+                
+                dim_half = mu.size(-1) // 2  # Half the dimension
+                mu_reward, mu_state = mu[:, :dim_half] , mu[:, dim_half:]
+                logstd_reward, logstd_state = logstd[:, :dim_half], logstd[:, dim_half:]
+
+                state_std = torch.exp(logstd_state)
+                state_cov = torch.diag_embed(state_std**2)
+
+                dist = MultivariateNormal(loc=mu_state, covariance_matrix=state_cov)
+
+                state_feature = dist.rsample()
+                feature = torch.concatenate((mu_reward, state_feature), axis=-1)
+
+                kl = -0.5 * torch.sum(
+                    1 + torch.log(state_std**2) - mu_state**2 - state_std**2, dim=-1
+                )
+            else:
+                mu = F.tanh(self.mu(out))
+                logstd = torch.clamp(
+                    self.logstd(out),
+                    min=self.logstd_range[0],
+                    max=self.logstd_range[1],
+                )
+                
+                std = torch.exp(state)
+                cov = torch.diag_embed(std**2)
+
+                dist = MultivariateNormal(loc=mu, covariance_matrix=cov)
+
+                feature = dist.rsample()
+
+                kl = -0.5 * torch.sum(
+                    1 + torch.log(std**2) - mu**2 - std**2, dim=-1
+                )
         kl_loss = torch.mean(kl)
 
         return feature, {"loss": kl_loss}
