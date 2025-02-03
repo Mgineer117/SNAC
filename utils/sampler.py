@@ -491,7 +491,7 @@ class OnlineSampler(Base):
                                     break
                         else:
                             o_t = 1
-                            for o_t in range(1, 10):
+                            for o_t in range(1, 15):
                                 # env stepping
                                 with torch.no_grad():
                                     option_a, _ = policy(

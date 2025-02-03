@@ -419,7 +419,7 @@ class VAE(nn.Module):
         self.en_vae = MLP(
             input_dim=input_dim,
             hidden_dims=(fc_dim, fc_dim, fc_dim),
-            activation=self.act,
+            activation=nn.ELU(),
         )
 
         # self.encoder = nn.Sequential(self.flatter, self.tensorEmbed, self.en_vae)
@@ -427,14 +427,12 @@ class VAE(nn.Module):
 
         self.mu = MLP(
             input_dim=fc_dim,
-            hidden_dims=(fc_dim,),
-            output_dim=sf_dim,
+            hidden_dims=(sf_dim,),
             activation=nn.Identity(),
         )
         self.logstd = MLP(
             input_dim=fc_dim,
-            hidden_dims=(fc_dim,),
-            output_dim=sf_dim,
+            hidden_dims=(sf_dim,),
             activation=nn.Identity(),
         )
 
@@ -461,7 +459,7 @@ class VAE(nn.Module):
             input_dim=fc_dim,
             hidden_dims=(fc_dim, fc_dim, fc_dim),
             output_dim=input_dim,
-            activation=self.act,
+            activation=nn.ELU(),
         )
 
         self.decoder = nn.Sequential(self.concat, self.de_vae)
