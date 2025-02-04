@@ -194,7 +194,7 @@
         "op_policy_lr": 5e-4,
         "phi_loss_r_scaler": 1.0,
         "phi_loss_s_scaler": 1e-3,
-        "phi_loss_kl_scaler": 1e-6,
+        "phi_loss_kl_scaler": 1e-5,
         "phi_loss_l2_scaler": 1e-9,
         "episode_len": 250,
         "op_batch_size": 512,
