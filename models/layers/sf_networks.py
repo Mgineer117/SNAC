@@ -427,32 +427,35 @@ class VAE(nn.Module):
 
         self.mu = MLP(
             input_dim=fc_dim,
-            hidden_dims=(sf_dim,),
-            activation=nn.Identity(),
+            hidden_dims=(fc_dim// 2,),
+            output_dim=sf_dim,
+            activation=nn.ELU(),
         )
         self.logstd = MLP(
             input_dim=fc_dim,
-            hidden_dims=(sf_dim,),
-            activation=nn.Identity(),
+            hidden_dims=(fc_dim // 2,),
+            output_dim=sf_dim,
+            initialization="nearzero",
+            activation=nn.ELU(),
         )
 
         ### Decoding module
         self.de_latent = MLP(
             input_dim=decoder_inpuit_dim,
             hidden_dims=(fc_dim,),
-            activation=self.act,
+            activation=nn.ELU(),
         )
 
         self.de_action = MLP(
             input_dim=action_dim,
             hidden_dims=(fc_dim,),
-            activation=self.act,
+            activation=nn.ELU(),
         )
 
         self.concat = MLP(
             input_dim=int(2 * fc_dim),
             hidden_dims=(fc_dim,),
-            activation=self.act,
+            activation=nn.ELU(),
         )
 
         self.de_vae = MLP(
@@ -479,6 +482,7 @@ class VAE(nn.Module):
         else:
             if self._is_snac:
                 mu = F.tanh(self.mu(out))
+                # mu = self.mu(out)
                 logstd = torch.clamp(
                     self.logstd(out),
                     min=self.logstd_range[0],
@@ -518,7 +522,7 @@ class VAE(nn.Module):
                 kl = -0.5 * torch.sum(
                     1 + torch.log(std**2) - mu**2 - std**2, dim=-1
                 )
-        kl_loss = torch.mean(kl)
+            kl_loss = torch.mean(kl)
 
         return feature, {"loss": kl_loss}
 

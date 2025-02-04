@@ -38,7 +38,7 @@ class PointNavigationEnv(BaseTask):
         self._add_geoms(Walls(num=4, locate_factor=1.25))
         self._add_geoms(
             Pillars(
-                num=9,
+                num=8,
                 size=0.1,
                 height=0.1,
                 keepout=0.1,

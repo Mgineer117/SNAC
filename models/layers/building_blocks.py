@@ -90,7 +90,7 @@ class MLP(nn.Module):
         input_dim: int,
         hidden_dims: Union[List[int], Tuple[int]],
         output_dim: Optional[int] = None,
-        initialization: bool = True,
+        initialization: str = "xavier",
         activation: nn.Module = nn.ReLU(),
         dropout_rate: Optional[float] = None,
         device=torch.device("cpu"),
@@ -102,15 +102,17 @@ class MLP(nn.Module):
         # Initialize hidden layers
         for in_dim, out_dim in zip(hidden_dims[:-1], hidden_dims[1:]):
             linear_layer = nn.Linear(in_dim, out_dim)
-            if initialization:
+            if initialization == "xavier":
                 nn.init.xavier_normal_(
                     linear_layer.weight, gain=nn.init.calculate_gain("tanh")
                 )  # Xavier Normal initialization
-
-                # nn.init.orthogonal_(
-                #     linear_layer.weight, gain=1.414
-                # )  # Orthogonal initialization
-                linear_layer.bias.data.fill_(0.01)
+            elif initialization == "orthogonal":
+                nn.init.orthogonal_(
+                    linear_layer.weight, gain=1.414
+                )  # Orthogonal initialization
+            elif initialization == "nearzero":
+                linear_layer.weight.data.fill_(-2) # logstd e^-2 ~= 0.1
+            linear_layer.bias.data.fill_(0.01)
             model += (
                 [linear_layer, activation] if activation is not None else [linear_layer]
             )

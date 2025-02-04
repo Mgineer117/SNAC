@@ -277,9 +277,9 @@ class SF_Split(BasePolicy):
         plt.stem(
             x,
             reward_pred_np,
-            linefmt="k-",       # Keep the line black
-            markerfmt="o",      # Use default circular marker
-            basefmt="k-",       # Keep the base line black
+            linefmt="b-",
+            markerfmt="bo",
+            basefmt="k-",
             label="Predicted Rewards",
         )
 
@@ -291,6 +291,44 @@ class SF_Split(BasePolicy):
         plt.legend()
         plt.grid(True, which="both", ls="--", linewidth=0.5)
         plt.savefig(f"{self.sf_path}/{self._forward_steps}_reward.png")
+        plt.close()
+
+    def plot_states(self, state_preds, states):
+        """
+        Plot predicted and true rewards as a stem plot with logarithmic y-axis.
+        """
+        # Detach tensors and convert to NumPy for plotting
+        state_preds = state_preds[0].detach().cpu().numpy().flatten()
+        states = states[0].detach().cpu().numpy().flatten()
+
+        # Plot stem
+        x = range(state_preds.shape[0])
+        plt.figure(figsize=(12, 6))
+        plt.stem(
+            x,
+            state_preds,
+            linefmt="r-",
+            markerfmt="ro",
+            basefmt="k-",
+            label="True states",
+        )
+        plt.stem(
+            x,
+            states,
+            linefmt="b-",
+            markerfmt="bo",
+            basefmt="k-",
+            label="Predicted States",
+        )
+
+        # Set logarithmic y-scale
+        # plt.yscale('log')
+        plt.xlabel("Reward Index")
+        plt.ylabel("Reward")
+        plt.title("Predicted vs True Rewards")
+        plt.legend()
+        plt.grid(True, which="both", ls="--", linewidth=0.5)
+        plt.savefig(f"{self.sf_path}/{self._forward_steps}_state.png")
         plt.close()
 
     def decode(self, features, actions, conv_dict):
@@ -322,14 +360,15 @@ class SF_Split(BasePolicy):
         reward_pred = torch.sum(phi_r * self._options, axis=-1, keepdim=True)
         phi_r_loss = self._phi_loss_r_scaler * self.mse_loss(reward_pred, rewards)
 
-        # Plot predicted vs true rewards
-        if self._forward_steps % 100 == 0:
-            self.plot_rewards(reward_pred, rewards)
-
         state_pred = self.decode(phi_s, actions, conv_dict)
         phi_s_loss = self._phi_loss_s_scaler * self.mse_loss(
             next_states, state_pred
         )
+
+        # Plot predicted vs true rewards
+        if self._forward_steps % 10 == 0:
+            self.plot_rewards(reward_pred, rewards)
+            self.plot_states(state_pred, next_states)
 
         option_loss_scaler = 1.0
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)
