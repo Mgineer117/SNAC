@@ -77,6 +77,7 @@ class SF_Combined(BasePolicy):
         psi_loss_l2_scaler: float = 1e-6,
         q_loss_scaler: float = 0.0,
         is_discrete: bool = False,
+        sf_path: str | None = None,
         device: str = "cpu",
     ):
         super(SF_Combined, self).__init__()
@@ -106,6 +107,12 @@ class SF_Combined(BasePolicy):
         # trainable networks
         self.feaNet = feaNet
         self.psiNet = psiNet
+
+        if sf_path is None:
+            sf_path = "phi_prediction"
+            if not os.path.exists(sf_path):
+                os.mkdir(sf_path)
+        self.sf_path = sf_path
 
         if options is not None:
             self._options = options
@@ -203,6 +210,45 @@ class SF_Combined(BasePolicy):
             psi = psi.cpu().numpy()
         return psi, {}
 
+    def plot_states(self, state_preds, states):
+        """
+        Plot predicted and true rewards as a stem plot with logarithmic y-axis.
+        """
+        # Detach tensors and convert to NumPy for plotting
+        state_preds = state_preds[0].detach().cpu().numpy().flatten()
+        states = states[0].detach().cpu().numpy().flatten()
+
+        # Plot stem
+        x = range(state_preds.shape[0])
+        plt.figure(figsize=(12, 6))
+        plt.stem(
+            x,
+            state_preds,
+            linefmt="r-",
+            markerfmt="ro",
+            basefmt="k-",
+            label="True states",
+        )
+        plt.stem(
+            x,
+            states,
+            linefmt="b-",
+            markerfmt="bo",
+            basefmt="k-",
+            label="Predicted States",
+        )
+
+        # Set logarithmic y-scale
+        # plt.yscale('log')
+        plt.xlabel("Reward Index")
+        plt.ylabel("Reward")
+        plt.title("Predicted vs True Rewards")
+        plt.legend()
+        plt.grid(True, which="both", ls="--", linewidth=0.5)
+        plt.savefig(f"{self.sf_path}/{self._forward_steps}_state.png")
+        plt.close()
+
+
     def decode(self, features, actions, conv_dict):
         # Does some dimensional and np <-> tensor work
         # and pass it to feature decoder actions should be one-hot
@@ -232,6 +278,10 @@ class SF_Combined(BasePolicy):
         phi_s_loss = self._phi_loss_s_scaler * self.mqe4D_loss(
             next_states, state_pred
         )
+
+        # Plot predicted vs true rewards
+        if self._forward_steps % 10 == 0:
+            self.plot_states(state_pred, next_states)
 
         option_loss_scaler = 1e-10
         option_loss = option_loss_scaler * ((1.0 - torch.norm(self._options, p=2)) ** 2)

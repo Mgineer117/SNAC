@@ -106,6 +106,7 @@ def call_env(args):
             width=1024,
             height=1024,
             camera_name="fixedfar",
+            max_episode_steps=args.episode_len,
         )
 
         disc_or_cont(env, args)

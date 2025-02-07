@@ -91,7 +91,7 @@ class HC_Controller(BasePolicy):
         self._tau = tau
         self._K = K
         self._l2_reg = 1e-6
-        self._target_kl = 0.03
+        self._target_kl = 0.02
         self._bfgs_iter = bfgs_iter
         self._forward_steps = 0
 

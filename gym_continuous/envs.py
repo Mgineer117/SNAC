@@ -58,8 +58,8 @@ class PointNavigationEnv(BaseTask):
         self._add_mocaps(
             Gremlins(
                 num=2,
-                placements=[(-0.7, -0.2, 0.7, 0.7)],
-                travel=0.45,
+                placements=[(-0.4, -0.2, 0.2, 0.5)],
+                travel=0.5,
                 keepout=0.3,
             )
         )

@@ -57,7 +57,7 @@ class OP_Controller(BasePolicy):
         self.tau = args.tau
         self.K = args.OP_K_epochs
         self.l2_reg = 1e-6
-        self.target_kl = 0.03
+        self.target_kl = 0.02
         self.bfgs_iter = args.bfgs_iter
         self.is_discrete = args.is_discrete
 

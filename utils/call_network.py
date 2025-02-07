@@ -515,6 +515,7 @@ def call_sfNetwork(args, sf_path: str | None = None):
             batch_size=args.batch_size,
             a_dim=args.a_dim,
             is_discrete=args.is_discrete,
+            sf_path=sf_path,
             device=args.device,
         )
 

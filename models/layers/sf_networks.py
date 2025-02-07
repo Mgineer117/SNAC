@@ -479,6 +479,7 @@ class VAE(nn.Module):
 
         if deterministic:
             feature = F.tanh(self.mu(out))
+            kl_loss = torch.tensor(0.0).to(feature.device)
         else:
             if self._is_snac:
                 mu = F.tanh(self.mu(out))

@@ -141,7 +141,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--cost-scaler",
         type=float,
-        default=1e-1,
+        default=1.0,
         help="reward shaping parameter r = reawrd - scaler * cost",
     )
     parser.add_argument(
@@ -260,7 +260,7 @@ def get_args(verbose=True):
         help="Hierarchical Policy policy (PPO-based) critic learning rate. If none, BFGS is used.",
     )
     parser.add_argument(
-        "--ppo-policy-lr", type=float, default=3e-4, help="PPO-actor learning rate"
+        "--ppo-policy-lr", type=float, default=1e-4, help="PPO-actor learning rate"
     )
     parser.add_argument(
         "--ppo-critic-lr",
@@ -465,10 +465,10 @@ def get_args(verbose=True):
 
     # PPO parameters
     parser.add_argument(
-        "--K-epochs", type=int, default=10, help="PPO update per one iter"
+        "--K-epochs", type=int, default=40, help="PPO update per one iter"
     )
     parser.add_argument(
-        "--OP-K-epochs", type=int, default=15, help="Option policy update per one iter"
+        "--OP-K-epochs", type=int, default=50, help="Option policy update per one iter"
     )
     parser.add_argument(
         "--eps-clip", type=float, default=0.2, help="clipping parameter for gradient"
@@ -490,7 +490,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--sac-critic-lr",
         type=float,
-        default=1e-4,
+        default=3e-4,
         help="SAC-critic learning rate. (AdamW)",
     )
     parser.add_argument(
