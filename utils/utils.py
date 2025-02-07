@@ -350,7 +350,7 @@ def estimate_advantages(
         prev_advantage = advantages[i, 0]
 
     returns = values + advantages
-    advantages = (advantages - advantages.mean()) / advantages.std()
+    # advantages = (advantages - advantages.mean()) / advantages.std()
     advantages, returns = advantages.to(device), returns.to(device)
     return advantages, returns
 

@@ -306,6 +306,7 @@ class HC_Controller(BasePolicy):
             # global batch normalization and target return
             mb_returns = returns[indices]
             mb_advantages = advantages[indices]
+            mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
 
             mb_values, _ = self.critic(mb_states)
             # with torch.no_grad():
@@ -421,9 +422,7 @@ class HC_Controller(BasePolicy):
             f"{prefix}/klDivergence": np.mean(target_kl),
             f"{prefix}/clipFraction": np.mean(clip_fractions),
             f"{prefix}/K-epoch": k + 1,
-            f"{prefix}/EpisodicReward": (
-                torch.sum(rewards) / torch.sum(terminals)
-            ).item(),
+            f"{prefix}/EpisodicReturn": torch.mean(returns).item(),
         }
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)

@@ -28,25 +28,27 @@ class PPO_Policy(nn.Module):
         self._a_dim = a_dim
         self._dtype = torch.float32
 
-        self.logstd_range = (-10, 2)
+        self.logstd = 0
 
         self.is_discrete = is_discrete
 
-        if self.is_discrete:
-            self.model = MLP(input_dim, (fc_dim, fc_dim), a_dim, activation=self.act)
-        else:
-            self.model = MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
-            self.mu = MLP(fc_dim, (a_dim,), activation=nn.Identity())
-            self.logstd = MLP(fc_dim, (a_dim,), activation=nn.Identity())
+        self.model = MLP(
+            input_dim,
+            (fc_dim, fc_dim),
+            a_dim,
+            activation=self.act,
+            initialization="actor",
+        )
 
     def forward(self, state: torch.Tensor, deterministic: bool = False):
         if len(state.shape) == 3 or len(state.shape) == 1:
             state = state.unsqueeze(0)
         state = state.reshape(state.shape[0], -1)
 
-        logits = self.model(state)
+        raw_logits = self.model(state)
 
         if self.is_discrete:
+            logits = F.softplus(raw_logits)
             probs = F.softmax(logits, dim=-1)
             dist = Categorical(probs)
 
@@ -61,11 +63,8 @@ class PPO_Policy(nn.Module):
 
         else:
             ### Shape the output as desired
-            mu = F.tanh(self.mu(logits))
-            logstd = torch.clamp(
-                self.logstd(logits), min=self.logstd_range[0], max=self.logstd_range[1]
-            )
-            std = torch.exp(logstd)
+            mu = F.tanh(raw_logits)
+            std = torch.exp(self.logstd)
 
             covariance_matrix = torch.diag_embed(std**2)  # Variance is std^2
             dist = MultivariateNormal(loc=mu, covariance_matrix=covariance_matrix)
@@ -119,7 +118,13 @@ class PPO_Critic(nn.Module):
 
         self._dtype = torch.float32
 
-        self.model = MLP(input_dim, (fc_dim, fc_dim, fc_dim), 1, activation=self.act)
+        self.model = MLP(
+            input_dim,
+            (fc_dim, fc_dim),
+            1,
+            activation=self.act,
+            initialization="critic",
+        )
 
     def forward(self, x: torch.Tensor):
         value = self.model(x)

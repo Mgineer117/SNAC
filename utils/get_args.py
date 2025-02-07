@@ -333,7 +333,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-batch-for-worker",
         type=int,
-        default=1024,
+        default=2048,
         help="Minimum batch size assgined for one worker (thread)",
     )
     parser.add_argument(
@@ -351,7 +351,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--ppo-entropy-scaler",
         type=float,
-        default=5e-4,
+        default=1e-3,
         help="PPO policy entropy scaler",
     )
     parser.add_argument(
@@ -439,22 +439,22 @@ def get_args(verbose=True):
         help="action dimension. For grid with 5 available actions, it is one-hotted to be 1 x 5.",
     )
     parser.add_argument(
-        "--fc-dim",
+        "--policy-fc-dim",
         type=int,
         default=None,
         help="This is general fully connected dimension for most of network this code.",
+    )
+    parser.add_argument(
+        "--critic-fc-dim",
+        type=int,
+        default=None,
+        help="This is a dimension of FCL of option policy",
     )
     parser.add_argument(
         "--feature-fc-dim",
         type=int,
         default=None,
         help="This is a dimension of FCL that decodes the output of CNN or VAE",
-    )
-    parser.add_argument(
-        "--option-fc-dim",
-        type=int,
-        default=None,
-        help="This is a dimension of FCL of option policy",
     )
     parser.add_argument(
         "--sf-dim",
@@ -572,7 +572,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--import-sf-model",
         type=bool,
-        default=False,
+        default=True,
         help="it imports previously trained model",
     )
     parser.add_argument(

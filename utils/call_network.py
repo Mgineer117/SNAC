@@ -279,7 +279,7 @@ def call_sacNetwork(args):
         # Define the Actor (Policy) network
         actor = SAC_Policy(
             input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.policy_fc_dim,
             a_dim=args.a_dim,
             activation=nn.ReLU(),
             is_discrete=args.is_discrete,
@@ -288,7 +288,7 @@ def call_sacNetwork(args):
         # Define the Critic networks
         critic_twin = SAC_CriticTwin(
             input_dim=args.s_flat_dim + args.a_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.critic_fc_dim,
             activation=nn.ReLU(),
         )
 
@@ -330,14 +330,14 @@ def call_ppoNetwork(args):
     else:
         actor = PPO_Policy(
             input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.policy_fc_dim,
             a_dim=args.a_dim,
             activation=nn.Tanh(),
             is_discrete=args.is_discrete,
         )
         critic = PPO_Critic(
             input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.critic_fc_dim,
             activation=nn.Tanh(),
         )
 
@@ -377,7 +377,7 @@ def call_ocNetwork(args):
         encoder_conv_layers, _ = get_conv_layer(args)
         policy = OC_Policy(
             state_dim=args.s_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.policy_fc_dim,
             a_dim=args.a_dim,
             num_options=args.num_vector,
             encoder_conv_layers=encoder_conv_layers,
@@ -386,7 +386,7 @@ def call_ocNetwork(args):
         )
         critic = OC_Critic(
             input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.critic_fc_dim,
             num_options=args.num_vector,
             activation=nn.Tanh(),
         )
@@ -474,7 +474,7 @@ def call_sfNetwork(args, sf_path: str | None = None):
             )
 
         psiNet = PsiCritic(
-            fc_dim=args.fc_dim,
+            fc_dim=args.critic_fc_dim,
             sf_dim=args.sf_dim,
             a_dim=args.a_dim,
             activation=nn.Tanh(),
@@ -554,7 +554,7 @@ def call_opNetwork(
         if args.op_mode == "sac":
             optionPolicy = OptionPolicy(
                 input_dim=args.s_flat_dim,
-                fc_dim=args.option_fc_dim,
+                fc_dim=args.policy_fc_dim,
                 a_dim=args.a_dim,
                 num_options=options.shape[0],
                 activation=nn.ReLU(),
@@ -562,18 +562,18 @@ def call_opNetwork(
             )
             optionCritic = OP_CriticTwin(
                 input_dim=args.s_flat_dim + args.a_dim,
-                fc_dim=args.fc_dim,
+                fc_dim=args.critic_fc_dim,
                 num_options=options.shape[0],
                 activation=nn.ReLU(),
             )
         else:
             print(args.s_flat_dim)
-            print(args.option_fc_dim)
+            print(args.policy_fc_dim)
             print(args.a_dim)
 
             optionPolicy = OptionPolicy(
                 input_dim=args.s_flat_dim,
-                fc_dim=args.option_fc_dim,
+                fc_dim=args.policy_fc_dim,
                 a_dim=args.a_dim,
                 num_options=options.shape[0],
                 activation=nn.Tanh(),
@@ -581,7 +581,7 @@ def call_opNetwork(
             )
             optionCritic = OP_Critic(
                 input_dim=args.s_flat_dim,
-                fc_dim=args.fc_dim,
+                fc_dim=args.critic_fc_dim,
                 num_options=options.shape[0],
                 activation=nn.Tanh(),
             )
@@ -651,14 +651,14 @@ def call_hcNetwork(sf_network, op_network, args):
     else:
         policy = HC_Policy(
             input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.policy_fc_dim,
             num_options=args.num_vector,
             activation=nn.Tanh(),
         )
         if args.PM_policy == "PPO":
             primitivePolicy = HC_PPO(
                 input_dim=args.s_flat_dim,
-                fc_dim=args.fc_dim,
+                fc_dim=args.policy_fc_dim,
                 a_dim=args.a_dim,
                 is_discrete=args.is_discrete,
                 activation=nn.Tanh(),
@@ -672,7 +672,7 @@ def call_hcNetwork(sf_network, op_network, args):
             NotImplementedError(f"{args.PM_policy} is not implemented")
         critic = HC_Critic(
             input_dim=args.s_flat_dim,
-            fc_dim=args.fc_dim,
+            fc_dim=args.critic_fc_dim,
             activation=nn.Tanh(),
         )
 

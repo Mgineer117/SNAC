@@ -30,34 +30,22 @@ class OptionPolicy(nn.Module):
         self._dtype = torch.float32
         self._num_options = num_options
 
-        self.logstd_range = (-10, 2)
+        self.logstd = 0
 
         self.is_discrete = is_discrete
 
-        if self.is_discrete:
-            self.models = nn.ModuleList()
-            for _ in range(num_options):
-                self.models.append(self.create_model(input_dim, fc_dim, a_dim))
-        else:
-            self.models = nn.ModuleList()
-            self.mus = nn.ModuleList()
-            self.logstds = nn.ModuleList()
-            for _ in range(num_options):
-                self.models.append(self.create_model(input_dim, fc_dim, a_dim))
-                self.mus.append(self.create_mu_model(input_dim, fc_dim, a_dim))
-                self.logstds.append(self.create_logstd_model(input_dim, fc_dim, a_dim))
+        self.models = nn.ModuleList()
+        for _ in range(num_options):
+            self.models.append(self.create_model(input_dim, fc_dim, a_dim))
 
     def create_model(self, input_dim, fc_dim, output_dim):
-        if self.is_discrete:
-            return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
-        else:
-            return MLP(input_dim, (fc_dim, fc_dim), activation=self.act)
-
-    def create_mu_model(self, input_dim, fc_dim, output_dim):
-        return MLP(fc_dim, (output_dim,), activation=nn.Identity())
-
-    def create_logstd_model(self, input_dim, fc_dim, output_dim):
-        return MLP(fc_dim, (output_dim,), activation=nn.Identity())
+        return MLP(
+            input_dim,
+            (fc_dim, fc_dim),
+            output_dim,
+            activation=self.act,
+            initialization="actor",
+        )
 
     def forward(self, state: torch.Tensor, z: int, deterministic=False):
         # when the input is raw by forawrd() not learn()
@@ -65,9 +53,10 @@ class OptionPolicy(nn.Module):
             state = state.unsqueeze(0)
         state = state.reshape(state.shape[0], -1)
 
-        logits = self.models[z](state)
+        raw_logits = self.models[z](state)
 
         if self.is_discrete:
+            logits = F.softplus(raw_logits)
             probs = F.softmax(logits, dim=-1)
             dist = Categorical(probs)
 
@@ -78,13 +67,8 @@ class OptionPolicy(nn.Module):
             probs = torch.sum(probs * a, dim=-1)
         else:
             ### Shape the output as desired
-            mu = F.tanh(self.mus[z](logits))
-            logstd = torch.clamp(
-                self.logstds[z](logits),
-                min=self.logstd_range[0],
-                max=self.logstd_range[1],
-            )
-            std = torch.exp(logstd)
+            mu = F.tanh(raw_logits)
+            std = torch.exp(self.logstd)
 
             covariance_matrix = torch.diag_embed(std**2)  # Variance is std^2
             dist = MultivariateNormal(loc=mu, covariance_matrix=covariance_matrix)
@@ -149,7 +133,13 @@ class OP_Critic(nn.Module):
             self.models.append(self.create_model(input_dim, fc_dim, 1))
 
     def create_model(self, input_dim, fc_dim, output_dim):
-        return MLP(input_dim, (fc_dim, fc_dim), output_dim, activation=self.act)
+        return MLP(
+            input_dim,
+            (fc_dim, fc_dim),
+            output_dim,
+            activation=self.act,
+            initialization="critic",
+        )
 
     def forward(self, state: torch.Tensor, z: int):
         if len(state.shape) == 3 or len(state.shape) == 1:

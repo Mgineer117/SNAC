@@ -187,17 +187,9 @@ class PPO_Learner(BasePolicy):
             # global batch normalization and target return
             mb_returns = returns[indices]
             mb_advantages = advantages[indices]
+            mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
 
             mb_values = self.critic(mb_states)
-            # with torch.no_grad():
-            #     mb_advantages, _ = estimate_advantages(
-            #         mb_rewards,
-            #         mb_terminals,
-            #         mb_values,
-            #         gamma=self._gamma,
-            #         tau=self._tau,
-            #         device=self.device,
-            #     )
 
             # 1. Critic Update
             valueLoss = self.mse_loss(mb_values, mb_returns)
@@ -256,7 +248,7 @@ class PPO_Learner(BasePolicy):
             "PPO/klDivergence": np.mean(target_kl),
             "PPO/clipFraction": np.mean(clip_fractions),
             "PPO/K-epoch": k + 1,
-            "PPO/EpisodicReward": (torch.sum(rewards) / torch.sum(terminals)).item(),
+            "PPO/EpisodicReturn": torch.mean(returns).item(),
         }
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)

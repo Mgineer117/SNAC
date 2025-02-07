@@ -404,25 +404,14 @@ class OP_Controller(BasePolicy):
             indices = torch.randperm(batch_size)[: self.minibatch_size]
             mb_states = states[indices]
             mb_actions = actions[indices]
-            mb_rewards = rewards[indices]
-            mb_terminals = terminals[indices]
-
             mb_old_logprobs = old_logprobs[indices]
 
             # global batch normalization and target return
             mb_returns = returns[indices]
             mb_advantages = advantages[indices]
+            mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
 
             mb_values, _ = self.optionCritic(mb_states, z)
-            # with torch.no_grad():
-            #     mb_advantages, _ = estimate_advantages(
-            #         mb_rewards,
-            #         mb_terminals,
-            #         mb_values,
-            #         gamma=self.gamma,
-            #         tau=self.tau,
-            #         device=self.device,
-            #     )
 
             # 1. Critic Update
             valueLoss = self.mse_loss(mb_returns, mb_values)
@@ -482,9 +471,7 @@ class OP_Controller(BasePolicy):
             "OP_PPO/klDivergence": np.mean(target_kl),
             "OP_PPO/clipFraction": np.mean(clip_fractions),
             "OP_PPO/K-epoch": k + 1,
-            f"OP_PPO/EpisodicReward:{z}": (
-                torch.sum(rewards) / torch.sum(terminals)
-            ).item(),
+            f"OP_PPO/EpisodicReturn:{z}": torch.mean(returns).item(),
         }
         loss_dict.update(grad_dict)
         loss_dict.update(norm_dict)
