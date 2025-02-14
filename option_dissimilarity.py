@@ -17,20 +17,40 @@ from utils.call_env import call_env
 from models.evaulators.base_evaluator import DotDict
 
 COLORS = {
-    "EigenOption": "#da0000",  # Muted Red
-    "EigenOption+": "#ff8000",  # Deep Orange
-    "EigenOption++": "#00c9ff",  # Cyan
+    "SNAC": "#da0000",  # Muted Red
+    "SNAC+++": "#ff8000",  # Deep Orange
+    "EigenOption": "#00A6CC",  # Slightly Darker Cyan
+    "EigenOption+": "#1B5E20",  # Dark Green
+    "EigenOption++": "#6A1B9A",  # Deep Violet
     "EigenOption+++": "#1565C0",  # Medium Blue
     "CoveringOption": "#388E3C",  # Forest Green
     "OptionCritic": "#8700ff",  # Rich Purple
     "PPO": "#ff80ff",  # Pale Magenta
 }
 
-LINESTYLES = {
-    "EigenOption": "-",
-    "EigenOption+": (0, (5, 10)),
-    "EigenOption++": ":",
-    "EigenOption+++": "--",
+LINESTYLES_BY_OPTIONS = {
+    "0": "-",
+    "6": (0, (2, 10)),
+    "8": (0, (3, 8)),
+    "12": (0, (4, 6)),
+    "16": (0, (5, 5)),
+    "18": (0, (6, 4)),
+    "20": (0, (7, 3)),
+    "24": (0, (8, 1)),
+    "30": "dashdot",
+}
+
+
+LINESTYLES_BY_ALGS = {
+    "PPO": "-",
+    "SNAC": (0, (1, 10)),
+    "SNAC+++": (0, (2, 8)),
+    "EigenOption": (0, (4, 6)),
+    "EigenOption+": (0, (5, 5)),
+    "EigenOption++": (0, (6, 4)),
+    "EigenOption+++": (0, (8, 2)),
+    "CoveringOption": (0, (10, 1)),
+    "OptionCritic": "dashdot",
 }
 
 MARKERS = {
@@ -40,38 +60,50 @@ MARKERS = {
         "markeredgewidth": 1.5,
         "markersize": 10,
     },
+    "SNAC": {
+        "marker": "p",  # Pentagon marker
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 10,
+    },
+    "SNAC+++": {
+        "marker": "*",  # Star marker
+        "markerfacecolor": "none",
+        "markeredgewidth": 1.5,
+        "markersize": 10,
+    },
     "EigenOption": {
-        "marker": "s",
+        "marker": "s",  # Square marker
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
         "markersize": 10,
     },
     "EigenOption+": {
-        "marker": "D",
+        "marker": "D",  # Diamond marker
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
         "markersize": 10,
     },
     "EigenOption++": {
-        "marker": "X",
+        "marker": "X",  # X marker
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
         "markersize": 10,
     },
     "EigenOption+++": {
-        "marker": "P",
+        "marker": "P",  # Plus-filled marker
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
         "markersize": 10,
     },
     "CoveringOption": {
-        "marker": "^",
+        "marker": "^",  # Triangle-up marker
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
         "markersize": 10,
     },
     "OptionCritic": {
-        "marker": "v",
+        "marker": "v",  # Triangle-down marker
         "markerfacecolor": "none",
         "markeredgewidth": 1.5,
         "markersize": 10,
@@ -79,18 +111,19 @@ MARKERS = {
 }
 
 LABELS = {
-    "EigenOption": "Top n",
+    "SNAC": "SNAC - Top n",
+    "SNAC+++": "SNAC - TRS",
+    "EigenOption": "EigenOption",
     "EigenOption+": "CVS",
-    "EigenOption++": "CRS",
+    "EigenOption++": "CRS (ours)",
     "EigenOption+++": "TRS (ours)",
-    "CoveringOption": "Successive Top n",
+    "CoveringOption": "Successive EigenOption",
     "OptionCritic": "OptionCritic",
     "PPO": "PPO",
 }
 
 
-def init_args(algo_name: str, num_vector: str):
-    env_name = "Maze"
+def init_args(env_name: str, algo_name: str, num_vector: str):
     model_dir = f"log/eval_log/model_for_eval/{env_name}/EigenOption/"
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
@@ -257,75 +290,100 @@ def get_similarity_metric(features, option_vals, options, pos, args):
 
 
 if __name__ == "__main__":
-    algo_names = ["EigenOption", "EigenOption+", "EigenOption++", "EigenOption+++"]
-    num_vectors = [6, 12, 18, 24, 30]  # , 24, 48]
+    env_names = ["Maze", "FourRooms"]
+    num_vectors_list = {
+        "Maze": [6, 12, 18, 24, 30, 42, 48, 60],
+        "FourRooms": [6, 12, 18, 24, 30, 42, 48],
+    }
+    for env_name in env_names:
+        # algo_names = ["EigenOption", "EigenOption+", "EigenOption++", "EigenOption+++"]
+        algo_names = ["EigenOption+", "EigenOption++"]
+        num_vectors = num_vectors_list[env_name]
 
-    mean_diss_dict = {}
-    for algo_name in algo_names:
-        mean_diss_list = []
-        for num_vector in num_vectors:
-            args = init_args(algo_name=algo_name, num_vector=num_vector)
-
-            env = call_env(args)
-            sf_network = call_sfNetwork(args)
-
-            grid, pos = get_grid(args)
-            feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
-
-            n = 5
-            mean_diss = 0
-            dict_list = []
-            for i in range(n):
-                option_vals, options = get_vectors(args)
-                diss, diss_dict = get_similarity_metric(
-                    feature_matrix, option_vals, options, pos, args
+        mean_diss_dict = {}
+        for algo_name in algo_names:
+            mean_diss_list = []
+            for num_vector in num_vectors:
+                args = init_args(
+                    env_name=env_name, algo_name=algo_name, num_vector=num_vector
                 )
-                mean_diss += diss / n
-                dict_list.append(diss_dict)
-            mean_diss_list.append(mean_diss)
 
-            # Organize data by keys
-            data_by_key = {key: [] for key in range(num_vector)}
-            for d in dict_list:
-                i = 0
-                for _, value in d.items():
-                    data_by_key[i].append(value)
-                    i += 1
+                env = call_env(args)
+                sf_network = call_sfNetwork(args)
 
-            # Compute mean and std dev for each key (if needed)
-            means = {key: np.mean(values) for key, values in data_by_key.items()}
-            std_devs = {key: np.std(values) for key, values in data_by_key.items()}
+                grid, pos = get_grid(args)
+                feature_matrix = get_feature_matrix(sf_network.feaNet, grid, pos, args)
 
-            # Prepare data for boxplot
-            boxplot_data = [values for key, values in sorted(data_by_key.items())]
-            plt.figure(figsize=(12, 8))  # Width=12, Height=8 (adjust as needed)
-            plt.boxplot(boxplot_data, patch_artist=True)
-            plt.title(f"Mean dissimilarity: {mean_diss} for {args.algo_name}")
-            plt.tight_layout()
-            plt.savefig(f"data_{args.algo_name}_{num_vector}.png")
-            plt.close()
+                n = 5
+                mean_diss = 0
+                dict_list = []
+                for i in range(n):
+                    option_vals, options = get_vectors(args)
+                    diss, diss_dict = get_similarity_metric(
+                        feature_matrix, option_vals, options, pos, args
+                    )
+                    mean_diss += diss / n
+                    dict_list.append(diss_dict)
+                mean_diss_list.append(mean_diss)
 
-        mean_diss_dict[algo_name] = mean_diss_list
+                # Organize data by keys
+                data_by_key = {key: [] for key in range(num_vector)}
+                for d in dict_list:
+                    i = 0
+                    for _, value in d.items():
+                        data_by_key[i].append(value)
+                        i += 1
 
-    print(mean_diss_dict)
+                # Compute mean and std dev for each key (if needed)
+                means = {key: np.mean(values) for key, values in data_by_key.items()}
+                std_devs = {key: np.std(values) for key, values in data_by_key.items()}
 
-    # Plot the results
-    for k, v in mean_diss_dict.items():
-        plt.plot(
+                # Prepare data for boxplot
+                boxplot_data = [values for key, values in sorted(data_by_key.items())]
+                plt.figure(figsize=(12, 8))  # Width=12, Height=8 (adjust as needed)
+                plt.boxplot(boxplot_data, patch_artist=True)
+                plt.title(f"Mean dissimilarity: {mean_diss} for {args.algo_name}")
+                plt.tight_layout()
+                plt.savefig(f"data_{args.env_name}_{args.algo_name}_{num_vector}.png")
+                plt.close()
+
+            mean_diss_dict[algo_name] = mean_diss_list
+
+        print(mean_diss_dict)
+
+        # Plot the results
+        if env_name == "Maze":
+            num_vectors = [x / 128 for x in num_vectors]
+        else:
+            num_vectors = [x / 64 for x in num_vectors]
+        for k, v in mean_diss_dict.items():
+            plt.plot(
+                num_vectors,
+                v,
+                label=f"{LABELS[k]}",
+                color=COLORS[k],
+                linestyle=LINESTYLES_BY_ALGS[k],
+                **MARKERS[k],
+            )
+
+        plt.xlabel("Ratio: Available/Total Options", fontsize=20)
+        plt.ylabel("Mean Diversity", fontsize=20)
+        plt.xticks(
             num_vectors,
-            v,
-            label=f"{LABELS[k]}",
-            color=COLORS[k],
-            linestyle=LINESTYLES[k],
-            **MARKERS[k],
+            labels=[f"{x:.2f}" for x in num_vectors],
+            fontsize=14,
+            rotation=45,
         )
-
-    plt.xlabel("Number of Vectors/ Clusters", fontsize=20)
-    plt.ylabel("Mean Dissimilarity", fontsize=20)
-    plt.xticks(num_vectors, labels=[str(x) for x in num_vectors], fontsize=18)
-    plt.yticks(fontsize=18)
-    # plt.legend(fontsize=12)
-    # plt.xscale("log")
-    plt.tight_layout()
-    plt.savefig(f"FourRooms cluster.png")
-    plt.close()
+        plt.yticks(fontsize=14)
+        # plt.legend(
+        #     loc="upper center",  # Align legend to the upper center
+        #     bbox_to_anchor=(0.5, 1.15),  # Position the legend above the plot
+        #     fontsize=12,  # Font size of the legend
+        #     borderaxespad=0,  # Padding between the axes and the legend box
+        #     ncol=8,  # First row will have 7 columns
+        #     handlelength=2.5,  # Adjust length of the legend handles
+        # )
+        # plt.xscale("log")
+        plt.tight_layout()
+        plt.savefig(f"{env_name} cluster.png")
+        plt.close()

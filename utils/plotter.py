@@ -883,6 +883,7 @@ class Plotter:
         ### Plot (everything into numpy)
         vec_dir_path = os.path.join(dir, "rewardMap")
         os.mkdir(vec_dir_path)
+        grid_list = []
         for vec_idx in range(num_vec):
             grid = np.zeros((self.grid_size, self.grid_size))
             grid += rewards[vec_idx, :, :]
@@ -891,6 +892,7 @@ class Plotter:
                 for x, y in zip(coords[0], coords[1]):
                     grid[x, y] += 1.0
             grid[walls] = 0.0
+            grid_list.append(grid)
 
             x = np.linspace(0, self.grid_size - 1, self.grid_size)
             y = np.linspace(0, self.grid_size - 1, self.grid_size)
@@ -934,6 +936,9 @@ class Plotter:
             plt.tight_layout()
             plt.savefig(f"{vec_dir_path}/{vec_idx}_{S[vec_idx]:3f}.png")
             plt.close()
+
+        intrinsic_rewards_map = np.stack(grid_list, axis=0)
+        return intrinsic_rewards_map
 
     def plotActionValueMap(
         self,

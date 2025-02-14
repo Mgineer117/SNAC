@@ -159,7 +159,7 @@
         "ppo_batch_size": 512,
         "sac_batch_size": 512,
         "oc_batch_size": 512,
-        "batch_size": 2048,
+        "batch_size": 8192,
         "eval_episodes": 10,
         "num_traj_decomp": 500,
         "max_batch_size": 200000,

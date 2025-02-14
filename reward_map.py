@@ -102,6 +102,7 @@ def run_loop(env, option_vals, options, args):
         )  # find idx where not wall
 
         random_index = random.sample(range(len(x_coords)), 1)
+        reward_list = []
         for x, y in zip(x_coords, y_coords):
             grid = grid_tensor.copy()
             # enemy assignment
@@ -134,7 +135,7 @@ def run_loop(env, option_vals, options, args):
                 remove_dir(save_path)
                 os.mkdir(save_path)
             # do reward Plot
-            plotter.plotRewardMap2(
+            intrinsic_rewards_map = plotter.plotRewardMap2(
                 feaNet=sf_network.feaNet,
                 S=option_vals,
                 V=options,
@@ -146,6 +147,65 @@ def run_loop(env, option_vals, options, args):
                 dir=save_path,
                 device=args.device,
             )
+            reward_list.append(intrinsic_rewards_map)
+
+        intrinsic_rewards_map = np.stack(reward_list, axis=0)
+        intrinsic_rewards_map = np.transpose(intrinsic_rewards_map, (1, 0, 2, 3))
+
+        mean_diff_list = []
+        for i in range(intrinsic_rewards_map.shape[0]):
+            mean_matrix = np.mean(
+                intrinsic_rewards_map[i], axis=0
+            )  # Compute element-wise mean
+            mean_diff = np.mean(
+                [np.abs(m - mean_matrix) for m in intrinsic_rewards_map[i]]
+            )
+            mean_diff_list.append(mean_diff)
+        print(mean_diff_list)
+
+        # Plotting
+        n = len(mean_diff_list)
+        half_n = n // 2
+        indices = np.arange(n)
+
+        reward_options = mean_diff_list[:half_n]
+        state_options = mean_diff_list[half_n:]
+
+        plt.figure(figsize=(8, 5))
+
+        # Scatter plot for reward options
+        plt.scatter(
+            indices,
+            reward_options,
+            color="blue",
+            label="Reward Options (Mean Diff)",
+            marker="o",
+            s=100,
+        )
+
+        # Scatter plot for state options
+        plt.scatter(
+            indices,
+            state_options,
+            color="red",
+            label="State Options (Mean Diff)",
+            marker="s",
+            s=100,
+        )
+
+        # Add x-ticks at each data point
+        plt.xticks(np.arange(n))
+
+        # Formatting
+        plt.xlabel("Index", fontsize=24)
+        plt.ylabel("Mean Reward Difference", fontsize=24)
+        plt.axvline(
+            x=half_n - 0.5, color="k", linestyle="--", label="Split Line"
+        )  # Separate two groups
+        plt.legend(fontsize=18)
+        plt.grid(True, linestyle="--", alpha=0.5)
+        plt.savefig("mean_diff.png")
+        plt.close()
 
 
 if __name__ == "__main__":
@@ -159,7 +219,8 @@ if __name__ == "__main__":
     args = DotDict(config)
     args.algo_name = algo_name
     args.env_name = env_name
-    args.num_vector = 24
+    args.num_vector = 16
+    args.division_rate = 0.25
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")
