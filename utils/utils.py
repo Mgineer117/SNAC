@@ -3,6 +3,7 @@ import cv2
 import uuid
 import math
 import random
+import pandas as pd
 import torch
 import json
 import numpy as np
@@ -14,6 +15,33 @@ from utils.get_args import get_args
 from torch.utils.tensorboard import SummaryWriter
 from log.wandb_logger import WandbLogger
 
+def concat_csv_columnwise_and_delete(folder_path, output_file="output.csv"):
+    csv_files = [f for f in os.listdir(folder_path) if f.endswith(".csv")]
+
+    if not csv_files:
+        print("No CSV files found in the folder.")
+        return
+
+    dataframes = []
+
+    for file in csv_files:
+        file_path = os.path.join(folder_path, file)
+        df = pd.read_csv(file_path)
+        dataframes.append(df)
+
+    # Concatenate column-wise (axis=1)
+    combined_df = pd.concat(dataframes, axis=1)
+
+    # Save to output file
+    output_file = os.path.join(folder_path, output_file)
+    combined_df.to_csv(output_file, index=False)
+    print(f"Combined CSV saved to {output_file}")
+
+    # Delete original CSV files
+    for file in csv_files:
+        os.remove(os.path.join(folder_path, file))
+
+    print("Original CSV files deleted.")
 
 def override_args(env_name: str | None = None):
     args = get_args(verbose=False)

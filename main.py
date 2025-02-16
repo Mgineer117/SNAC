@@ -4,7 +4,7 @@ import datetime
 from algorithms import SNAC, EigenOption, PPO, SAC, OptionCritic
 
 from utils.call_env import call_env
-from utils.utils import setup_logger, seed_all, override_args
+from utils.utils import setup_logger, seed_all, override_args, concat_csv_columnwise_and_delete
 
 
 import wandb
@@ -57,42 +57,6 @@ def train(args, seed, unique_id, exp_time):
 #########################################################
 # ENV LOOP
 #########################################################
-import os
-import pandas as pd
-
-
-def concat_csv_columnwise_and_delete(folder_path, output_file="output.csv"):
-    csv_files = [f for f in os.listdir(folder_path) if f.endswith(".csv")]
-
-    if not csv_files:
-        print("No CSV files found in the folder.")
-        return
-
-    dataframes = []
-
-    for file in csv_files:
-        file_path = os.path.join(folder_path, file)
-        df = pd.read_csv(file_path)
-        dataframes.append(df)
-
-    # Concatenate column-wise (axis=1)
-    combined_df = pd.concat(dataframes, axis=1)
-
-    # Save to output file
-    output_file = os.path.join(folder_path, output_file)
-    combined_df.to_csv(output_file, index=False)
-    print(f"Combined CSV saved to {output_file}")
-
-    # Delete original CSV files
-    for file in csv_files:
-        os.remove(os.path.join(folder_path, file))
-
-    print("Original CSV files deleted.")
-
-
-# Example usage
-
-
 if __name__ == "__main__":
     init_args = override_args()
     unique_id = str(uuid.uuid4())[:4]

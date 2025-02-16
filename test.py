@@ -83,7 +83,7 @@ def test_ppo():
             try:
                 args = override_args(env_name)
                 args.algo_name = "PPO"
-                args.PPO_timesteps = 10000  # Small timesteps for quick testing
+                args.PPO_timesteps = 1000  # Small timesteps for quick testing
                 args.min_batch_for_worker = 1024
                 args.rendering = True
                 args.draw_map = True
@@ -121,6 +121,7 @@ def test_snac():
             args.algo_name = "SNAC"
             args.SF_epoch = 10  # Small SF-epoch for quick testing
             args.step_per_epoch = 1  # Small steps per epoch
+            args.sf_log_interval = 5
             args.OP_timesteps = 10000  # Small OP-timesteps
             args.HC_timesteps = 10000  # Small HC-timesteps
             args.min_batch_size = 2048
