@@ -212,41 +212,37 @@ class SF_EigenOption(BasePolicy):
         with torch.no_grad():
             phi = self.get_features(states, deterministic=True)
 
-        if self.sf_s_dim != 0:
-            ### decoder reconstructed images ###
-            ground_truth_images = []
-            predicted_images = []
-            for i in range(phi.shape[0]):
-                # Decode the feature and append to reconstructed states
-                with torch.no_grad():
-                    true_state = next_states[i]
-                    decoded_state = self.decode(phi[i], actions[i])
-                    decoded_state = decoded_state.squeeze(0)
+        ### decoder reconstructed images ###
+        ground_truth_images = []
+        predicted_images = []
+        for i in range(phi.shape[0]):
+            # Decode the feature and append to reconstructed states
+            with torch.no_grad():
+                true_state = next_states[i]
+                decoded_state = self.decode(phi[i], actions[i])
+                decoded_state = decoded_state.squeeze(0)
 
-                # Handle vector data by reshaping into a heatmap
+            # Handle vector data by reshaping into a heatmap
 
-                if decoded_state.dim() == 1:  # If the state is a vector
-                    heatmap_data = (
-                        decoded_state.cpu().numpy().reshape(1, -1)
-                    )  # Reshape for heatmap
-                else:  # Assume it's already 2D
-                    heatmap_data = decoded_state.cpu().numpy()
+            if decoded_state.dim() == 1:  # If the state is a vector
+                heatmap_data = (
+                    decoded_state.cpu().numpy().reshape(1, -1)
+                )  # Reshape for heatmap
+            else:  # Assume it's already 2D
+                heatmap_data = decoded_state.cpu().numpy()
 
-                # Normalize the heatmap data between 0 and 1
-                true_image = (true_state - np.min(true_state)) / (
-                    np.max(true_state) - np.min(true_state)
-                )
-                pred_image = (heatmap_data - np.min(heatmap_data)) / (
-                    np.max(heatmap_data) - np.min(heatmap_data)
-                )
+            # Normalize the heatmap data between 0 and 1
+            true_image = (true_state - np.min(true_state)) / (
+                np.max(true_state) - np.min(true_state)
+            )
+            pred_image = (heatmap_data - np.min(heatmap_data)) / (
+                np.max(heatmap_data) - np.min(heatmap_data)
+            )
 
-                # Update the corresponding subplot
-                true_image, pred_image = self.get_image(true_image, pred_image)
-                ground_truth_images.append(true_image)
-                predicted_images.append(pred_image)
-        else:
-            ground_truth_images = [None]
-            predicted_images = [None]
+            # Update the corresponding subplot
+            true_image, pred_image = self.get_image(true_image, pred_image)
+            ground_truth_images.append(true_image)
+            predicted_images.append(pred_image)
 
         ### FEATURE IMAGE ###
         phi = phi.cpu().numpy()
@@ -274,6 +270,7 @@ class SF_EigenOption(BasePolicy):
         return {
             "ground_truth": ground_truth_images,
             "prediction": predicted_images,
+            "reward_plot": [None],
             "feature_plot": [feature_img],
         }
 
@@ -431,7 +428,7 @@ class SF_EigenOption(BasePolicy):
 
     def save_model(self, logdir, epoch=None, is_best=False):
         self.feaNet = self.feaNet.cpu()
-        feature_weights = self.feature_weights.detach().clone().cpu()
+        feature_weights = None
 
         # save checkpoint
         if is_best:

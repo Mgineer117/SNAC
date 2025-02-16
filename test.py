@@ -121,7 +121,7 @@ def test_snac():
             args.algo_name = "SNAC"
             args.SF_epoch = 10  # Small SF-epoch for quick testing
             args.step_per_epoch = 1  # Small steps per epoch
-            args.sf_log_interval = 5
+            args.sf_log_interval = 10
             args.OP_timesteps = 10000  # Small OP-timesteps
             args.HC_timesteps = 10000  # Small HC-timesteps
             args.min_batch_size = 2048
@@ -167,6 +167,7 @@ def test_eigenoption():
             args.algo_name = "EigenOption"
             args.SF_epoch = 10  # Small SF-epoch for quick testing
             args.step_per_epoch = 1  # Small steps per epoch
+            args.sf_log_interval = 10
             args.OP_timesteps = 10000  # Small OP-timesteps
             args.HC_timesteps = 10000  # Small HC-timesteps
             args.min_batch_size = 2048
