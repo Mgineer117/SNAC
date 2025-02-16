@@ -369,7 +369,7 @@
         "min_batch_size": 5000,
         "DIF_batch_size": 30000,
         "post_process": "nonzero_rewards",
-        "render_fps": 60,
+        "render_fps": 120,
         "gamma": 0.99
     },
     "InvertedPendulum": {
