@@ -98,7 +98,7 @@ def get_conv_layer(args):
             },  # Maintains size: (9x9 -> 9x9)
         ]
 
-    elif args.env_name in ("LavaRooms", "CtF"):
+    elif args.env_name == "LavaRooms":
         encoder_conv_layers = [
             {
                 "type": "conv",
@@ -178,6 +178,169 @@ def get_conv_layer(args):
                 "out_filters": in_channels,  # Number of output channels
             },  # Maintains size: (9x9 -> 9x9)
         ]
+    elif args.env_name == "CtF":
+        if args.ctf_type == "regular":
+            encoder_conv_layers = [
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 1,
+                    "padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": in_channels,  # Number of input channels
+                    "out_filters": 32,
+                },  # Maintain spatial size (12x12 -> 12x12)
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 2,
+                    "padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 32,
+                    "out_filters": 64,
+                },  # Reduce spatial size (12x12 -> 6x6)
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 1,
+                    "padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 64,
+                    "out_filters": 128,
+                },  # Maintain spatial size (6x6 -> 6x6)
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 2,
+                    "padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 128,
+                    "out_filters": 256,
+                },  # Reduce spatial size (6x6 -> 3x3)
+            ]
+
+            decoder_conv_layers = [
+                {
+                    "type": "conv_transpose",
+                    "kernel_size": 3,
+                    "stride": 2,
+                    "padding": 1,
+                    "output_padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 256,
+                    "out_filters": 128,
+                },  # Increases size: (3x3 -> 5x5)
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 1,
+                    "padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 128,
+                    "out_filters": 64,
+                },  # Maintains size: (5x5 -> 5x5)
+                {
+                    "type": "conv_transpose",
+                    "kernel_size": 3,
+                    "stride": 2,
+                    "padding": 1,
+                    "output_padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 64,
+                    "out_filters": 32,
+                },  # Increases size: (5x5 -> 9x9)
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 1,
+                    "padding": 1,
+                    "activation": nn.ELU(),  # Final activation for reconstruction
+                    "in_filters": 32,
+                    "out_filters": in_channels,  # Number of output channels
+                },  # Maintains size: (9x9 -> 9x9)
+            ]
+        elif args.ctf_type == "strategic":
+            encoder_conv_layers = [
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 1,
+                    "padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": in_channels,  # Input channel for grayscale image
+                    "out_filters": 32,
+                },  # (20, 20, 1) -> (20, 20, 32)
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 2,
+                    "padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 32,
+                    "out_filters": 64,
+                },  # (20, 20, 32) -> (10, 10, 64)
+                {
+                    "type": "conv",
+                    "kernel_size": 3,
+                    "stride": 2,
+                    "padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 64,
+                    "out_filters": 128,
+                },  # (10, 10, 64) -> (5, 5, 128)
+                {
+                    "type": "conv",
+                    "kernel_size": 2,
+                    "stride": 2,
+                    "padding": 0,
+                    "activation": nn.ELU(),
+                    "in_filters": 128,
+                    "out_filters": 128,
+                },  # (5, 5, 128) -> (2, 2, 128)
+            ]
+
+            decoder_conv_layers = [
+                {
+                    "type": "conv_transpose",
+                    "kernel_size": 2,
+                    "stride": 2,
+                    "padding": 0,
+                    "output_padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 128,
+                    "out_filters": 128,
+                },  # (2, 2, 128) -> (4, 4, 128)
+                {
+                    "type": "conv_transpose",
+                    "kernel_size": 3,
+                    "stride": 2,
+                    "padding": 1,
+                    "output_padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 128,
+                    "out_filters": 64,
+                },  # (4, 4, 128) -> (9, 9, 64)
+                {
+                    "type": "conv_transpose",
+                    "kernel_size": 3,
+                    "stride": 2,
+                    "padding": 1,
+                    "output_padding": 1,
+                    "activation": nn.ELU(),
+                    "in_filters": 64,
+                    "out_filters": 32,
+                },  # (9, 9, 64) -> (20, 20, 32)
+                {
+                    "type": "conv_transpose",
+                    "kernel_size": 3,
+                    "stride": 1,
+                    "padding": 1,
+                    "output_padding": 0,
+                    "activation": nn.ELU(),  # Final activation
+                    "in_filters": 32,
+                    "out_filters": in_channels,
+                },  # (20, 20, 32) -> (20, 20, 1)
+            ]
     elif args.env_name == "Maze":
         encoder_conv_layers = [
             {
@@ -260,7 +423,6 @@ def get_conv_layer(args):
                 "out_filters": in_channels,
             },  # (20, 20, 32) -> (20, 20, 1)
         ]
-
 
     return encoder_conv_layers, decoder_conv_layers
 

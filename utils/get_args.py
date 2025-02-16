@@ -104,6 +104,12 @@ def get_args(verbose=True):
         help="SNAC / OptionCritic / SAC / PPO",
     )
     parser.add_argument(
+        "--ctf-type",
+        type=str,
+        default=None,
+        help="0 or 1. Seed to fix the grid, agent, and goal locations",
+    )
+    parser.add_argument(
         "--grid-type",
         type=int,
         default=0,

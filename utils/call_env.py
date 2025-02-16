@@ -82,7 +82,13 @@ def call_env(args):
         args.agent_num = len(env.agents)
         return GridWrapper(env, args)
     elif args.env_name in ("CtF"):
-        map_path: str = "assets/regular_ctf.txt"
+        if args.ctf_type == "regular":
+            map_path: str = "assets/regular_ctf.txt"
+        elif args.ctf_type == "strategic":
+            map_path: str = "assets/strategic_ctf.txt"
+        else:
+            raise ValueError(f"Invalid grid type: {args.ctf_type}")
+
         observation_option: str = "tensor"
         env = CtF(
             map_path=map_path,
