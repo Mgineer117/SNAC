@@ -1,3 +1,7 @@
 nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method top --gpu-idx 0 --num-options 4 --cpu-preserve-rate 0.7 &
 nohup python3 main.py --env-name CtF --project CtF --algo-name SNAC --method trs --gpu-idx 0 --num-options 4 --cpu-preserve-rate 0.7 &
 nohup python3 main.py --env-name CtF --project CtF --algo-name PPO --gpu-idx 1 --cpu-preserve-rate 0.3 &
+
+nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method top --gpu-idx 0 --num-options 4 --ctf-type strategic --cpu-preserve-rate 0.7 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name SNAC --method trs --gpu-idx 0 --num-options 4 --ctf-type strategic --cpu-preserve-rate 0.7 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name PPO --gpu-idx 1 --ctf-type strategic --cpu-preserve-rate 0.3 &
