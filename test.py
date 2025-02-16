@@ -1,5 +1,6 @@
 import uuid
 import random
+import datetime
 import wandb
 import sys
 import os
@@ -32,10 +33,10 @@ def suppress_output():
 #########################################################
 # Parameter definitions
 #########################################################
-def train(args, seed, unique_id):
+def train(args, seed, unique_id, exp_time):
     """Initiate the training process with given args."""
     env = call_env(args)
-    logger, writer = setup_logger(args, unique_id, seed)
+    logger, writer = setup_logger(args, unique_id, exp_time, seed)
 
     algo_classes = {
         "PPO": PPO,
@@ -67,6 +68,7 @@ def train(args, seed, unique_id):
 def test_ppo():
     seed = 42
     seed_all(seed)
+    exp_time = datetime.datetime.now().strftime("%m-%d_%H-%M-%S.%f")
     unique_id = str(uuid.uuid4())[:4]
 
     envs = ["FourRooms", "Maze", "CtF", "PointNavigation"]
@@ -87,7 +89,7 @@ def test_ppo():
                 args.draw_map = True
 
                 with suppress_output():  # Suppress print output
-                    train(args, seed, unique_id)
+                    train(args, seed, unique_id, exp_time)
 
             except Exception as e:
                 errors.append(f"❌ PPO Test Failed on {env_name}: {str(e)}")
@@ -104,6 +106,7 @@ def test_ppo():
 #########################################################
 def test_snac():
     unique_id = str(uuid.uuid4())[:4]
+    exp_time = datetime.datetime.now().strftime("%m-%d_%H-%M-%S.%f")
     seed = 42
     seed_all(seed)
     errors = []  # Store errors to print later
@@ -131,7 +134,7 @@ def test_snac():
             args.draw_map = True
 
             with suppress_output():  # Suppress print output
-                train(args, seed, unique_id)
+                train(args, seed, unique_id, exp_time)
 
         except Exception as e:
             errors.append(f"❌ SNAC Test Failed: {str(e)}")
@@ -150,6 +153,7 @@ def test_eigenoption():
     seed = 42
     seed_all(seed)
     unique_id = str(uuid.uuid4())[:4]
+    exp_time = datetime.datetime.now().strftime("%m-%d_%H-%M-%S.%f")
     errors = []  # Store errors to print later
 
     with tqdm(
@@ -175,7 +179,7 @@ def test_eigenoption():
             args.draw_map = True
 
             with suppress_output():  # Suppress print output
-                train(args, seed, unique_id)
+                train(args, seed, unique_id, exp_time)
 
         except Exception as e:
             errors.append(f"❌ EigenOption Test Failed: {str(e)}")
