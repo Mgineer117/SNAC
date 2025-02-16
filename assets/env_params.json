@@ -215,7 +215,7 @@
         "K_epochs": 10,
         "target_kl": 0.03,
         "method": "top",
-        "ctf_type": "strategic",
+        "ctf_type": "regular",
         "sf_dim": 128,
         "sf_fc_dim": 512,
         "op_policy_dim": [
