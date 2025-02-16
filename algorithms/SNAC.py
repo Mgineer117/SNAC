@@ -212,7 +212,7 @@ class SNAC:
         Train Hierarchical Controller to compute optimal policy that alternates between
         options and the random walk.
         """
-        total_batch_size = int(self.args.hc_batch_size * self.args.K_epochs / 2)
+        total_batch_size = self.args.hc_batch_size * self.args.K_epochs
         self.sampler.initialize(
             batch_size=total_batch_size,
             num_option=1,

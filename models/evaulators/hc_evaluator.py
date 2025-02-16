@@ -251,14 +251,17 @@ class HC_Evaluator(Evaluator):
                         # save option indices
                         option_image = self.plotOptionIndices()
                     else:
-                        option_image = None
+                        if "option_image" not in globals():
+                            option_image = None
 
                     if num_episodes == 0 and self.renderPlot:
                         path_render = self.plotRender()
                         self.recorded_frames = []
                     else:
-                        path_image = None
-                        path_render = None
+                        if "path_image" not in globals():
+                            path_image = None
+                        if "path_render" not in globals():
+                            path_render = None
 
         reward_list = [ep_info["ep_reward"] for ep_info in ep_buffer]
         length_list = [ep_info["ep_length"] for ep_info in ep_buffer]

@@ -26,7 +26,7 @@ class PPOTrainer:
         evaluator: Evaluator,
         timesteps: int = 1e6,
         lr_scheduler: torch.optim.lr_scheduler = None,
-        log_interval: int = 10,
+        log_interval: int = 2,
         grid_type: int = 0,
     ) -> None:
         self.policy = policy
