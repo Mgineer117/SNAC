@@ -19,7 +19,6 @@ from torch.utils.tensorboard import SummaryWriter
 from argparse import ArgumentParser
 
 from utils import *
-from utils.call_env import call_env
 
 
 class SF_Train:

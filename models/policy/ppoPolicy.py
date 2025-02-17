@@ -10,7 +10,7 @@ from scipy.optimize import fmin_l_bfgs_b as bfgs
 
 from copy import deepcopy
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
-from utils import estimate_advantages
+from utils.utils import estimate_advantages
 from models.layers.building_blocks import MLP
 from models.layers.ppo_networks import PPO_Policy, PPO_Critic
 from models.policy.base_policy import BasePolicy

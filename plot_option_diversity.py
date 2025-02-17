@@ -7,12 +7,12 @@ import seaborn as sns
 
 sns.set_theme()
 
-# from utils import *
-from utils.call_network import call_sfNetwork
-from utils.get_all_states import get_grid_tensor
-from utils.plotter import Plotter
-from utils.sampler import OnlineSampler
-from utils.eigenvector import get_eigenvectors
+from utils import *
+# from utils.call_network import call_sfNetwork
+#from utils.get_all_states import get_grid_tensor
+# from utils.buffer import TrajectoryBuffer
+# from utils.sampler import OnlineSampler
+from utils.call_weights import call_options
 from utils.call_env import call_env
 from models.evaulators.base_evaluator import DotDict
 
@@ -123,8 +123,8 @@ LABELS = {
 }
 
 
-def init_args(env_name: str, algo_name: str, num_vector: str):
-    model_dir = f"log/eval_log/model_for_eval/{env_name}/EigenOption/"
+def init_args(env_name: str, algo_name: str, num_options: str, method: str):
+    model_dir = f"log/eval_log/model_for_eval/{env_name}/"
     with open(model_dir + "config.json", "r") as json_file:
         config = json.load(json_file)
     args = DotDict(config)
@@ -133,33 +133,30 @@ def init_args(env_name: str, algo_name: str, num_vector: str):
 
     args.algo_name = algo_name
     args.env_name = env_name
-    args.num_vector = num_vector
+    args.num_options = num_options
+    args.max_batch_size = 5000
+    args.min_batch_size = 5000
+    args.DIF_batch_size = 5000
+    args.method = method
     args.device = torch.device("cpu")
 
     print(f"Algo name: {args.algo_name}")
     print(f"Env name: {args.env_name}")
-    print(f"Num vector: {args.num_vector}")
+    print(f"Num options: {args.num_options}")
 
     return args
 
 
-def get_vectors(args):
-    plotter = Plotter(
-        grid_size=args.grid_size,
-        img_tile_size=args.img_tile_size,
-        device=args.device,
-    )
-
+def get_options(args):
     sampler = OnlineSampler(
-        training_envs=env,
+        env=env,
         state_dim=args.s_dim,
-        feature_dim=args.sf_dim,
         action_dim=args.a_dim,
-        hc_action_dim=args.num_vector + 1,
-        agent_num=args.agent_num,
-        min_cover_option_length=args.min_cover_option_length,
+        hc_action_dim=2 * args.num_options + 1,
+        min_option_length=args.min_option_length,
+        num_options=1,
         episode_len=args.episode_len,
-        batch_size=4096,
+        batch_size=args.warm_batch_size,
         min_batch_for_worker=args.min_batch_for_worker,
         cpu_preserve_rate=args.cpu_preserve_rate,
         num_cores=args.num_cores,
@@ -167,20 +164,36 @@ def get_vectors(args):
         verbose=False,
     )
 
-    option_vals, options, _ = get_eigenvectors(
-        env,
-        sf_network,
-        sampler,
-        plotter,
-        args,
-        draw_map=False,
+    buffer = TrajectoryBuffer(
+        state_dim=args.s_dim,
+        action_dim=args.a_dim,
+        hc_action_dim=2 * args.num_options + 1,
+        episode_len=args.episode_len,
+        min_batch_size=args.min_batch_size,
+        max_batch_size=args.max_batch_size,
     )
 
-    return option_vals, options
+    reward_options, state_options = call_options(
+        algo_name=args.algo_name,
+        sf_dim=args.sf_dim,
+        snac_split_ratio=args.snac_split_ratio,
+        temporal_balance_ratio=args.temporal_balance_ratio,
+        num_options=args.num_options,
+        sf_network=sf_network,
+        sampler=sampler,
+        buffer=buffer,
+        DIF_batch_size=args.DIF_batch_size,
+        grid_type=args.grid_type,
+        gamma=args.gamma,
+        method=args.method,
+        device=args.device,
+    )
+
+    return reward_options, state_options
 
 
 def get_grid(args):
-    grid, pos, loc = get_grid_tensor(env, grid_type=args.grid_type)
+    grid, pos = get_grid_tensor(env, grid_type=args.grid_type)
 
     return grid, pos
 
@@ -208,26 +221,22 @@ def get_feature_matrix(feaNet, grid, pos, args):
     return features.numpy()
 
 
-def get_similarity_metric(features, option_vals, options, pos, args):
+def get_similarity_metric(features, reward_options, state_options, pos, args):
     """This sweeps possible blue agent states to
     compute all options for each feature then average"""
     total_dissimilarity = 0
     total_diss_dict = {}
     feature_num = len(pos[0])
 
-    if args.algo_name in ("SNAC", "SNAC+", "SNAC++", "SNAC+++"):
+    if args.algo_name == "SNAC":
         # parameters
-        vector_dividend = int(args.num_vector / 2)
-        feature_dividend = int(args.sf_dim / 2)
+        feature_dividend = args.sf_dim * args.snac_split_ratio
 
-        reward_options = options[:vector_dividend, :]
-        state_options = options[vector_dividend:, :]
+        num_reward_options = reward_options.shape[0]
+        num_state_options = state_options.shape[0]
 
-        values = [option_vals[i] for i in range(args.num_vector)]
-        val_pairs = list(itertools.combinations(values, 2))
-
-        reward_vectors = [reward_options[i, :] for i in range(vector_dividend)]
-        state_vectors = [state_options[i, :] for i in range(vector_dividend)]
+        reward_vectors = [reward_options[i, :] for i in range(num_reward_options)]
+        state_vectors = [state_options[i, :] for i in range(num_state_options)]
 
         reward_pairs = list(itertools.combinations(reward_vectors, 2))
         state_pairs = list(itertools.combinations(state_vectors, 2))
@@ -240,11 +249,11 @@ def get_similarity_metric(features, option_vals, options, pos, args):
             current_features = reward_features[x, y, :]  # F dim feature is ready
             for i, (v1, v2) in enumerate(reward_pairs):
                 dissimilarity = np.abs(np.dot(current_features, (v1 - v2)))
-                for key in val_pairs[i]:
+                for idx in range(num_reward_options):
                     try:
-                        total_diss_dict[str(round(key.item(), 3))] += dissimilarity
+                        total_diss_dict[str(idx)] += dissimilarity
                     except:
-                        total_diss_dict[str(round(key.item(), 3))] = dissimilarity
+                        total_diss_dict[str(idx)] = dissimilarity
                 # sweep through every options for each feature
                 current_dissimilarity += dissimilarity
             total_dissimilarity += current_dissimilarity / len(reward_pairs)
@@ -254,58 +263,58 @@ def get_similarity_metric(features, option_vals, options, pos, args):
             current_features = state_features[x, y, :]  # F dim feature is ready
             for j, (v1, v2) in enumerate(state_pairs):
                 dissimilarity = np.abs(np.dot(current_features, (v1 - v2)))
-                for key in val_pairs[i + j + 1]:
+                for idx in range(num_reward_options, num_reward_options+num_state_options):
                     try:
-                        total_diss_dict[str(round(key.item(), 3))] += dissimilarity
+                        total_diss_dict[str(idx)] += dissimilarity
                     except:
-                        total_diss_dict[str(round(key.item(), 3))] = dissimilarity
+                        total_diss_dict[str(idx)] = dissimilarity
                 # sweep through every options for each feature
                 current_dissimilarity += dissimilarity
             total_dissimilarity += current_dissimilarity / len(state_pairs)
     else:
-        values = [option_vals[i] for i in range(args.num_vector)]
-        vectors = [options[i, :] for i in range(args.num_vector)]
-        val_pairs = list(itertools.combinations(values, 2))
-        pairs = list(itertools.combinations(vectors, 2))
+        num_state_options = state_options.shape[0]
+        state_vectors = [state_options[i, :] for i in range(num_state_options)]
+        pairs = list(itertools.combinations(state_vectors, 2))
         # parameters
         for x, y in zip(pos[0], pos[1]):
             current_dissimilarity = 0
             current_features = features[x, y, :]  # F dim feature is ready
             for i, (v1, v2) in enumerate(pairs):
                 dissimilarity = np.abs(np.dot(current_features, (v1 - v2)))
-                for key in val_pairs[i]:
+                for idx in range(num_state_options):
                     try:
-                        total_diss_dict[str(round(key.item(), 3))] += dissimilarity
+                        total_diss_dict[str(idx)] += dissimilarity
                     except:
-                        total_diss_dict[str(round(key.item(), 3))] = dissimilarity
+                        total_diss_dict[str(idx)] = dissimilarity
                 # sweep through every options for each feature
                 current_dissimilarity += dissimilarity
             total_dissimilarity += current_dissimilarity / len(pairs)
 
     total_dissimilarity /= feature_num
     for k, v in total_diss_dict.items():
-        total_diss_dict[k] /= feature_num * (args.num_vector - 1)
+        total_diss_dict[k] /= feature_num * (2*args.num_options - 1)
 
     return total_dissimilarity, total_diss_dict
 
 
 if __name__ == "__main__":
     env_names = ["Maze", "FourRooms"]
-    num_vectors_list = {
-        "Maze": [6, 12, 18, 24, 30, 42, 48, 60],
-        "FourRooms": [6, 12, 18, 24, 30, 42, 48],
+    num_options_list = {
+        "Maze": [3, 6, 9, 12, 15, 21, 24, 30],
+        "FourRooms": [3, 6, 9, 12, 15, 21, 24],
     }
     for env_name in env_names:
         # algo_names = ["EigenOption", "EigenOption+", "EigenOption++", "EigenOption+++"]
-        algo_names = ["EigenOption+", "EigenOption++"]
-        num_vectors = num_vectors_list[env_name]
+        algo_name = "EigenOption"
+        methods = ["top", "cvs", "crs", "trs"]
+        num_options = num_options_list[env_name]
 
         mean_diss_dict = {}
-        for algo_name in algo_names:
+        for method in methods:
             mean_diss_list = []
-            for num_vector in num_vectors:
+            for num_option in num_options:
                 args = init_args(
-                    env_name=env_name, algo_name=algo_name, num_vector=num_vector
+                    env_name=env_name, algo_name=algo_name, num_options=num_option, method=method
                 )
 
                 env = call_env(args)
@@ -318,18 +327,20 @@ if __name__ == "__main__":
                 mean_diss = 0
                 dict_list = []
                 for i in range(n):
-                    option_vals, options = get_vectors(args)
+                    reward_options, state_options = get_options(args)
                     diss, diss_dict = get_similarity_metric(
-                        feature_matrix, option_vals, options, pos, args
+                        feature_matrix, reward_options, state_options, pos, args
                     )
                     mean_diss += diss / n
                     dict_list.append(diss_dict)
                 mean_diss_list.append(mean_diss)
 
                 # Organize data by keys
-                data_by_key = {key: [] for key in range(num_vector)}
+                data_by_key = {key: [] for key in range(2*num_option)}
+                print(data_by_key)
                 for d in dict_list:
                     i = 0
+                    print(d)
                     for _, value in d.items():
                         data_by_key[i].append(value)
                         i += 1
@@ -344,7 +355,7 @@ if __name__ == "__main__":
                 plt.boxplot(boxplot_data, patch_artist=True)
                 plt.title(f"Mean dissimilarity: {mean_diss} for {args.algo_name}")
                 plt.tight_layout()
-                plt.savefig(f"data_{args.env_name}_{args.algo_name}_{num_vector}.png")
+                plt.savefig(f"data_{args.env_name}_{args.algo_name}_{num_option}.png")
                 plt.close()
 
             mean_diss_dict[algo_name] = mean_diss_list
@@ -353,12 +364,12 @@ if __name__ == "__main__":
 
         # Plot the results
         if env_name == "Maze":
-            num_vectors = [x / 128 for x in num_vectors]
+            num_options = [x / 128 for x in num_options]
         else:
-            num_vectors = [x / 64 for x in num_vectors]
+            num_options = [x / 64 for x in num_options]
         for k, v in mean_diss_dict.items():
             plt.plot(
-                num_vectors,
+                num_options,
                 v,
                 label=f"{LABELS[k]}",
                 color=COLORS[k],
@@ -369,8 +380,8 @@ if __name__ == "__main__":
         plt.xlabel("Ratio: Available/Total Options", fontsize=20)
         plt.ylabel("Mean Diversity", fontsize=20)
         plt.xticks(
-            num_vectors,
-            labels=[f"{x:.2f}" for x in num_vectors],
+            num_options,
+            labels=[f"{x:.2f}" for x in num_options],
             fontsize=14,
             rotation=45,
         )
