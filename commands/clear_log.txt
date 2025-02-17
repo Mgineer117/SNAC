@@ -3,4 +3,5 @@ sudo fuser -v -k /dev/nvidia1
 sudo fuser -v -k /dev/nvidia2
 sudo fuser -v -k /dev/nvidia3
 
+sudo rm nohup.out
 sudo rm -r log/train_log
