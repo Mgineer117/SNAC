@@ -362,7 +362,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-min-batch-for-worker",
         type=int,
-        default=10240,
+        default=None,
         help="Minimum batch size assgined for one worker (thread)",
     )
     parser.add_argument(
