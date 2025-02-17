@@ -1,3 +1,4 @@
-nohup python3 main.py --env-name Maze --project Maze --algo-name EigenOption --method top --gpu-idx 1 --num-options 8 --cpu-preserve-rate 0.7 &
-nohup python3 main.py --env-name Maze --project Maze --algo-name SNAC --method trs --gpu-idx 1 --num-options 8 --cpu-preserve-rate 0.7 &
-nohup python3 main.py --env-name Maze --project Maze --algo-name PPO --gpu-idx 1 --cpu-preserve-rate 0.3 &
+nohup python3 main.py --env-name Maze --project Maze --algo-name EigenOption --method top --gpu-idx 3 --num-options 8 --cpu-preserve-rate 0.7 &
+nohup python3 main.py --env-name Maze --project Maze --algo-name EigenOption --method trs --gpu-idx 3 --num-options 8 --cpu-preserve-rate 0.7 &
+nohup python3 main.py --env-name Maze --project Maze --algo-name SNAC --method trs --gpu-idx 3 --num-options 8 --cpu-preserve-rate 0.7 &
+nohup python3 main.py --env-name Maze --project Maze --algo-name PPO --gpu-idx 3 --cpu-preserve-rate 0.3 &

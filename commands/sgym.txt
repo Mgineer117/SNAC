@@ -1,3 +1,7 @@
-nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name SNAC --method trs --gpu-idx 0 --num-options 8 --cpu-preserve-rate 0.7 &
-nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name EigenOption --method top --gpu-idx 0 --num-options 8 --cpu-preserve-rate 0.7 &
-nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name PPO --gpu-idx 0 --cpu-preserve-rate 0.3 &
+nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name SNAC --method trs --gpu-idx 0 --num-options 6 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name EigenOption --method top --gpu-idx 0 --num-options 6 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name EigenOption --method trs --gpu-idx 0 --num-options 6 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name SNAC --method trs --gpu-idx 1 --num-options 12 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name EigenOption --method top --gpu-idx 1 --num-options 12 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name EigenOption --method trs --gpu-idx 1 --num-options 12 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name PointNavigation --project Sgym --algo-name PPO --gpu-idx 2 --cpu-preserve-rate 0.3 &
