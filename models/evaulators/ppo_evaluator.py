@@ -102,7 +102,7 @@ class PPO_Evaluator(Evaluator):
                 if num_episodes == 0 and self.renderPlot:
                     img = env.render()
                     self.recorded_frames.append(img)
-                
+
                 if done:
                     if num_episodes == 0 and self.gridPlot:
                         # final agent pos
@@ -110,10 +110,16 @@ class PPO_Evaluator(Evaluator):
 
                         path_image = self.plotPath()
                         self.path = []
+                    else:
+                        if "path_image" not in globals():
+                            path_image = None
 
                     if num_episodes == 0 and self.renderPlot:
                         path_render = self.plotRender()
                         self.recorded_frames = []
+                    else:
+                        if "path_render" not in globals():
+                            path_render = None
 
                     ep_buffer.append({"reward": ep_reward, "ep_length": ep_length})
 
