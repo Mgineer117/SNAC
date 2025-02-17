@@ -170,6 +170,7 @@ class ConvNetwork(nn.Module):
 
         self.de_conv = nn.ModuleList()
         for layer in decoder_conv_layers:
+            print(layer)
             if layer["type"] == "conv_transpose":
                 element = DeConv(
                     in_channels=in_channels,
@@ -256,9 +257,11 @@ class ConvNetwork(nn.Module):
         out = torch.cat((features, actions), axis=-1)
         out = self.de_concat(out)
         out = self.reshape(out)
-
+        print(out.shape)
         for fn in self.de_conv:
             out, _ = fn(out)
+            print(out.shape)
+
         out = self.de_last_act(out)
         reconstructed_state = self.de_pmt(out)
         return reconstructed_state
