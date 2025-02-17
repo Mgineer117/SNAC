@@ -157,6 +157,7 @@ class EigenOption:
         if self.args.env_name in ("OneRoom", "FourRooms", "Maze", "CtF"):
             images = get_reward_maps(
                 env=self.env,
+                env_name=self.args.env_name,
                 sf_network=self.sf_network,
                 V=[reward_options, state_options],
                 feature_dim=self.args.sf_dim,

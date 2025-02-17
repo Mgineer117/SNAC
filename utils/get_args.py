@@ -595,9 +595,8 @@ def get_args(verbose=True):
     # Misc. parameters
     parser.add_argument(
         "--rendering",
-        type=bool,
-        default=True,
-        help="saves the rendering during evaluation",
+        action="store_true",
+        help="Imports previously trained SF model",
     )
     parser.add_argument(
         "--render-fps",
@@ -607,9 +606,8 @@ def get_args(verbose=True):
     )
     parser.add_argument(
         "--draw-map",
-        type=bool,
-        default=True,
-        help="Turn off plotting reward map. Only works for FourRoom",
+        action="store_true",
+        help="Imports previously trained SF model",
     )
     parser.add_argument(
         "--import-sf-model",

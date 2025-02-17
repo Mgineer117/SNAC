@@ -137,58 +137,205 @@ def call_options(
 
 
 def get_reward_maps(
-    env: gym.Env, sf_network: nn.Module, V: list, feature_dim: int, grid_type: int
-):
-
-    raw_grid, x_coords, y_coords = get_grid_and_coords(env, grid_type)
-    random_indices = random.sample(range(len(x_coords)), 2)
-    # fix enemy assignment
-    # raw_grid[x_coords[random_indices[0]], y_coords[random_indices[0]], 1:] = 2
-    # raw_grid[x_coords[random_indices[1]], y_coords[random_indices[1]], 1:] = 2
-
-    raw_grid[3, 3, 1:] = 2
-    raw_grid[8, 8, 1:] = 2
-
-    # find idx where not wall and red agent
-    pos = np.where(
-        (raw_grid[:, :, 0] != 0)
-        & (raw_grid[:, :, 1] != 2)
-        & (raw_grid[:, :, 1] != 3)
-        & (raw_grid[:, :, 1] != 4)
-    )
-
-    img = plotRewardMap(
-        sf_network=sf_network,
-        raw_grid=raw_grid,
-        V=V,
-        feature_dim=feature_dim,
-        coords=pos,
-    )
+    env: gym.Env, env_name:str, sf_network: nn.Module, V: list, feature_dim: int, grid_type: int
+):  
+    raw_grid, pos = get_grid_and_coords(env, env_name, grid_type)
+    
+    if env_name in ("OneRoom", "LavaRooms", "FourRooms", "Maze"):
+        img = plotRoomRewardMap(
+            sf_network=sf_network,
+            raw_grid=raw_grid,
+            V=V,
+            feature_dim=feature_dim,
+            coords=pos,
+        )
+    else:
+        img = plotCtFRewardMap(
+            sf_network=sf_network,
+            raw_grid=raw_grid,
+            V=V,
+            feature_dim=feature_dim,
+            coords=pos,
+        )
     return img
 
 
-def get_grid_and_coords(env, grid_type):
+def get_grid_and_coords(env, env_name, grid_type):
+    
+    
     obs, _ = env.reset(seed=grid_type)
     raw_grid = obs["observation"]
     env.close()
 
-    agent_pos = np.where(raw_grid[:, :, 1] == 1)
-    enemy_pos = np.where(raw_grid[:, :, 1] == 2)
+    if env_name == "CtF":    
+        agent_pos = np.where(raw_grid[:, :, 1] == 1)
+        enemy_pos = np.where(raw_grid[:, :, 1] == 2)
 
-    raw_grid[agent_pos[0], agent_pos[1], 1] = 0
-    raw_grid[agent_pos[0], agent_pos[1], 2] = 0
+        raw_grid[agent_pos[0], agent_pos[1], 1] = 0
+        raw_grid[agent_pos[0], agent_pos[1], 2] = 0
 
-    raw_grid[enemy_pos[0], enemy_pos[1], 1] = 0
-    raw_grid[enemy_pos[0], enemy_pos[1], 2] = 0
+        raw_grid[enemy_pos[0], enemy_pos[1], 1] = 0
+        raw_grid[enemy_pos[0], enemy_pos[1], 2] = 0
 
-    x_coords, y_coords = np.where(
-        (raw_grid[:, :, 0] != 0) & (raw_grid[:, :, 1] != 3) & (raw_grid[:, :, 1] != 4)
-    )  # find idx where not wall
+        # fix one enemy assignment while iterate other one
+        raw_grid[3, 3, 1:] = 2
+        raw_grid[8, 8, 1:] = 2
 
-    return raw_grid, x_coords, y_coords
+        # find idx where not wall
+        pos = np.where(
+            (raw_grid[:, :, 0] != 0)
+            & (raw_grid[:, :, 1] != 2)
+            & (raw_grid[:, :, 1] != 3)
+            & (raw_grid[:, :, 1] != 4)
+        ) 
+    else:
+        agent_pos = np.where(raw_grid[:, :, 0] == 10)
+
+        raw_grid[agent_pos[0], agent_pos[1], 0] = 1
+
+        pos = np.where(
+            (raw_grid[:, :, 0] != 2) & (raw_grid[:, :, 0] != 8) & (raw_grid[:, :, 0] != 9)
+        )  # find idx where not wall
 
 
-def plotRewardMap(
+    return raw_grid, pos
+
+def plotRoomRewardMap(
+    sf_network: nn.Module,
+    raw_grid: np.ndarray,
+    V: list,
+    feature_dim: int,
+    coords: tuple,
+):
+    # convert V to tensor
+    for i, vector in enumerate(V):
+        if vector is not None:
+            V[i] = torch.from_numpy(vector).to(torch.float32)
+
+    ### Load parameters
+    x_grid_dim, y_grid_dim, _ = raw_grid.shape
+    num_reward_options = V[0].shape[0] if V[0] is not None else 0
+    num_state_options = V[1].shape[0] if V[1] is not None else 0
+    agent_dirs = [0, 1, 2, 3]
+    num_vec = num_reward_options + num_state_options
+    num_r_features = sf_network.num_r_features
+
+    x_coords, y_coords = coords
+    device_of_model = next(sf_network.parameters()).device
+
+    # create a placeholder
+    features = torch.zeros(x_grid_dim, y_grid_dim, feature_dim)
+    deltaPhi = torch.zeros(len(agent_dirs), x_grid_dim, y_grid_dim, feature_dim)
+
+    # will avg across agent_dirs
+    rewards = torch.zeros(num_vec, x_grid_dim, y_grid_dim)
+
+    for x, y in zip(x_coords, y_coords):
+        # # Load the image as a NumPy array
+        img = raw_grid.copy()
+        img[x, y, 0] = 10
+
+        with torch.no_grad():
+            img = torch.from_numpy(img).to(torch.float32).to(device_of_model)
+            if len(img.shape) == 3:
+                img = img.unsqueeze(0)
+            phi = sf_network.get_features(img, deterministic=True)
+        features[x, y, :] = phi
+
+    deltaPhi = features
+
+    r_deltaPhi, s_deltaPhi = (
+        deltaPhi[:, :, :num_r_features],
+        deltaPhi[:, :, num_r_features:],
+    )
+
+    for vec_idx in range(num_vec):
+        is_reward_option = True if vec_idx < num_reward_options else False
+        if is_reward_option:
+            idx = vec_idx
+            reward = torch.sum(
+                torch.mul(r_deltaPhi[:, :, :], V[0][idx, :]),
+                axis=-1,
+            )
+        else:
+            idx = vec_idx - num_reward_options
+            reward = torch.sum(
+                torch.mul(s_deltaPhi[:, :, :], V[1][idx, :]),
+                axis=-1,
+            )
+
+        for x, y in zip(x_coords, y_coords):
+            rewards[vec_idx, x, y] += reward[x, y]
+
+    ### Normalization
+    for k in range(num_vec):
+        # Identify positive and negative rewards
+        pos_rewards = rewards[k, :, :] > 0
+        neg_rewards = rewards[k, :, :] < 0
+
+        # Normalize positive rewards to the range [0, 1]
+        if pos_rewards.any():  # Check if there are any positive rewards
+            r_pos_max = rewards[k, pos_rewards].max()
+            r_pos_min = rewards[k, pos_rewards].min()
+            rewards[k, pos_rewards] = (rewards[k, pos_rewards] - r_pos_min) / (
+                r_pos_max - r_pos_min + 1e-10
+            )
+        # Normalize negative rewards to the range [-1, 0]
+        if neg_rewards.any():  # Check if there are any negative rewards
+            r_neg_max = rewards[k, neg_rewards].max()  # Closest to 0 (least negative)
+            r_neg_min = rewards[k, neg_rewards].min()  # Most negative
+            rewards[k, neg_rewards] = (rewards[k, neg_rewards] - r_neg_max) / (
+                r_neg_max - r_neg_min + 1e-10
+            )
+
+    # Smoothing the tensor using a uniform filter
+    rewards = rewards.numpy()
+    # for k in range(rewards.shape[0]):
+    #     rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=3)
+
+    # Define a custom colormap with black at the center
+    colors = [
+        (0.2, 0.2, 1),
+        (0.2667, 0.0039, 0.3294),
+        (1, 0.2, 0.2),
+    ]  # Blue -> Black -> Red
+    cmap = mcolors.LinearSegmentedColormap.from_list("pale_blue_dark_pale_red", colors)
+
+    images = []
+    walls = np.where(
+        (raw_grid[:, :, 0] == 2)
+        | (raw_grid[:, :, 0] == 8)
+        | (raw_grid[:, :, 0] == 9)
+    )
+    for i in range(num_vec):
+        grid = np.zeros((x_grid_dim, y_grid_dim))
+        grid += rewards[i, :, :]
+
+        if np.sum(np.int8(grid > 0)) == 0:
+            for x, y in zip(coords[0], coords[1]):
+                grid[x, y] += 1.0
+        grid[walls] = 0.0
+
+        fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12, 8))
+        ax0.imshow(raw_grid * 50)
+        ax1.imshow(grid, cmap=cmap, interpolation="nearest", vmin=-1, vmax=1)
+        plt.tight_layout()
+
+        # Render the figure to a canvas
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+
+        # Convert canvas to a NumPy array
+        reward_img = np.frombuffer(canvas.tostring_rgb(), dtype="uint8")
+        reward_img = reward_img.reshape(
+            canvas.get_width_height()[::-1] + (3,)
+        )  # Shape: (height, width, 3)
+        plt.close()
+        images.append(reward_img)
+        i += 1
+    return images
+
+def plotCtFRewardMap(
     sf_network: nn.Module,
     raw_grid: np.ndarray,
     V: list,
@@ -362,7 +509,6 @@ def plotRewardMap(
         images.append(reward_img)
         i += 1
     return images
-
 
 def warm_buffer(
     sf_network: nn.Module,
