@@ -1,0 +1,7 @@
+nohup python3 main.py --env-name FourRooms --project FourRooms --algo-name EigenOption --method top --gpu-idx 0 --num-options 4 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name FourRooms --project FourRooms --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 4 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name FourRooms --project FourRooms --algo-name EigenOption --method trs --gpu-idx 0 --num-options 4 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name FourRooms --project FourRooms --algo-name EigenOption --method top --gpu-idx 0 --num-options 8 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name FourRooms --project FourRooms --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 8 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name FourRooms --project FourRooms --algo-name EigenOption --method trs --gpu-idx 0 --num-options 8 --cpu-preserve-rate 0.5 &
+nohup python3 main.py --env-name FourRooms --project FourRooms --algo-name PPO --gpu-idx 0 --cpu-preserve-rate 0.3 &
