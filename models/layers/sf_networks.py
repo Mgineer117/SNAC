@@ -170,7 +170,6 @@ class ConvNetwork(nn.Module):
 
         self.de_conv = nn.ModuleList()
         for layer in decoder_conv_layers:
-            print(layer)
             if layer["type"] == "conv_transpose":
                 element = DeConv(
                     in_channels=in_channels,
