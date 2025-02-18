@@ -503,7 +503,6 @@ class OnlineSampler(Base):
 
             self.external_t = 0
             for t in range(self.episode_len):
-
                 with torch.no_grad():
                     # sample action
                     a, metaData = policy(obs, idx, deterministic=deterministic)

@@ -82,7 +82,7 @@ class OP_Evaluator(Evaluator):
             done = False
             while not done:
                 with torch.no_grad():
-                    a, _ = policy(obs, idx, deterministic=False)
+                    a, _ = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze()
 
                 # env stepping

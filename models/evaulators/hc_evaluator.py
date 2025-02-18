@@ -184,7 +184,7 @@ class HC_Evaluator(Evaluator):
             self.option_indices = {"x": [], "y": []}
             while not done:
                 with torch.no_grad():
-                    a, metaData = policy(obs, idx, deterministic=False)
+                    a, metaData = policy(obs, idx, deterministic=True)
                     a = a.cpu().numpy().squeeze() if a.shape[-1] > 1 else [a.item()]
 
                 self.option_indices["x"].append(self.external_t)
@@ -202,7 +202,7 @@ class HC_Evaluator(Evaluator):
                                 option_a, option_dict = policy(
                                     next_obs,
                                     metaData["z_argmax"],
-                                    deterministic=False,
+                                    deterministic=True,
                                 )
                                 option_a = option_a.cpu().numpy().squeeze()
 
