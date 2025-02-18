@@ -1,6 +1,6 @@
 {
     "FourRooms": {
-        "SF_epoch": 500,
+        "SF_epoch": 200,
         "step_per_epoch": 100,
         "OP_timesteps": 1e6,
         "HC_timesteps": 1e6,
@@ -9,7 +9,7 @@
         "SAC_timesteps": 1e6,
         "num_options": 4,
         "op_mode": "ppo",
-        "sf_log_interval": 250,
+        "sf_log_interval": 100,
         "op_log_interval": 2,
         "hc_log_interval": 10,
         "oc_log_interval": 10,
