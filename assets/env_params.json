@@ -179,7 +179,7 @@
         "ppo_batch_size": 256,
         "sac_batch_size": 256,
         "eval_episodes": 10,
-        "max_batch_size": 20000,
+        "max_batch_size": 25000,
         "min_batch_size": 5000,
         "DIF_batch_size": 20000,
         "render_fps": 10,
