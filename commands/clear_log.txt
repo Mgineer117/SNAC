@@ -1,3 +1,6 @@
+git fetch
+git log -1
+
 sudo fuser -v -k /dev/nvidia0
 sudo fuser -v -k /dev/nvidia1
 sudo fuser -v -k /dev/nvidia2
