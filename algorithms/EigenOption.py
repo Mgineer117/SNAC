@@ -114,6 +114,7 @@ class EigenOption:
         self.op_evaluator = OP_Evaluator(dir=self.op_path, **evaluator_params)
         self.hc_evaluator = HC_Evaluator(
             dir=self.hc_path,
+            episode_len=args.episode_len,
             min_option_length=args.min_option_length,
             **evaluator_params,
         )
