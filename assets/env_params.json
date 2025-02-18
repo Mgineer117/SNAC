@@ -93,7 +93,7 @@
         "gamma": 0.99
     },
     "Maze": {
-        "SF_epoch": 500,
+        "SF_epoch": 250,
         "step_per_epoch": 100,
         "OP_timesteps": 1e6,
         "HC_timesteps": 1e7,
@@ -102,7 +102,7 @@
         "SAC_timesteps": 1e7,
         "num_options": 8,
         "op_mode": "ppo",
-        "sf_log_interval": 250,
+        "sf_log_interval": 125,
         "op_log_interval": 2,
         "hc_log_interval": 10,
         "oc_log_interval": 10,
