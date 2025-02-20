@@ -195,7 +195,7 @@ def test_ppo():
                 args.ppo_num_minibatch = 1
                 args.ppo_minibatch_size = 64
                 args.K_epochs = 1
-                args.rendering = True
+                args.rendering = False
                 args.draw_map = True
 
                 with suppress_output():  # Suppress print output
