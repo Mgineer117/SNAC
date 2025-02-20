@@ -362,31 +362,31 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-min-batch-for-worker",
         type=int,
-        default=None,
+        default=4096,
         help="Minimum batch size assgined for one worker (thread)",
     )
     parser.add_argument(
         "--op-entropy-scaler",
         type=float,
-        default=1e-4,
+        default=1e-3,
         help="Option policy entropy scaler",
     )
     parser.add_argument(
         "--hc-entropy-scaler",
         type=float,
-        default=1e-3,
+        default=1e-2,
         help="Hierarchical policy entropy scaler",
     )
     parser.add_argument(
         "--sac-entropy-scaler",
         type=float,
-        default=1e-4,
+        default=1e-3,
         help="PPO policy entropy scaler",
     )
     parser.add_argument(
         "--ppo-entropy-scaler",
         type=float,
-        default=1e-4,
+        default=1e-3,
         help="PPO policy entropy scaler",
     )
 
@@ -606,8 +606,7 @@ def get_args(verbose=True):
     )
     parser.add_argument(
         "--draw-map",
-        action="store_true",
-        help="Imports previously trained SF model",
+        type=bool, default=True, help="WandB logging"
     )
     parser.add_argument(
         "--import-sf-model",
