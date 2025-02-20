@@ -190,10 +190,10 @@ def test_ppo():
             try:
                 args = override_args(env_name)
                 args.algo_name = "PPO"
-                args.PPO_timesteps = 1000  # Small timesteps for quick testing
+                args.PPO_timesteps = 100  # Small timesteps for quick testing
                 args.min_batch_for_worker = 1024
                 args.ppo_num_minibatch = 1
-                args.ppo_minibatch_size = 32
+                args.ppo_minibatch_size = 64
                 args.K_epochs = 1
                 args.rendering = True
                 args.draw_map = True
