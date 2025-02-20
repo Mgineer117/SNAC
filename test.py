@@ -87,10 +87,12 @@ def test_snac():
                 args.sf_log_interval = 10
                 args.OP_timesteps = 100  # Small OP-timesteps
                 args.HC_timesteps = 100  # Small HC-timesteps
-                args.sf_batch_size = 64
-                args.op_batch_size = 32
-                args.hc_batch_size = 32
-                args.K_epochs = 3
+                args.sf_minibatch_size = 64
+                args.op_num_minibatch = 1
+                args.op_minibatch_size = 64
+                args.hc_num_minibatch = 1
+                args.hc_minibatch_size = 64
+                args.K_epochs = 1
                 args.min_batch_size = 64
                 args.max_batch_size = 512
                 args.warm_batch_size = 256
@@ -98,7 +100,7 @@ def test_snac():
                 args.post_process = None
                 args.num_options = 2
                 args.method = "top"
-                args.rendering = True
+                args.rendering = False
                 args.draw_map = True
 
                 with suppress_output():  # Suppress print output
@@ -139,10 +141,12 @@ def test_eigenoption():
                 args.sf_log_interval = 10
                 args.OP_timesteps = 100  # Small OP-timesteps
                 args.HC_timesteps = 100  # Small HC-timesteps
-                args.sf_batch_size = 32
-                args.op_batch_size = 32
-                args.hc_batch_size = 32
-                args.K_epochs = 3
+                args.sf_minibatch_size = 64
+                args.op_num_minibatch = 1
+                args.op_minibatch_size = 64
+                args.hc_num_minibatch = 1
+                args.hc_minibatch_size = 64
+                args.K_epochs = 1
                 args.min_batch_size = 32
                 args.max_batch_size = 512
                 args.warm_batch_size = 256
@@ -150,7 +154,7 @@ def test_eigenoption():
                 args.post_process = None
                 args.num_options = 2
                 args.method = "top"
-                args.rendering = True
+                args.rendering = False
                 args.draw_map = True
 
                 with suppress_output():  # Suppress print output
@@ -188,6 +192,9 @@ def test_ppo():
                 args.algo_name = "PPO"
                 args.PPO_timesteps = 1000  # Small timesteps for quick testing
                 args.min_batch_for_worker = 1024
+                args.ppo_num_minibatch = 1
+                args.ppo_minibatch_size = 32
+                args.K_epochs = 1
                 args.rendering = True
                 args.draw_map = True
 
@@ -209,6 +216,11 @@ def test_ppo():
 #########################################################
 if __name__ == "__main__":
     print("\n" + "=" * 60)
+    print(" 🚀 Running PPO for small timesteps on all environments ")
+    print("=" * 60 + "\n")
+    test_ppo()
+
+    print("\n" + "=" * 60)
     print(" 🎯 Running SNAC pipeline with small SF-epoch, OP, HC-timesteps ")
     print("=" * 60 + "\n")
     test_snac()
@@ -218,9 +230,6 @@ if __name__ == "__main__":
     print("=" * 60 + "\n")
     test_eigenoption()
 
-    print("\n" + "=" * 60)
-    print(" 🚀 Running PPO for small timesteps on all environments ")
-    print("=" * 60 + "\n")
-    test_ppo()
+    
 
     print("\n✅ All tests completed successfully!")

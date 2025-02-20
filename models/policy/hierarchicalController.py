@@ -64,6 +64,7 @@ class HC_Controller(BasePolicy):
         policy: HC_Policy,
         primitivePolicy: HC_PPO,
         critic: HC_Critic,
+        num_minibatch: int,
         minibatch_size: int,
         a_dim: int,
         policy_lr: float = 5e-4,
@@ -80,6 +81,7 @@ class HC_Controller(BasePolicy):
         super(HC_Controller, self).__init__()
         # constants
         self.device = device
+        self.num_minibatch = num_minibatch
         self.minibatch_size = minibatch_size
 
         self._num_weights = policy._num_weights
@@ -231,97 +233,98 @@ class HC_Controller(BasePolicy):
 
         # K - Loop
         for k in range(self._K):
-            indices = torch.randperm(batch_size)[: self.minibatch_size]
-            mb_states = states[indices]
-            mb_option_actions = option_actions[indices]
-            mb_old_logprobs, mb_returns = old_logprobs[indices], returns[indices]
+            for n in range(self.num_minibatch):
+                indices = torch.randperm(batch_size)[: self.minibatch_size]
+                mb_states = states[indices]
+                mb_option_actions = option_actions[indices]
+                mb_old_logprobs, mb_returns = old_logprobs[indices], returns[indices]
 
-            # global batch normalization and target return
-            mb_advantages = advantages[indices]
-            mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
+                # global batch normalization and target return
+                mb_advantages = advantages[indices]
+                mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
 
-            # 1. Critic Update (with optional regularization)
-            mb_values, _ = self.critic(mb_states)
-            valueLoss = self.mse_loss(mb_returns, mb_values)
-            value_losses.append(valueLoss.item())
+                # 1. Critic Update (with optional regularization)
+                mb_values, _ = self.critic(mb_states)
+                valueLoss = self.mse_loss(mb_returns, mb_values)
+                value_losses.append(valueLoss.item())
 
-            # 2. Policy Update
-            _, _, metaData = self.policy(mb_states)
-            # Compute hierarchical policy logprobs and entropy
-            logprobs = self.policy.log_prob(metaData["dist"], mb_option_actions)
-            entropy = self.policy.entropy(metaData["dist"])
-            ratios = torch.exp(logprobs - mb_old_logprobs)
+                # 2. Policy Update
+                _, _, metaData = self.policy(mb_states)
+                # Compute hierarchical policy logprobs and entropy
+                logprobs = self.policy.log_prob(metaData["dist"], mb_option_actions)
+                entropy = self.policy.entropy(metaData["dist"])
+                ratios = torch.exp(logprobs - mb_old_logprobs)
 
-            # prepare updates
-            surr1 = ratios * mb_advantages
-            surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                # prepare updates
+                surr1 = ratios * mb_advantages
+                surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
 
-            actor_loss = -torch.min(surr1, surr2).mean()
-            entropy_loss = self._entropy_scaler * entropy.mean()
+                actor_loss = -torch.min(surr1, surr2).mean()
+                entropy_loss = self._entropy_scaler * entropy.mean()
 
-            if isinstance(self.primitivePolicy, HC_PPO):
-                # find mask: the actions contributions by hc policy only
-                pm_mask = torch.argmax(mb_option_actions, dim=-1) == self._num_weights
+                if isinstance(self.primitivePolicy, HC_PPO):
+                    # find mask: the actions contributions by hc policy only
+                    pm_mask = torch.argmax(mb_option_actions, dim=-1) == self._num_weights
 
-                if pm_mask is not None:
-                    mb_actions = actions[indices]
-                    mb_pm_old_logprobs = pm_old_logprobs[indices]
+                    if pm_mask is not None:
+                        mb_actions = actions[indices]
+                        mb_pm_old_logprobs = pm_old_logprobs[indices]
 
-                    _, pm_metaData = self.primitivePolicy(mb_states[pm_mask])
+                        _, pm_metaData = self.primitivePolicy(mb_states[pm_mask])
 
-                    pm_logprobs = self.policy.log_prob(
-                        pm_metaData["dist"], mb_actions[pm_mask]
-                    )
-                    pm_entropy = self.policy.entropy(pm_metaData["dist"])
-                    pm_ratios = torch.exp(pm_logprobs - mb_pm_old_logprobs[pm_mask])
+                        pm_logprobs = self.policy.log_prob(
+                            pm_metaData["dist"], mb_actions[pm_mask]
+                        )
+                        pm_entropy = self.policy.entropy(pm_metaData["dist"])
+                        pm_ratios = torch.exp(pm_logprobs - mb_pm_old_logprobs[pm_mask])
 
-                    # prepare updates
-                    surr1 = pm_ratios * mb_advantages[pm_mask]
-                    surr2 = (
-                        torch.clamp(pm_ratios, 1 - self._eps, 1 + self._eps)
-                        * mb_advantages[pm_mask]
-                    )
+                        # prepare updates
+                        surr1 = pm_ratios * mb_advantages[pm_mask]
+                        surr2 = (
+                            torch.clamp(pm_ratios, 1 - self._eps, 1 + self._eps)
+                            * mb_advantages[pm_mask]
+                        )
 
-                    pm_actorLoss = -torch.min(surr1, surr2).mean()
-                    pm_entropyLoss = self._entropy_scaler * pm_entropy.mean()
+                        pm_actorLoss = -torch.min(surr1, surr2).mean()
+                        pm_entropyLoss = self._entropy_scaler * pm_entropy.mean()
 
-                    # finishing up
-                    actor_loss += pm_actorLoss
-                    entropy_loss += pm_entropyLoss
+                        # finishing up
+                        actor_loss += pm_actorLoss
+                        entropy_loss += pm_entropyLoss
 
-                    # Simplify the repeated patterns
-                    ratios = torch.cat((ratios, pm_ratios), dim=0)
-                    logprobs = torch.cat((logprobs, pm_logprobs), dim=0)
-                    mb_old_logprobs = torch.cat(
-                        (mb_old_logprobs, mb_pm_old_logprobs[pm_mask]), dim=0
-                    )
+                        # Simplify the repeated patterns
+                        ratios = torch.cat((ratios, pm_ratios), dim=0)
+                        logprobs = torch.cat((logprobs, pm_logprobs), dim=0)
+                        mb_old_logprobs = torch.cat(
+                            (mb_old_logprobs, mb_pm_old_logprobs[pm_mask]), dim=0
+                        )
 
-            loss = actor_loss + 0.5 * valueLoss - entropy_loss
+                loss = actor_loss + 0.5 * valueLoss - entropy_loss
 
-            losses.append(loss.item())
-            actor_losses.append(actor_loss.item())
-            entropy_losses.append(entropy_loss.item())
+                losses.append(loss.item())
+                actor_losses.append(actor_loss.item())
+                entropy_losses.append(entropy_loss.item())
 
-            # Compute clip fraction (for logging)
-            clip_fraction = torch.mean((torch.abs(ratios - 1) > self._eps).float())
-            clip_fractions.append(clip_fraction.item())
+                # Compute clip fraction (for logging)
+                clip_fraction = torch.mean((torch.abs(ratios - 1) > self._eps).float())
+                clip_fractions.append(clip_fraction.item())
 
-            # Check if KL divergence exceeds target KL for early stopping
-            kl_div = torch.mean(mb_old_logprobs - logprobs)
-            target_kl.append(kl_div.item())
-            if kl_div.item() > self._target_kl:
-                break
+                # Check if KL divergence exceeds target KL for early stopping
+                kl_div = torch.mean(mb_old_logprobs - logprobs)
+                target_kl.append(kl_div.item())
+                if kl_div.item() > self._target_kl:
+                    break
 
-            self.optimizers.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
-            grad_dict = self.compute_gradient_norm(
-                [self.policy, self.primitivePolicy, self.critic],
-                ["policy", "primitivePolicy", "critic"],
-                dir="HC",
-                device=self.device,
-            )
-            self.optimizers.step()
+                self.optimizers.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+                grad_dict = self.compute_gradient_norm(
+                    [self.policy, self.primitivePolicy, self.critic],
+                    ["policy", "primitivePolicy", "critic"],
+                    dir="HC",
+                    device=self.device,
+                )
+                self.optimizers.step()
 
         # Logging
         loss_dict = {
@@ -351,7 +354,7 @@ class HC_Controller(BasePolicy):
 
         self.eval()
 
-        timesteps = self.minibatch_size * (k + 1)
+        timesteps = self.num_minibatch * self.minibatch_size
         update_time = time.time() - t0
 
         return loss_dict, timesteps, update_time

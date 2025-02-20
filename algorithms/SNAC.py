@@ -49,6 +49,7 @@ class SNAC:
             min_batch_size=args.min_batch_size,
             max_batch_size=args.max_batch_size,
         )
+        print(args.warm_batch_size)
         self.sampler = OnlineSampler(
             env=self.env,
             state_dim=args.s_dim,
@@ -173,7 +174,7 @@ class SNAC:
         This discovers the eigenvectors via clustering for each of reward and state decompositions.
         --------------------------------------------------------------------------------------------
         """
-        total_batch_size = int(self.args.op_batch_size * self.args.K_epochs)
+        total_batch_size = int(self.args.op_num_minibatch * self.args.op_minibatch_size)
         self.sampler.initialize(
             batch_size=total_batch_size,
             num_option=2 * self.args.num_options,
@@ -197,7 +198,7 @@ class SNAC:
                 mode=self.args.op_mode,
                 timesteps=self.args.OP_timesteps,
                 init_timesteps=self.curr_timesteps,
-                batch_size=self.args.op_batch_size,
+                batch_size=self.args.op_minibatch_size,
                 log_interval=self.args.op_log_interval,
                 grid_type=self.args.grid_type,
             )
@@ -214,7 +215,7 @@ class SNAC:
         Train Hierarchical Controller to compute optimal policy that alternates between
         options and the random walk.
         """
-        total_batch_size = self.args.hc_batch_size * self.args.K_epochs
+        total_batch_size = int(self.args.hc_num_minibatch * self.args.hc_minibatch_size)
         self.sampler.initialize(
             batch_size=total_batch_size,
             num_option=1,

@@ -21,7 +21,6 @@ class PPO:
         self.env = env
 
         # define buffers and sampler for Monte-Carlo sampling
-        total_batch_size = int(args.ppo_batch_size * args.K_epochs)
         self.sampler = OnlineSampler(
             env=self.env,
             state_dim=args.s_dim,
@@ -30,7 +29,7 @@ class PPO:
             min_option_length=args.min_option_length,
             num_options=1,
             episode_len=args.episode_len,
-            batch_size=total_batch_size,
+            batch_size=int(args.ppo_num_minibatch * args.ppo_minibatch_size),
             min_batch_for_worker=args.min_batch_for_worker,
             cpu_preserve_rate=args.cpu_preserve_rate,
             num_cores=args.num_cores,

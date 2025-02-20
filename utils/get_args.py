@@ -306,40 +306,70 @@ def get_args(verbose=True):
         help="Base number of batch size for training",
     )
     parser.add_argument(
-        "--sf-batch-size",
+        "--sf-minibatch-size",
         type=int,
         default=None,
-        help="Base number of batch size for training",
+        help="Base number of minibatch size for training",
     )
     parser.add_argument(
-        "--op-batch-size",
+        "--op-num-minibatch",
         type=int,
         default=None,
-        help="Option policy number of batch size for training",
+        help="Option policy number of minibatch size for training",
     )
     parser.add_argument(
-        "--hc-batch-size",
+        "--op-minibatch-size",
         type=int,
         default=None,
-        help="Hierarchical policy number of batch size for training",
+        help="Option policy number of minibatch size for training",
     )
     parser.add_argument(
-        "--oc-batch-size",
+        "--hc-num-minibatch",
         type=int,
         default=None,
-        help="Option critic number of batch size for training",
+        help="Option policy number of minibatch size for training",
     )
     parser.add_argument(
-        "--ppo-batch-size",
+        "--hc-minibatch-size",
         type=int,
         default=None,
-        help="Naive ppo number of batch size for training",
+        help="Hierarchical policy number of minibatch size for training",
     )
     parser.add_argument(
-        "--sac-batch-size",
+        "--oc-num-minibatch",
         type=int,
         default=None,
-        help="SAC number of batch size for training",
+        help="Option policy number of minibatch size for training",
+    )
+    parser.add_argument(
+        "--oc-minibatch-size",
+        type=int,
+        default=None,
+        help="Option critic number of minibatch size for training",
+    )
+    parser.add_argument(
+        "--ppo-num-minibatch",
+        type=int,
+        default=None,
+        help="Option policy number of minibatch size for training",
+    )
+    parser.add_argument(
+        "--ppo-minibatch-size",
+        type=int,
+        default=None,
+        help="Naive ppo number of minibatch size for training",
+    )
+    parser.add_argument(
+        "--sac-num-minibatch",
+        type=int,
+        default=None,
+        help="Option policy number of minibatch size for training",
+    )
+    parser.add_argument(
+        "--sac-minibatch-size",
+        type=int,
+        default=None,
+        help="SAC number of minibatch size for training",
     )
     parser.add_argument(
         "--max-batch-size",

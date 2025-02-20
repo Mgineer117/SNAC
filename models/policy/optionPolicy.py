@@ -33,6 +33,7 @@ class OP_Controller(BasePolicy):
         reward_options: np.ndarray,
         state_options: np.ndarray,
         alpha: int,
+        num_minibatch: int,
         minibatch_size: int,
         args,
     ):
@@ -44,6 +45,7 @@ class OP_Controller(BasePolicy):
         self._gamma = args.gamma
         self._l2_reg = args.weight_loss_scaler
         self._is_discrete = args.is_discrete
+        self._num_minibatch = num_minibatch
         self._minibatch_size = minibatch_size
         self._K = args.K_epochs
         self.mode = args.op_mode
@@ -373,67 +375,68 @@ class OP_Controller(BasePolicy):
 
         # K - Loop
         for k in range(self._K):
-            indices = torch.randperm(batch_size)[: self._minibatch_size]
-            mb_states, mb_actions = states[indices], actions[indices]
-            mb_old_logprobs, mb_returns = old_logprobs[indices], returns[indices]
+            for n in range(self._num_minibatch):
+                indices = torch.randperm(batch_size)[: self._minibatch_size]
+                mb_states, mb_actions = states[indices], actions[indices]
+                mb_old_logprobs, mb_returns = old_logprobs[indices], returns[indices]
 
-            # advantages
-            mb_advantages = advantages[indices]
-            mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
+                # advantages
+                mb_advantages = advantages[indices]
+                mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
 
-            # 1. Critic Update (with optional regularization)
-            mb_values, _ = self.critic(mb_states, z)
-            value_loss = self.mse_loss(mb_values, mb_returns)
-            l2_reg = sum(param.pow(2).sum() for param in self.critic.parameters())
-            value_loss += self._l2_reg * l2_reg
+                # 1. Critic Update (with optional regularization)
+                mb_values, _ = self.critic(mb_states, z)
+                value_loss = self.mse_loss(mb_values, mb_returns)
+                l2_reg = sum(param.pow(2).sum() for param in self.critic.parameters())
+                value_loss += self._l2_reg * l2_reg
 
-            # Track value loss for logging
-            value_losses.append(value_loss.item())
+                # Track value loss for logging
+                value_losses.append(value_loss.item())
 
-            # 2. Policy Update
-            _, metaData = self.policy(mb_states, z)
-            logprobs = self.policy.log_prob(metaData["dist"], mb_actions)
-            entropy = self.policy.entropy(metaData["dist"])
-            ratios = torch.exp(logprobs - mb_old_logprobs)
+                # 2. Policy Update
+                _, metaData = self.policy(mb_states, z)
+                logprobs = self.policy.log_prob(metaData["dist"], mb_actions)
+                entropy = self.policy.entropy(metaData["dist"])
+                ratios = torch.exp(logprobs - mb_old_logprobs)
 
-            surr1 = ratios * mb_advantages
-            surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
-            actor_loss = -torch.min(surr1, surr2).mean()
-            entropy_loss = self._entropy_scaler * entropy.mean()
+                surr1 = ratios * mb_advantages
+                surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                actor_loss = -torch.min(surr1, surr2).mean()
+                entropy_loss = self._entropy_scaler * entropy.mean()
 
-            # Track policy loss for logging
-            actor_losses.append(actor_loss.item())
-            entropy_losses.append(entropy_loss.item())
+                # Track policy loss for logging
+                actor_losses.append(actor_loss.item())
+                entropy_losses.append(entropy_loss.item())
 
-            # Total loss
-            loss = actor_loss + 0.5 * value_loss - entropy_loss
-            losses.append(loss.item())
+                # Total loss
+                loss = actor_loss + 0.5 * value_loss - entropy_loss
+                losses.append(loss.item())
 
-            # Compute clip fraction (for logging)
-            clip_fraction = torch.mean(
-                (torch.abs(ratios - 1) > self._eps).float()
-            ).item()
-            clip_fractions.append(clip_fraction)
+                # Compute clip fraction (for logging)
+                clip_fraction = torch.mean(
+                    (torch.abs(ratios - 1) > self._eps).float()
+                ).item()
+                clip_fractions.append(clip_fraction)
 
-            # Check if KL divergence exceeds target KL for early stopping
-            kl_div = torch.mean(mb_old_logprobs - logprobs)
-            target_kl.append(kl_div.item())
-            if kl_div.item() > self._target_kl:
-                break
+                # Check if KL divergence exceeds target KL for early stopping
+                kl_div = torch.mean(mb_old_logprobs - logprobs)
+                target_kl.append(kl_div.item())
+                if kl_div.item() > self._target_kl:
+                    break
 
-            for _, optim in self.optimizers.items():
-                optim.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=0.5)
-            grad_dict = self.compute_gradient_norm(
-                [self.policy, self.critic],
-                ["optionPolicy", "optionCritic"],
-                dir="OP_PPO",
-                device=self.device,
-            )
-            grad_dicts.append(grad_dict)
-            for _, optim in self.optimizers.items():
-                optim.step()
+                for _, optim in self.optimizers.items():
+                    optim.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=0.5)
+                grad_dict = self.compute_gradient_norm(
+                    [self.policy, self.critic],
+                    ["optionPolicy", "optionCritic"],
+                    dir="OP_PPO",
+                    device=self.device,
+                )
+                grad_dicts.append(grad_dict)
+                for _, optim in self.optimizers.items():
+                    optim.step()
 
         norm_dict = self.compute_weight_norm(
             [self.policy, self.critic],
@@ -476,7 +479,7 @@ class OP_Controller(BasePolicy):
 
         self.eval()
 
-        timesteps = self._minibatch_size * (k + 1)
+        timesteps = self._num_minibatch * self._minibatch_size
         update_time = time.time() - t0
         return (loss_dict, timesteps, update_time)
 

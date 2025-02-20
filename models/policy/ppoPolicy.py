@@ -23,6 +23,7 @@ class PPO_Learner(BasePolicy):
         critic: PPO_Critic,
         policy_lr: float = 3e-4,
         critic_lr: float = 5e-4,
+        num_minibatch: int = 8,
         minibatch_size: int = 256,
         eps: float = 0.2,
         entropy_scaler: float = 1e-3,
@@ -38,6 +39,7 @@ class PPO_Learner(BasePolicy):
         # constants
         self.device = device
 
+        self.num_minibatch = num_minibatch
         self.minibatch_size = minibatch_size
         self._entropy_scaler = entropy_scaler
         self._eps = eps
@@ -134,69 +136,70 @@ class PPO_Learner(BasePolicy):
         grad_dicts = []
 
         for k in range(self._K):
-            indices = torch.randperm(batch_size)[: self.minibatch_size]
-            mb_states, mb_actions = states[indices], actions[indices]
-            mb_old_logprobs, mb_returns = old_logprobs[indices], returns[indices]
+            for n in range(self.num_minibatch):
+                indices = torch.randperm(batch_size)[: self.minibatch_size]
+                mb_states, mb_actions = states[indices], actions[indices]
+                mb_old_logprobs, mb_returns = old_logprobs[indices], returns[indices]
 
-            # advantages
-            mb_advantages = advantages[indices]
-            mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
+                # advantages
+                mb_advantages = advantages[indices]
+                mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
 
-            # 1. Critic Update (with optional regularization)
-            mb_values = self.critic(mb_states)
-            value_loss = self.mse_loss(mb_values, mb_returns)
-            l2_reg = (
-                sum(param.pow(2).sum() for param in self.critic.parameters())
-                * self._l2_reg
-            )
-            value_loss += l2_reg
+                # 1. Critic Update (with optional regularization)
+                mb_values = self.critic(mb_states)
+                value_loss = self.mse_loss(mb_values, mb_returns)
+                l2_reg = (
+                    sum(param.pow(2).sum() for param in self.critic.parameters())
+                    * self._l2_reg
+                )
+                value_loss += l2_reg
 
-            # Track value loss for logging
-            value_losses.append(value_loss.item())
+                # Track value loss for logging
+                value_losses.append(value_loss.item())
 
-            # 2. Policy Update
-            _, metaData = self.policy(mb_states)
-            logprobs = self.policy.log_prob(metaData["dist"], mb_actions)
-            entropy = self.policy.entropy(metaData["dist"])
-            ratios = torch.exp(logprobs - mb_old_logprobs)
+                # 2. Policy Update
+                _, metaData = self.policy(mb_states)
+                logprobs = self.policy.log_prob(metaData["dist"], mb_actions)
+                entropy = self.policy.entropy(metaData["dist"])
+                ratios = torch.exp(logprobs - mb_old_logprobs)
 
-            surr1 = ratios * mb_advantages
-            surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
-            actor_loss = -torch.min(surr1, surr2).mean()
-            entropy_loss = self._entropy_scaler * entropy.mean()
+                surr1 = ratios * mb_advantages
+                surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                actor_loss = -torch.min(surr1, surr2).mean()
+                entropy_loss = self._entropy_scaler * entropy.mean()
 
-            # Track policy loss for logging
-            actor_losses.append(actor_loss.item())
-            entropy_losses.append(entropy_loss.item())
+                # Track policy loss for logging
+                actor_losses.append(actor_loss.item())
+                entropy_losses.append(entropy_loss.item())
 
-            # Total loss
-            loss = actor_loss + 0.5 * value_loss - entropy_loss
-            losses.append(loss.item())
+                # Total loss
+                loss = actor_loss + 0.5 * value_loss - entropy_loss
+                losses.append(loss.item())
 
-            # Compute clip fraction (for logging)
-            clip_fraction = torch.mean(
-                (torch.abs(ratios - 1) > self._eps).float()
-            ).item()
-            clip_fractions.append(clip_fraction)
+                # Compute clip fraction (for logging)
+                clip_fraction = torch.mean(
+                    (torch.abs(ratios - 1) > self._eps).float()
+                ).item()
+                clip_fractions.append(clip_fraction)
 
-            # Check if KL divergence exceeds target KL for early stopping
-            kl_div = torch.mean(mb_old_logprobs - logprobs)
-            target_kl.append(kl_div.item())
-            if kl_div.item() > self._target_kl:
-                break
+                # Check if KL divergence exceeds target KL for early stopping
+                kl_div = torch.mean(mb_old_logprobs - logprobs)
+                target_kl.append(kl_div.item())
+                if kl_div.item() > self._target_kl:
+                    break
 
-            # Update critic parameters
-            self.optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=0.5)
-            grad_dict = self.compute_gradient_norm(
-                [self.policy, self.critic],
-                ["policy", "critic"],
-                dir="PPO",
-                device=self.device,
-            )
-            grad_dicts.append(grad_dict)
-            self.optimizer.step()
+                # Update critic parameters
+                self.optimizer.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=0.5)
+                grad_dict = self.compute_gradient_norm(
+                    [self.policy, self.critic],
+                    ["policy", "critic"],
+                    dir="PPO",
+                    device=self.device,
+                )
+                grad_dicts.append(grad_dict)
+                self.optimizer.step()
 
         # Logging
         loss_dict = {
@@ -227,7 +230,7 @@ class PPO_Learner(BasePolicy):
 
         self.eval()
 
-        timesteps = self.minibatch_size * (k + 1)
+        timesteps = self.num_minibatch * self.minibatch_size
         update_time = time.time() - t0
         return loss_dict, timesteps, update_time
 

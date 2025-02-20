@@ -359,6 +359,7 @@ class OnlineSampler(Base):
             rounds (int): Total number of rounds.
         """
         # Calculate required number of workers
+        print(self.batch_size, self.min_batch_for_worker)
         req_num_workers = ceil(self.batch_size / self.min_batch_for_worker)
         total_num_workers = req_num_workers * self.num_options
 
