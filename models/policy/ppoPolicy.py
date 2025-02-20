@@ -200,6 +200,9 @@ class PPO_Learner(BasePolicy):
                 )
                 grad_dicts.append(grad_dict)
                 self.optimizer.step()
+            
+            if kl_div.item() > self._target_kl:
+                break
 
         # Logging
         loss_dict = {

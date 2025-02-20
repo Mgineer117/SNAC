@@ -437,6 +437,9 @@ class OP_Controller(BasePolicy):
                 grad_dicts.append(grad_dict)
                 for _, optim in self.optimizers.items():
                     optim.step()
+            
+            if kl_div.item() > self._target_kl:
+                break
 
         norm_dict = self.compute_weight_norm(
             [self.policy, self.critic],

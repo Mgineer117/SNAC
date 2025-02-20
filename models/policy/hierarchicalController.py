@@ -325,6 +325,9 @@ class HC_Controller(BasePolicy):
                     device=self.device,
                 )
                 self.optimizers.step()
+                
+            if kl_div.item() > self._target_kl:
+                break
 
         # Logging
         loss_dict = {
