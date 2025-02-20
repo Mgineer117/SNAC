@@ -8,10 +8,40 @@ from torch.utils.data import DataLoader, TensorDataset
 from mpl_toolkits.mplot3d import Axes3D
 
 # Step 1: Generate 3D state data
-def generate_4d_data(n_samples=2000):
-    mean = torch.tensor([0.0, 0.0, 0.0, 0.0])
-    cov = torch.eye(4) * 0.5
-    data = torch.distributions.MultivariateNormal(mean, cov).sample((n_samples,))
+def generate_4d_data(n_samples=2000, option=1):
+    # Mean vector for the first three dimensions
+    mean = torch.tensor([0.0, 0.0, 0.0])
+    
+    # Random covariance matrix for the first three dimensions
+    cov = torch.randn(3, 3) * 0.5  # Random covariance matrix for the first three dims
+    cov = torch.mm(cov, cov.T)     # Ensure the matrix is symmetric and positive semidefinite
+    
+    # Generate 3D data using the random covariance matrix
+    data_3d = torch.distributions.MultivariateNormal(mean, cov).sample((n_samples,))
+    
+    if option == 1:
+        # Option 1: Independent (No Correlation)
+        # Generate 4th dimension as pure Gaussian noise
+        data_4th_dim = torch.randn(n_samples, 1)
+    
+    elif option == 2:
+        # Option 2: Linear Correlation
+        # 4th dimension is a linear function of the first three dimensions with noise
+        data_4th_dim = 0.5 * data_3d.sum(dim=1, keepdim=True) + torch.randn(n_samples, 1) * 0.1
+    
+    elif option == 3:
+        # Option 3: Non-linear (Quadratic) Relationship
+        # 4th dimension is a quadratic function of the first three dimensions with noise
+        data_4th_dim = (data_3d[:, 0]**2 + data_3d[:, 1]**2 + data_3d[:, 2]**2).unsqueeze(1) + torch.randn(n_samples, 1) * 0.1
+    
+    elif option == 4:
+        # Option 4: Mixed (Linear + Noise)
+        # 4th dimension is a linear combination of the first three with added noise
+        data_4th_dim = (0.3 * data_3d[:, 0] + 0.5 * data_3d[:, 1] - 0.2 * data_3d[:, 2]).unsqueeze(1) + torch.randn(n_samples, 1) * 0.1
+
+    # Concatenate the 3D data with the 4th dimension
+    data = torch.cat((data_3d, data_4th_dim), dim=1)
+    
     return data
 
 # Step 3: Define a quadratic base distribution
@@ -24,7 +54,7 @@ def quadratic_base_distribution(n_samples):
     return latent_samples
 
 # Step 5: Visualization
-def visualize_mapping(original, transformed):
+def visualize_mapping(original, transformed, option):
     fig = plt.figure(figsize=(12, 5))
     ax1 = fig.add_subplot(121, projection='3d')
     ax2 = fig.add_subplot(122, projection='3d')
@@ -44,7 +74,7 @@ def visualize_mapping(original, transformed):
     ax2.set_zlabel("Z Axis")
     # fig.colorbar(scatter2, ax=ax2, label='Y Value')
     
-    plt.show()
+    plt.savefig(f"{option}.png")
 
 # Step 2: Define an affine normalizing flow transformation
 class AffineLayer(nn.Module):
@@ -103,30 +133,16 @@ def lyapunov_loss(transformed_x, cost, lambda_1=1.0, lambda_2=10.0, lambda_3=0.1
 
     convex_loss = lambda_1 * ((xy**2).sum(dim=1) - z).pow(2).mean()
     
+    
     # r_norm_pred = (torch.norm(transformed_x, p=2, dim=-1)**2).unsqueeze(-1)
     monotonicity_loss = lambda_2 * nn.functional.mse_loss(z, cost)
 
-
-
-    # # 1. Quadratic Shape Loss: Ensure x3 ~ x1^2 + x2^2
-    # quadratic_loss = ((xy**2).sum(dim=1) - z).pow(2).mean()
-
-    # # 2. Monotonicity Loss: Higher cost should mean higher x3
-    # monotonicity_loss = torch.relu(cost.unsqueeze(1) - cost.unsqueeze(0)) * torch.relu(transformed_x[:, -1].unsqueeze(0) - transformed_x[:, -1].unsqueeze(1))
-    # monotonicity_loss = monotonicity_loss.mean()
-
-    # # 3. Convexity Loss: Soft Hessian Constraint
-    # grad_x3 = torch.autograd.grad(z.sum(), transformed_x, create_graph=True, retain_graph=True)[0]  # ∇x3
-    # convexity_loss = torch.norm(grad_x3, dim=1).mean()  # Penalize large gradient changes
-
-    # # Total loss
-    # total_loss = lambda_1 * quadratic_loss + lambda_2 * monotonicity_loss + lambda_3 * convexity_loss
     total_loss = convex_loss + monotonicity_loss
     return total_loss
 
 
 # Step 4: Train the normalizing flow using quadratic prior with minibatch and time tracking
-def train_flow(model, data, batch_size=512, epochs=10000, lr=0.001):
+def train_flow(model, data, batch_size=2048, epochs=5000, lr=0.001):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     
     xyz_data = data[:, :-1]  # Extract (x, y, z)
@@ -145,11 +161,6 @@ def train_flow(model, data, batch_size=512, epochs=10000, lr=0.001):
 
             # print(transformed_x.shape, c_batch.squeeze().shape)
             loss = lyapunov_loss(transformed_x, c_batch.squeeze())
-
-            
-
-
-            # loss = nn.functional.mse_loss(r_norm_pred, c_batch) + quadratic_constraint
             loss.backward()
             optimizer.step()
 
@@ -161,41 +172,10 @@ def train_flow(model, data, batch_size=512, epochs=10000, lr=0.001):
 
 
 # Run the pipeline
-data = generate_4d_data()
-flow_model = MultiAffineFlow(10)
-train_flow(flow_model, data)
-transformed_data = flow_model(data[:, :-1])
-visualize_mapping(data.numpy(), transformed_data.detach().numpy())
-
-# import itertools
-
-# # Define hyperparameter grid
-# lr_options = [0.0001, 0.0005, 0.001]
-# num_layers_options = [3, 5, 7]
-# hidden_dim_options = [16, 32, 64]
-# batch_size_options = [128, 256, 512]
-
-# best_loss = float('inf')
-# best_params = None
-
-# # Iterate through all combinations
-# for lr, num_layers, hidden_dim, batch_size in itertools.product(lr_options, num_layers_options, hidden_dim_options, batch_size_options):
-#     print(f"Testing: lr={lr}, num_layers={num_layers}, hidden_dim={hidden_dim}, batch_size={batch_size}")
-    
-#     # Create model and train
-#     model = MultiAffineFlow(num_layers, input_dim=3, hidden_dim=hidden_dim)
-#     train_flow(model, data, batch_size=batch_size, epochs=500, lr=lr)
-
-#     # Evaluate performance (use final loss)
-#     transformed_data = model(data[:, :-1])
-#     loss = nn.functional.mse_loss(data[:, -1:], (torch.norm(transformed_data, p=2, dim=-1) ** 2).unsqueeze(-1))
-
-#     print(f"Loss: {loss.item():.4f}")
-
-#     # Track best parameters
-#     if loss.item() < best_loss:
-#         best_loss = loss.item()
-#         best_params = (lr, num_layers, hidden_dim, batch_size)
-
-# print(f"Best parameters: lr={best_params[0]}, num_layers={best_params[1]}, hidden_dim={best_params[2]}, batch_size={best_params[3]}, loss={best_loss:.4f}")
-
+options = [1,2,3,4]
+for option in options:
+    data = generate_4d_data(n_samples=8192, option=option)
+    flow_model = MultiAffineFlow(10)
+    train_flow(flow_model, data)
+    transformed_data = flow_model(data[:, :-1])
+    visualize_mapping(data.numpy(), transformed_data.detach().numpy(), option)
