@@ -221,9 +221,9 @@ class HC_Evaluator(Evaluator):
                     successes[num_episodes] = np.maximum(
                         successes[num_episodes], infos["success"]
                     )
-                if "failures" in infos:
+                if "failure" in infos:
                     failures[num_episodes] = np.maximum(
-                        failures[num_episodes], infos["failures"]
+                        failures[num_episodes], infos["failure"]
                     )
 
                 ep_reward += rew
