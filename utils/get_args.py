@@ -404,7 +404,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--hc-entropy-scaler",
         type=float,
-        default=1e-2,
+        default=3e-3,
         help="Hierarchical policy entropy scaler",
     )
     parser.add_argument(
@@ -634,10 +634,7 @@ def get_args(verbose=True):
         default=None,
         help="saves the rendering during evaluation",
     )
-    parser.add_argument(
-        "--draw-map",
-        type=bool, default=True, help="WandB logging"
-    )
+    parser.add_argument("--draw-map", type=bool, default=True, help="WandB logging")
     parser.add_argument(
         "--import-sf-model",
         action="store_true",
