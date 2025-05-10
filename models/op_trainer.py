@@ -213,7 +213,7 @@ class OPTrainer:
                     self.policy,
                     option_indices=[i for i in range(self.num_weights)],
                     grid_type=self.grid_type,
-                    # random_init_pos=True,
+                    random_init_pos=True,
                 )
 
                 for z in trange(self.num_weights, desc=f"Updating Option", leave=False):
