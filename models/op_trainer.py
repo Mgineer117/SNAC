@@ -1,18 +1,19 @@
 import time
-import numpy as np
+from collections import deque
 from copy import deepcopy
+
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
-
 from tqdm import tqdm
 from tqdm.auto import trange
-from collections import deque
+
 from log.wandb_logger import WandbLogger
-from models.policy.optionPolicy import OP_Controller
-from utils.sampler import OnlineSampler
-from utils.buffer import TrajectoryBuffer
 from models.evaulators.sf_evaluator import Evaluator
+from models.policy.optionPolicy import OP_Controller
+from utils.buffer import TrajectoryBuffer
+from utils.sampler import OnlineSampler
 
 
 # Custom scheduler logic for different parameter groups
@@ -212,7 +213,7 @@ class OPTrainer:
                     self.policy,
                     option_indices=[i for i in range(self.num_weights)],
                     grid_type=self.grid_type,
-                    random_init_pos=True,
+                    # random_init_pos=True,
                 )
 
                 for z in trange(self.num_weights, desc=f"Updating Option", leave=False):
