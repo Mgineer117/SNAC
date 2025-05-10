@@ -1,6 +1,7 @@
 """Define variables and hyperparameters using argparse"""
 
 import argparse
+
 import torch
 
 
@@ -392,7 +393,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--op-min-batch-for-worker",
         type=int,
-        default=4096,
+        default=2048,
         help="Minimum batch size assgined for one worker (thread)",
     )
     parser.add_argument(
