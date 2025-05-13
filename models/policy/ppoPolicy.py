@@ -1,19 +1,20 @@
-import time
 import os
-import matplotlib.pyplot as plt
 import pickle
+import time
+from copy import deepcopy
+
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.optimize import fmin_l_bfgs_b as bfgs
 
-from copy import deepcopy
+from models.layers.building_blocks import MLP
+from models.layers.ppo_networks import PPO_Critic, PPO_Policy
+from models.policy.base_policy import BasePolicy
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils.utils import estimate_advantages
-from models.layers.building_blocks import MLP
-from models.layers.ppo_networks import PPO_Policy, PPO_Critic
-from models.policy.base_policy import BasePolicy
 
 
 class PPO_Learner(BasePolicy):
@@ -143,7 +144,9 @@ class PPO_Learner(BasePolicy):
 
                 # advantages
                 mb_advantages = advantages[indices]
-                mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
+                mb_advantages = (mb_advantages - mb_advantages.mean()) / (
+                    mb_advantages.std() + 1e-8
+                )
 
                 # 1. Critic Update (with optional regularization)
                 mb_values = self.critic(mb_states)
@@ -164,7 +167,9 @@ class PPO_Learner(BasePolicy):
                 ratios = torch.exp(logprobs - mb_old_logprobs)
 
                 surr1 = ratios * mb_advantages
-                surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                surr2 = (
+                    torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                )
                 actor_loss = -torch.min(surr1, surr2).mean()
                 entropy_loss = self._entropy_scaler * entropy.mean()
 
@@ -200,7 +205,7 @@ class PPO_Learner(BasePolicy):
                 )
                 grad_dicts.append(grad_dict)
                 self.optimizer.step()
-            
+
             if kl_div.item() > self._target_kl:
                 break
 

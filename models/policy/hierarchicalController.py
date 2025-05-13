@@ -1,20 +1,21 @@
-import time
 import os
-import matplotlib.pyplot as plt
 import pickle
+import time
+from copy import deepcopy
+
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.optimize import fmin_l_bfgs_b as bfgs
 
-from copy import deepcopy
+from models.layers.building_blocks import MLP
+from models.layers.hc_networks import HC_PPO, HC_Critic, HC_Policy
+from models.policy.base_policy import BasePolicy
+from models.policy.optionPolicy import OP_Controller
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils.utils import estimate_advantages
-from models.layers.building_blocks import MLP
-from models.policy.optionPolicy import OP_Controller
-from models.layers.hc_networks import HC_Policy, HC_PPO, HC_Critic
-from models.policy.base_policy import BasePolicy
 
 
 def check_all_devices(module):
@@ -241,7 +242,9 @@ class HC_Controller(BasePolicy):
 
                 # global batch normalization and target return
                 mb_advantages = advantages[indices]
-                mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
+                mb_advantages = (mb_advantages - mb_advantages.mean()) / (
+                    mb_advantages.std() + 1e-8
+                )
 
                 # 1. Critic Update (with optional regularization)
                 mb_values, _ = self.critic(mb_states)
@@ -249,7 +252,25 @@ class HC_Controller(BasePolicy):
                 value_losses.append(valueLoss.item())
 
                 # 2. Policy Update
+                # Before forward pass: Check mb_states
+                if torch.isnan(mb_states).any():
+                    raise ValueError("[ERROR] Detected NaNs in mb_states.")
+
+                # Forward pass
                 _, _, metaData = self.policy(mb_states)
+
+                # After forward pass: Check policy parameters
+                for name, param in self.policy.named_parameters():
+                    if torch.isnan(param).any():
+                        raise ValueError(
+                            f"[ERROR] NaN detected in policy parameter: {name}"
+                        )
+
+                # After forward pass: Check metaData
+                for key, val in metaData.items():
+                    if isinstance(val, torch.Tensor) and torch.isnan(val).any():
+                        raise ValueError(f"[ERROR] NaN detected in metaData['{key}']")
+
                 # Compute hierarchical policy logprobs and entropy
                 logprobs = self.policy.log_prob(metaData["dist"], mb_option_actions)
                 entropy = self.policy.entropy(metaData["dist"])
@@ -257,14 +278,18 @@ class HC_Controller(BasePolicy):
 
                 # prepare updates
                 surr1 = ratios * mb_advantages
-                surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                surr2 = (
+                    torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                )
 
                 actor_loss = -torch.min(surr1, surr2).mean()
                 entropy_loss = self._entropy_scaler * entropy.mean()
 
                 if isinstance(self.primitivePolicy, HC_PPO):
                     # find mask: the actions contributions by hc policy only
-                    pm_mask = torch.argmax(mb_option_actions, dim=-1) == self._num_weights
+                    pm_mask = (
+                        torch.argmax(mb_option_actions, dim=-1) == self._num_weights
+                    )
 
                     if pm_mask is not None:
                         mb_actions = actions[indices]
@@ -325,7 +350,7 @@ class HC_Controller(BasePolicy):
                     device=self.device,
                 )
                 self.optimizers.step()
-                
+
             if kl_div.item() > self._target_kl:
                 break
 

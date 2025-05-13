@@ -285,7 +285,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--min-option-length",
         type=int,
-        default=10,
+        default=15,
         help="Minimum time step for one option duration of SNAC / EigenOption",
     )
     parser.add_argument(

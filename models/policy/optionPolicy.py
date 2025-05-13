@@ -1,20 +1,21 @@
-import time
 import os
-import matplotlib.pyplot as plt
 import pickle
+import time
+from copy import deepcopy
+from math import floor
+
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from math import floor
-from copy import deepcopy
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.optimize import fmin_l_bfgs_b as bfgs
 
+from models.layers.building_blocks import MLP
+from models.layers.op_networks import OptionCritic, OptionPolicy
+from models.policy.base_policy import BasePolicy
 from utils.torch import get_flat_grad_from, get_flat_params_from, set_flat_params_to
 from utils.utils import estimate_advantages, estimate_psi
-from models.layers.building_blocks import MLP
-from models.layers.op_networks import OptionPolicy, OptionCritic
-from models.policy.base_policy import BasePolicy
 
 
 def check_all_devices(module):
@@ -382,7 +383,9 @@ class OP_Controller(BasePolicy):
 
                 # advantages
                 mb_advantages = advantages[indices]
-                mb_advantages = (mb_advantages - mb_advantages.mean()) / mb_advantages.std()
+                mb_advantages = (mb_advantages - mb_advantages.mean()) / (
+                    mb_advantages.std() + 1e-8
+                )
 
                 # 1. Critic Update (with optional regularization)
                 mb_values, _ = self.critic(mb_states, z)
@@ -400,7 +403,9 @@ class OP_Controller(BasePolicy):
                 ratios = torch.exp(logprobs - mb_old_logprobs)
 
                 surr1 = ratios * mb_advantages
-                surr2 = torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                surr2 = (
+                    torch.clamp(ratios, 1 - self._eps, 1 + self._eps) * mb_advantages
+                )
                 actor_loss = -torch.min(surr1, surr2).mean()
                 entropy_loss = self._entropy_scaler * entropy.mean()
 
@@ -437,7 +442,7 @@ class OP_Controller(BasePolicy):
                 grad_dicts.append(grad_dict)
                 for _, optim in self.optimizers.items():
                     optim.step()
-            
+
             if kl_div.item() > self._target_kl:
                 break
 

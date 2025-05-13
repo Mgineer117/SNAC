@@ -4,14 +4,15 @@ from typing import Type, TypeVar
 
 import numpy as np
 from numpy.typing import NDArray
-from gym_multigrid.core.grid import Grid
 
+from gym_multigrid.core.grid import Grid
 from gym_multigrid.core.world import WorldT
 from gym_multigrid.policy.base import AgentPolicyT
 from gym_multigrid.typing import Position
-from ..utils.rendering import point_in_triangle, rotate_fn, fill_coords
-from .object import WorldObj
+
+from ..utils.rendering import fill_coords, point_in_triangle, rotate_fn
 from .constants import DIR_TO_VEC
+from .object import WorldObj
 
 ActionsT = TypeVar("ActionsT", bound=enum.IntEnum)
 
@@ -50,11 +51,10 @@ class MineActions(enum.IntEnum):
 
 
 class MazeActions(enum.IntEnum):
-    stay = 0
-    left = 1
-    down = 2
-    right = 3
-    up = 4
+    left = 0
+    down = 1
+    right = 2
+    up = 3
 
 
 AgentT = TypeVar("AgentT", bound="Agent")
@@ -131,9 +131,7 @@ class Agent(WorldObj):
     def encode(self, current_agent=False):
         """Encode the a description of this object as a 3-tuple of integers"""
         if self.world.encode_dim == 1:
-            return (
-                self.world.OBJECT_TO_IDX[self.type],
-            )
+            return (self.world.OBJECT_TO_IDX[self.type],)
         elif self.world.encode_dim == 3:
             return (
                 self.world.OBJECT_TO_IDX[self.type],

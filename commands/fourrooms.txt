@@ -44,41 +44,41 @@ nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOptio
 
 
 
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method top --gpu-idx 0 --num-options 8 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method top --gpu-idx 0 --num-options 6 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 8 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 6 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method trs --gpu-idx 0 --num-options 8 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method trs --gpu-idx 0 --num-options 6 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method crs --gpu-idx 0 --num-options 8 &
-sleep 300
-
-
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method top --gpu-idx 1 --num-options 12 &
-sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method cvs --gpu-idx 1 --num-options 12 &
-sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method trs --gpu-idx 1 --num-options 12 &
-sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method crs --gpu-idx 1 --num-options 12 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method crs --gpu-idx 0 --num-options 6 &
 sleep 300
 
 
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method top --gpu-idx 1 --num-options 8 &
+sleep 300
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method cvs --gpu-idx 1 --num-options 8 &
+sleep 300
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method trs --gpu-idx 1 --num-options 8 &
+sleep 300
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method crs --gpu-idx 1 --num-options 8 &
+sleep 300
 
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method top --gpu-idx 2 --num-options 16 &
+
+
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method top --gpu-idx 2 --num-options 10 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method cvs --gpu-idx 2 --num-options 16 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method cvs --gpu-idx 2 --num-options 10 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method trs --gpu-idx 2 --num-options 16 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method trs --gpu-idx 2 --num-options 10 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method crs --gpu-idx 2 --num-options 16 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method crs --gpu-idx 2 --num-options 10 &
 sleep 300
 
 
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method top --gpu-idx 3 --num-options 20 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method top --gpu-idx 3 --num-options 12 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method cvs --gpu-idx 3 --num-options 20 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method cvs --gpu-idx 3 --num-options 12 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method crs --gpu-idx 3 --num-options 20 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method crs --gpu-idx 3 --num-options 12 &
 sleep 300
-nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method trs --gpu-idx 3 --num-options 20 &
+nohup python3 main.py --env-name Maze --project SNAC --algo-name EigenOption --method trs --gpu-idx 3 --num-options 12 &

@@ -1,17 +1,16 @@
+import math
 import os
 import random
 import time
-import math
-
-import torch
-import torch.nn as nn
-import torch.multiprocessing as multiprocessing
-import numpy as np
-import cv2
-from math import floor, ceil
-
 from datetime import date
+from math import ceil, floor
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple
+
+import cv2
+import numpy as np
+import torch
+import torch.multiprocessing as multiprocessing
+import torch.nn as nn
 
 today = date.today()
 
@@ -473,7 +472,6 @@ class OnlineSampler(Base):
         policy: nn.Module,
         idx: int = None,
         grid_type: int = 0,
-        random_init_pos: bool = False,
         seed: int | None = None,
         deterministic: bool = False,
     ):
@@ -496,10 +494,7 @@ class OnlineSampler(Base):
         current_step = 0
         while current_step < self.min_batch_for_worker:
             # env initialization
-            if random_init_pos:
-                options = {"random_init_pos": True}
-            else:
-                options = {"random_init_pos": False}
+            options = {"random_init_pos": False}
             obs, _ = env.reset(seed=grid_type, options=options)
 
             self.external_t = 0
