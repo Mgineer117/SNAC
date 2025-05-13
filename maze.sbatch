@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=snac
 #SBATCH --account=huytran1-ic
-#SBATCH --partition=eng-research-gpu
-#SBATCH --nodelist=ccc0314
+#SBATCH --partition=IllinoisComputes-GPU
+#SBATCH --nodelist=ccc0390
 #SBATCH --nodes=1
 #SBATCH --ntasks=16
 #SBATCH --cpus-per-task=4
