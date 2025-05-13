@@ -33,7 +33,7 @@ class SFTrainer:
         step_per_epoch: int = 1000,
         eval_episodes: int = 10,
         log_interval: int = 2,
-        post_process: str = "nonzero_rewards",
+        post_process: str | None = None,
         grid_type: int = 0,
     ) -> None:
         self.policy = policy

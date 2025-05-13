@@ -84,6 +84,7 @@ class ConvNetwork(nn.Module):
 
         self.sf_r_dim = floor(sf_dim * snac_split_ratio)
         self.sf_s_dim = sf_dim - self.sf_r_dim
+        self.feature_dim = None
 
         # Activation functions
         self.act = activation
@@ -241,6 +242,9 @@ class ConvNetwork(nn.Module):
 
         for fn in self.conv:
             out, info = fn(out)
+        
+        if self.feature_dim is None:
+            self.feature_dim = out.shape
 
         out = self.en_flatter(out)
         out = self.en_feature(out)
@@ -255,7 +259,9 @@ class ConvNetwork(nn.Module):
 
         out = torch.cat((features, actions), axis=-1)
         out = self.de_concat(out)
-        out = self.reshape(out)
+        out = out.reshape(-1, *self.feature_dim[1:])
+
+        # out = self.reshape(out)
         for fn in self.de_conv:
             out, _ = fn(out)
 

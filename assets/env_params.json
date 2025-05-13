@@ -419,7 +419,7 @@
         "K_epochs": 5,
         "target_kl": 0.01,
         "method": "top",
-        "sf_dim": 32,
+        "sf_dim": 256,
         "sf_fc_dim": 512,
         "op_policy_dim": [
             64,
@@ -468,7 +468,7 @@
         "lasso_loss_scaler": 1e-5,
         "episode_len": 10000,
         "warm_batch_size": 4096,
-        "sf_minibatch_size": 512,
+        "sf_minibatch_size": 128,
         "op_num_minibatch": 4,
         "op_minibatch_size": 64,
         "hc_num_minibatch": 4,

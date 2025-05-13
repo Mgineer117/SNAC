@@ -39,6 +39,38 @@ class GridWrapper(gym.Wrapper):
         obs["observation"] = observation
         return obs, reward, term, trunc, info
 
+class AtariWrapper(gym.Wrapper):
+    def __init__(self, env: gym.Env, args):
+        super(AtariWrapper, self).__init__(env)
+        self.agent_num = args.agent_num
+
+    def get_agent_pos(self):
+        agent_pos = np.full((2 * self.agent_num,), np.nan, dtype=np.float32)
+        for i in range(self.agent_num):
+            agent_pos[2 * i : 2 * i + 2] = None
+        return agent_pos
+
+    def get_step(self, action):
+        action = np.argmax(action)
+        # Call the original step method
+        observation, reward, termination, truncation, info = self.env.step(action)
+        return observation, reward, termination, truncation, info
+
+    def reset(self, **kwargs):
+        if "options" in kwargs:
+            # delete it
+            del kwargs["options"]
+
+        observation, info = self.env.reset(**kwargs)
+        obs = {}
+        obs["observation"] = observation
+        return obs, info
+
+    def step(self, action):
+        observation, reward, term, trunc, info = self.get_step(action)
+        obs = {}
+        obs["observation"] = observation
+        return obs, reward, term, trunc, info
 
 class CtFWrapper(gym.Wrapper):
     def __init__(self, env: gym.Env, args):

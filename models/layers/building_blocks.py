@@ -8,7 +8,7 @@ class Conv(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: int,
+        kernel_size: int | tuple,
         stride: int = 1,
         padding: int = 0,
         activation: nn.Module = nn.ReLU(),

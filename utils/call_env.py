@@ -8,7 +8,7 @@ from gym_multigrid.envs.lavarooms import LavaRooms
 from gym_multigrid.envs.maze import Maze
 from gym_multigrid.envs.oneroom import OneRoom
 from utils.utils import save_dim_to_args
-from utils.wrappers import CtFWrapper, GridWrapper, GymWrapper, NavigationWrapper
+from utils.wrappers import CtFWrapper, GridWrapper, GymWrapper, NavigationWrapper, AtariWrapper
 
 
 def disc_or_cont(env, args):
@@ -107,14 +107,14 @@ def call_env(args):
         disc_or_cont(env, args)
         save_dim_to_args(env, args)
         args.agent_num = 1
-        return GridWrapper(env, args)
+        return AtariWrapper(env, args)
     elif args.env_name == "MsPacman":
         # first call dummy env to find possible location for agent
         env = gym.make("ALE/MsPacman-v5")
         disc_or_cont(env, args)
         save_dim_to_args(env, args)
         args.agent_num = 1
-        return GridWrapper(env, args)
+        return AtariWrapper(env, args)
 
     elif args.env_name == "PointNavigation":
         config = {"agent_name": "Point"}
