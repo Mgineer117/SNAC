@@ -261,49 +261,89 @@ def get_conv_layer(args):
         encoder_conv_layers = [
             {
                 "type": "conv",
-                "kernel_size": 5,
-                "stride": 3,
-                "padding": 2,
+                "kernel_size": (6, 4),
+                "stride": 2,
+                "padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": in_channels,  # 3
                 "out_filters": 32,
             },  # (210,160) -> (105,80)
             {
                 "type": "conv",
-                "kernel_size": 5,
-                "stride": 3,
-                "padding": 2,
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": 32,
                 "out_filters": 64,
             },  # (105,80) -> (53,40)
             {
                 "type": "conv",
-                "kernel_size": 5,
-                "stride": 3,
-                "padding": 2,
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": 64,
                 "out_filters": 128,
+            },  # (53,40) -> (27,20)
+
+            {
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 0,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 256,
+            },  # (53,40) -> (27,20)
+
+            {
+                "type": "conv",
+                "kernel_size": 2,
+                "stride": 2,
+                "padding": 0,
+                "activation": nn.ELU(),
+                "in_filters": 256,
+                "out_filters": 512,
             },  # (53,40) -> (27,20)
 
         ]
         decoder_conv_layers = [
             {
                 "type": "conv_transpose",
-                "kernel_size": 5,
-                "stride": 3,
-                "padding": 2,
-                "output_padding": 2,
+                "kernel_size": 2,
+                "stride": 2,
+                "padding": 0,
+                "output_padding": 0,
                 "activation": nn.ELU(),
-                "in_filters": 128,
-                "out_filters": 64,
+                "in_filters": 256,
+                "out_filters": 512,
             },  # (7,5) -> (14,10)
             {
                 "type": "conv_transpose",
-                "kernel_size": (5, 7),
-                "stride": 3,
-                "padding": 2,
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 0,
+                "output_padding": 0,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 256,
+            },  # (14,10) -> (27,20)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "output_padding": 0,
+                "activation": nn.ELU(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # (14,10) -> (27,20)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
                 "output_padding": 0,
                 "activation": nn.ELU(),
                 "in_filters": 32,
@@ -311,9 +351,9 @@ def get_conv_layer(args):
             },  # (14,10) -> (27,20)
             {
                 "type": "conv_transpose",
-                "kernel_size": (7, 5),
-                "stride": 3,
-                "padding": 2,
+                "kernel_size": (6, 4),
+                "stride": 2,
+                "padding": 1,
                 "output_padding": 0,
                 "activation": nn.ELU(),
                 "in_filters": in_channels,
