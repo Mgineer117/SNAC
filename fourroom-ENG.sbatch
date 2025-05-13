@@ -2,7 +2,6 @@
 #SBATCH --job-name=snac
 #SBATCH --account=huytran1-ic
 #SBATCH --partition=eng-research-gpu
-#SBATCH --nodelist=ccc0312
 #SBATCH --nodes=1
 #SBATCH --ntasks=16
 #SBATCH --cpus-per-task=4

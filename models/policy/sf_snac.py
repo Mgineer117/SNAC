@@ -325,12 +325,12 @@ class SF_SNAC(BasePolicy):
             "feature_plot": [feature_img],
         }
 
-    def learn(self, buffer):
+    def learn(self, batch):
         self.train()
         t0 = time.time()
 
         ### Pull data from the batch
-        batch = buffer.sample(self.batch_size)
+        # batch = buffer.sample(self.batch_size)
 
         states = torch.from_numpy(batch["states"]).to(self._dtype).to(self.device)
         actions = torch.from_numpy(batch["actions"]).to(self._dtype).to(self.device)

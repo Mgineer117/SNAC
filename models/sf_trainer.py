@@ -62,8 +62,17 @@ class SFTrainer:
         self.post_process = post_process
         self.grid_type = grid_type
 
+    def print_gpu_usage(self):
+        allocated = torch.cuda.memory_allocated(self.policy.device) / 1024**2  # in MB
+        reserved = torch.cuda.memory_reserved(self.policy.device) / 1024**2    # in MB
+
+        print(f"Allocated memory: {allocated:.2f} MB")
+        print(f"Reserved memory: {reserved:.2f} MB")
+
     def train(self) -> Dict[str, float]:
         start_time = time.time()
+
+        # self.print_gpu_usage()
 
         # Calculate the total number of iterations for both training phases
         total_iterations = (self._epoch - self._init_epoch) * self._step_per_epoch
@@ -71,6 +80,7 @@ class SFTrainer:
 
         # Warm buffer
         sample_time = self.warm_buffer(post_process=self.post_process, minimum=True)
+        # self.print_gpu_usage()
 
         init_epoch = self._init_epoch
         final_epoch = self._epoch
@@ -88,7 +98,9 @@ class SFTrainer:
                 )
 
                 # Training step
-                loss, update_time = self.policy.learn(self.buffer)
+                batch = self.buffer.sample(self.policy.batch_size)
+                
+                loss, update_time = self.policy.learn(batch)
                 loss["SF/sample_time"] = sample_time
                 loss["SF/update_time"] = update_time
                 loss["SF/lr"] = self.policy.feature_optims.param_groups[0]["lr"]

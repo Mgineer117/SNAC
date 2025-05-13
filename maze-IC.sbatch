@@ -2,12 +2,11 @@
 #SBATCH --job-name=snac
 #SBATCH --account=huytran1-ic
 #SBATCH --partition=IllinoisComputes-GPU
-#SBATCH --nodelist=ccc0390
 #SBATCH --nodes=1
 #SBATCH --ntasks=16
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:4
-#SBATCH --time=2-00:00:00
+#SBATCH --time=3-00:00:00
 #SBATCH --output=snac.o%j
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=minjae5@illinois.edu
