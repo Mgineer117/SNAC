@@ -6,16 +6,16 @@ from numpy.random import Generator
 from numpy.typing import NDArray
 
 from gym_multigrid.core.agent import ActionsT, MazeActions
-from gym_multigrid.core.world import WorldT, CtfWorld
+from gym_multigrid.core.world import CtfWorld, WorldT
 from gym_multigrid.policy.base import BaseAgentPolicy
 from gym_multigrid.policy.ctf.typing import ObservationDict
 from gym_multigrid.policy.ctf.utils import a_star, get_unterminated_opponent_pos
+from gym_multigrid.typing import Position
 from gym_multigrid.utils.map import (
+    closest_area_pos,
     distance_area_point,
     position_in_positions,
-    closest_area_pos,
 )
-from gym_multigrid.typing import Position
 
 CtfPolicyT = TypeVar("CtfPolicyT", bound="CtfPolicy")
 
@@ -631,12 +631,12 @@ class RoombaPolicy(CtfPolicy):
 
     def __init__(
         self,
-        enemy_range: int = 2,
-        flag_range: int = 3,
+        enemy_range: int = 4,
+        flag_range: int = 4,
         field_map: NDArray | None = None,
         action_set: ActionsT = MazeActions,
         random_generator: Generator | None = None,
-        randomness: float = 0.15,
+        randomness: float = 0.0,
         ego_agent: Literal["red", "blue"] = "red",
         world: WorldT = CtfWorld,
         avoided_objects: list[str] = ["obstacle", "red_agent", "blue_agent"],

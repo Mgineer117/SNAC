@@ -57,6 +57,14 @@ class MazeActions(enum.IntEnum):
     up = 3
 
 
+class CtFActions(enum.IntEnum):
+    stay = 0
+    left = 1
+    down = 2
+    right = 3
+    up = 4
+
+
 AgentT = TypeVar("AgentT", bound="Agent")
 
 

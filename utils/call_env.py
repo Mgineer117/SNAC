@@ -1,15 +1,14 @@
-import safety_gymnasium as sgym
 import gymnasium as gym
-
+import safety_gymnasium as sgym
 from safety_gymnasium import __register_helper
-from gym_multigrid.envs.oneroom import OneRoom
-from gym_multigrid.envs.fourrooms import FourRooms
-from gym_multigrid.envs.maze import Maze
-from gym_multigrid.envs.lavarooms import LavaRooms
-from gym_multigrid.envs.ctf import CtF
 
+from gym_multigrid.envs.ctf import CtF
+from gym_multigrid.envs.fourrooms import FourRooms
+from gym_multigrid.envs.lavarooms import LavaRooms
+from gym_multigrid.envs.maze import Maze
+from gym_multigrid.envs.oneroom import OneRoom
 from utils.utils import save_dim_to_args
-from utils.wrappers import GridWrapper, CtFWrapper, NavigationWrapper, GymWrapper
+from utils.wrappers import CtFWrapper, GridWrapper, GymWrapper, NavigationWrapper
 
 
 def disc_or_cont(env, args):
@@ -95,13 +94,35 @@ def call_env(args):
             observation_option=observation_option,
             territory_adv_rate=1.0,
             max_steps=args.episode_len,
-            battle_reward_ratio=0.25,
-            step_penalty_ratio=0.0,
+            battle_reward_ratio=0.5,
+            step_penalty_ratio=0.005,
         )
         disc_or_cont(env, args)
         save_dim_to_args(env, args)
         args.agent_num = len(env.agents)
         return CtFWrapper(env, args)
+    elif args.env_name == "Amidar":
+        # first call dummy env to find possible location for agent
+        env = gym.make("ALE/Amidar-v5")
+        disc_or_cont(env, args)
+        save_dim_to_args(env, args)
+        args.agent_num = 1
+        return GridWrapper(env, args)
+    elif args.env_name == "Amidar":
+        # first call dummy env to find possible location for agent
+        env = gym.make("ALE/Amidar-v5")
+        disc_or_cont(env, args)
+        save_dim_to_args(env, args)
+        args.agent_num = 1
+        return GridWrapper(env, args)
+    elif args.env_name == "MsPacman":
+        # first call dummy env to find possible location for agent
+        env = gym.make("ALE/MsPacman-v5")
+        disc_or_cont(env, args)
+        save_dim_to_args(env, args)
+        args.agent_num = 1
+        return GridWrapper(env, args)
+
     elif args.env_name == "PointNavigation":
         config = {"agent_name": "Point"}
         env_id = "PointNavigation"

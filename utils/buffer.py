@@ -1,8 +1,8 @@
+from math import ceil, floor
+from typing import Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import torch
-
-from math import ceil, floor
-from typing import Optional, Union, Tuple, Dict, List
 
 
 class TrajectoryBuffer:

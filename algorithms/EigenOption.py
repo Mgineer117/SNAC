@@ -1,19 +1,15 @@
+import gymnasium as gym
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-import gymnasium as gym
+from torch.utils.tensorboard import SummaryWriter
 
 from algorithms import SF_Train
 from log.wandb_logger import WandbLogger
-from torch.utils.tensorboard import SummaryWriter
-from models.evaulators import (
-    OP_Evaluator,
-    HC_Evaluator,
-)
-
-from models import OPTrainer, HCTrainer
+from models import HCTrainer, OPTrainer
+from models.evaulators import HC_Evaluator, OP_Evaluator
 from utils import *
-from utils.call_weights import get_reward_maps, call_options
+from utils.call_weights import call_options, get_reward_maps
 
 
 class EigenOption:
@@ -49,7 +45,6 @@ class EigenOption:
             min_batch_size=args.min_batch_size,
             max_batch_size=args.max_batch_size,
         )
-        print(args.warm_batch_size)
         self.sampler = OnlineSampler(
             env=self.env,
             state_dim=args.s_dim,

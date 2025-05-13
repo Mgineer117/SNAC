@@ -1,25 +1,24 @@
-from typing import Final, Literal, TypeAlias, TypedDict, Any, Type
-
-from gymnasium import spaces
-import numpy as np
 import random
+from typing import Any, Final, Literal, Type, TypeAlias, TypedDict
+
+import numpy as np
+from gymnasium import spaces
 from numpy.typing import NDArray
 
-from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, MazeActions
+from gym_multigrid.core.agent import Agent, AgentT, CtFActions, PolicyAgent
 from gym_multigrid.core.grid import Grid
-from gym_multigrid.core.object import Floor, Flag, Obstacle, WorldObjT
+from gym_multigrid.core.object import Flag, Floor, Obstacle, WorldObjT
 from gym_multigrid.core.world import CtfWorld
 from gym_multigrid.multigrid import MultiGridEnv
 from gym_multigrid.policy.ctf.heuristic import (
-    RwPolicy,
-    RoombaPolicy,
-    CtfPolicyT,
     HEURISTIC_POLICIES,
+    CtfPolicyT,
+    RoombaPolicy,
+    RwPolicy,
 )
 from gym_multigrid.policy.ctf.typing import ObservationDict
 from gym_multigrid.typing import Position
 from gym_multigrid.utils.map import distance_area_point, distance_points, load_text_map
-
 
 Observation: TypeAlias = (
     ObservationDict | NDArray[np.int_] | dict[str, NDArray[np.int_] | int]
@@ -133,7 +132,7 @@ class CtfMvNEnv(MultiGridEnv):
         agent_view_size: int = 10
 
         self.world = CtfWorld
-        self.actions_set = MazeActions
+        self.actions_set = CtFActions
         see_through_walls: bool = False
 
         self._map_path: Final[str] = map_path

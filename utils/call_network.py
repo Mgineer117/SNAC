@@ -1,17 +1,16 @@
-import numpy as np
-import torch
-import torch.nn as nn
 import pickle
 from typing import Union
 
-
-from models.layers.op_networks import OptionPolicy, OptionCritic, OPtionCriticTwin
-from models.layers.hc_networks import HC_Policy, HC_PPO, HC_RW, HC_Critic
-from models.layers.oc_networks import OC_Policy, OC_Critic
-from models.layers.ppo_networks import PPO_Policy, PPO_Critic
-from models.layers.sac_networks import SAC_Policy, SAC_CriticTwin
+import numpy as np
+import torch
+import torch.nn as nn
 
 from log.logger_util import colorize
+from models.layers.hc_networks import HC_PPO, HC_RW, HC_Critic, HC_Policy
+from models.layers.oc_networks import OC_Critic, OC_Policy
+from models.layers.op_networks import OptionCritic, OPtionCriticTwin, OptionPolicy
+from models.layers.ppo_networks import PPO_Critic, PPO_Policy
+from models.layers.sac_networks import SAC_CriticTwin, SAC_Policy
 
 
 def get_conv_layer(args):
@@ -258,6 +257,106 @@ def get_conv_layer(args):
                 "out_filters": in_channels,  # Number of output channels
             },  # Maintains size: (9x9 -> 9x9)
         ]
+    elif args.env_name in ("Amidar", "MsPacman"):
+        encoder_conv_layers = [
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": in_channels,  # 3
+                "out_filters": 32,
+            },  # (210,160) -> (105,80)
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 32,
+                "out_filters": 64,
+            },  # (105,80) -> (53,40)
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 64,
+                "out_filters": 128,
+            },  # (53,40) -> (27,20)
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 256,
+            },  # (27,20) -> (14,10)
+            {
+                "type": "conv",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 256,
+                "out_filters": 512,
+            },  # (14,10) -> (7,5)
+        ]
+        decoder_conv_layers = [
+            {
+                "type": "conv_transpose",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "output_padding": 0,
+                "activation": nn.ELU(),
+                "in_filters": 512,
+                "out_filters": 256,
+            },  # (7,5) -> (14,10)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "output_padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 256,
+                "out_filters": 128,
+            },  # (14,10) -> (27,20)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "output_padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 128,
+                "out_filters": 64,
+            },  # (27,20) -> (53,40)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "output_padding": 1,
+                "activation": nn.ELU(),
+                "in_filters": 64,
+                "out_filters": 32,
+            },  # (53,40) -> (105,80)
+            {
+                "type": "conv_transpose",
+                "kernel_size": 4,
+                "stride": 2,
+                "padding": 1,
+                "output_padding": 0,
+                "activation": nn.Sigmoid(),  # or identity, or ELU + clamp, depending on output scaling
+                "in_filters": 32,
+                "out_filters": in_channels,
+            },  # (105,80) -> (210,160)
+        ]
 
     return encoder_conv_layers, decoder_conv_layers
 
@@ -396,7 +495,7 @@ def call_ocNetwork(args):
 
 
 def call_sfNetwork(args, sf_path: str | None = None):
-    from models.layers.sf_networks import AutoEncoder, VAE, ConvNetwork
+    from models.layers.sf_networks import VAE, AutoEncoder, ConvNetwork
     from models.policy import SF_LASSO, SF_SNAC, SF_EigenOption
 
     if args.algo_name == "SNAC":
