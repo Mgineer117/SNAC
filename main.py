@@ -1,13 +1,17 @@
-import uuid
-import random
 import datetime
-from algorithms import SNAC, EigenOption, PPO, SAC, OptionCritic
-
-from utils.call_env import call_env
-from utils.utils import setup_logger, seed_all, override_args, concat_csv_columnwise_and_delete
-
+import random
+import uuid
 
 import wandb
+
+from algorithms import PPO, SAC, SNAC, EigenOption, OptionCritic
+from utils.call_env import call_env
+from utils.utils import (
+    concat_csv_columnwise_and_delete,
+    override_args,
+    seed_all,
+    setup_logger,
+)
 
 wandb.require("core")
 
@@ -26,7 +30,7 @@ def train(args, seed, unique_id, exp_time):
                     - ++: clustering in value space
         unique_id (int): This is an unique running id for the experiment
     """
-    # # call logger
+    # call logger
     env = call_env(args)
     logger, writer = setup_logger(args, unique_id, exp_time, seed)
 

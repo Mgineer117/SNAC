@@ -1,3 +1,13 @@
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --gpu-idx 0 --num-options 4 &
+sleep 180
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 4 &
+sleep 180
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --gpu-idx 0 --num-options 4 &
+sleep 180
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --gpu-idx 0 --num-options 4 &
+sleep 180
+
+
 nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --gpu-idx 0 --num-options 6 &
 sleep 180
 nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 6 &
@@ -8,34 +18,24 @@ nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOptio
 sleep 180
 
 
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --gpu-idx 0 --num-options 8 &
+
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --gpu-idx 1 --num-options 8 &
 sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 8 &
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --gpu-idx 1 --num-options 8 &
 sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --gpu-idx 0 --num-options 8 &
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --gpu-idx 1 --num-options 8 &
 sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --gpu-idx 0 --num-options 8 &
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --gpu-idx 1 --num-options 8 &
 sleep 180
 
 
-
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --gpu-idx 1 --num-options 10 &
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --gpu-idx 2 --num-options 10 &
 sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --gpu-idx 1 --num-options 10 &
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --gpu-idx 2 --num-options 10 &
 sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --gpu-idx 1 --num-options 10 &
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --gpu-idx 2 --num-options 10 &
 sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --gpu-idx 1 --num-options 10 &
-sleep 180
-
-
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --gpu-idx 2 --num-options 12 &
-sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --gpu-idx 2 --num-options 12 &
-sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --gpu-idx 2 --num-options 12 &
-sleep 180
-nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --gpu-idx 2 --num-options 12 &
+nohup python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --gpu-idx 2 --num-options 10 &
 
 
 
