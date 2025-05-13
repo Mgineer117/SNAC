@@ -108,13 +108,6 @@ def call_env(args):
         save_dim_to_args(env, args)
         args.agent_num = 1
         return GridWrapper(env, args)
-    elif args.env_name == "Amidar":
-        # first call dummy env to find possible location for agent
-        env = gym.make("ALE/Amidar-v5")
-        disc_or_cont(env, args)
-        save_dim_to_args(env, args)
-        args.agent_num = 1
-        return GridWrapper(env, args)
     elif args.env_name == "MsPacman":
         # first call dummy env to find possible location for agent
         env = gym.make("ALE/MsPacman-v5")
