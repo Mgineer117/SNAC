@@ -12,16 +12,6 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=minjae5@illinois.edu
 
-# === Load Cluster Modules ===
-module purge
-module load anaconda3/2024.10
-module load git/2.48.1
-module load cuda/12.8
-module load gcc/13.3.0
-
-# === Initialize Conda ===
-source $(conda info --base)/etc/profile.d/conda.sh
-conda activate snac  # <- Replace with your conda environment name
 
 # === Run Experiments in Parallel ===
 CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --num-options 4 & 
