@@ -21,7 +21,7 @@ module load gcc/13.3.0
 
 # === Initialize Conda ===
 source $(conda info --base)/etc/profile.d/conda.sh
-conda activate your_env_name  # <- Replace with your conda environment name
+conda activate snac  # <- Replace with your conda environment name
 
 # === Run Experiments in Parallel ===
 CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --num-options 4 & 
