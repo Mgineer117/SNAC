@@ -7,21 +7,40 @@
 #SBATCH --partition=eng-research-gpu
 #SBATCH --output=snac.o%j
 
-# === Load Environment ===
-module purge
-module load anaconda3/2024.10
-module load cuda/12.8
-source $(conda info --base)/etc/profile.d/conda.sh
-conda activate snac  # replace with your actual environment name
+# Email settings (you can set it to send emails when the job starts, finishes, or fails)
+#SBATCH --mail-type=FAIL    # Can be 'FAIL', 'BEGIN', 'END', or 'ALL'
+#SBATCH --mail-user=minjae5@illinois.edu  # Replace with your email
 
-# === Run Jobs ===
-for num_options in 4 6 8 10; do
-    for method in top cvs trs crs; do
-        python3 main.py --env-name FourRooms \
-                        --project SNAC \
-                        --algo-name EigenOption \
-                        --method $method \
-                        --gpu-idx 0 \
-                        --num-options $num_options
-    done
-done
+# === Load Cluster Modules ===
+if [[ $- == *i* ]]; then
+    module purge
+    module load anaconda3/2024.10
+    module load git/2.48.1
+    module load cuda/12.8
+    module load gcc/13.3.0
+fi
+
+# === Initialize Conda ===
+source $(conda info --base)/etc/profile.d/conda.sh
+
+# === Run Experiments ===
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --num-options 4
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --num-options 4
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --num-options 4
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --num-options 4
+
+# Additional runs with varying options
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --num-options 6
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --num-options 6
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --num-options 6
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --num-options 6
+
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --num-options 8
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --num-options 8
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --num-options 8
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --num-options 8
+
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method top --num-options 10
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method cvs --num-options 10
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method trs --num-options 10
+python3 main.py --env-name FourRooms --project SNAC --algo-name EigenOption --method crs --num-options 10
