@@ -222,7 +222,7 @@ def get_reward_maps(
 ):
     raw_grid, pos = get_grid_and_coords(env, env_name, grid_type)
 
-    if env_name in ("OneRoom", "LavaRooms", "FourRooms", "Maze"):
+    if env_name in ("OneRoom", "LavaRooms", "FourRooms", "Rooms", "Maze"):
         img = plotRoomRewardMap(
             sf_network=sf_network,
             raw_grid=raw_grid,
@@ -372,48 +372,40 @@ def plotRoomRewardMap(
 
     # Smoothing the tensor using a uniform filter
     rewards = rewards.numpy()
-    # for k in range(rewards.shape[0]):
-    #     rewards[k, :, :] = uniform_filter(rewards[k, :, :], size=3)
-
-    # Define a custom colormap with black at the center
-    colors = [
-        (0.2, 0.2, 1),
-        (0.2667, 0.0039, 0.3294),
-        (1, 0.2, 0.2),
-    ]  # Blue -> Black -> Red
-    cmap = mcolors.LinearSegmentedColormap.from_list("pale_blue_dark_pale_red", colors)
 
     images = []
-    walls = np.where(
-        (raw_grid[:, :, 0] == 2) | (raw_grid[:, :, 0] == 8) | (raw_grid[:, :, 0] == 9)
-    )
+    mask = (raw_grid != 2) & (raw_grid != 8) & (raw_grid != 9)
     for i in range(num_vec):
-        grid = np.zeros((x_grid_dim, y_grid_dim))
-        grid += rewards[i, :, :]
-
-        if np.sum(np.int8(grid > 0)) == 0:
-            for x, y in zip(coords[0], coords[1]):
-                grid[x, y] += 1.0
-        grid[walls] = 0.0
-
-        fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12, 8))
-        ax0.imshow(raw_grid * 50)
-        ax1.imshow(grid, cmap=cmap, interpolation="nearest", vmin=-1, vmax=1)
-        plt.tight_layout()
-
-        # Render the figure to a canvas
-        canvas = FigureCanvas(fig)
-        canvas.draw()
-
-        # Convert canvas to a NumPy array
-        reward_img = np.frombuffer(canvas.tostring_rgb(), dtype="uint8")
-        reward_img = reward_img.reshape(
-            canvas.get_width_height()[::-1] + (3,)
-        )  # Shape: (height, width, 3)
-        plt.close()
-        images.append(reward_img)
+        rgb_image = reward_map_to_rgb(rewards[i, :, :], mask=mask)
+        images.append(rgb_image)
         i += 1
+
     return images
+
+
+def reward_map_to_rgb(reward_map: np.ndarray, mask) -> np.ndarray:
+    width = reward_map.shape[0]
+    height = reward_map.shape[1]
+
+    print(mask.shape, reward_map.shape)
+
+    mask = mask[:, :, 0]
+
+    rgb_img = np.zeros((width, height, 3), dtype=np.float32)
+
+    pos_mask = np.logical_and(mask, (reward_map > 0))
+    neg_mask = np.logical_and(mask, (reward_map < 0))
+
+    # Blue for negative: map [-1, 0] → [1, 0]
+    rgb_img[neg_mask, 2] = -reward_map[neg_mask]  # blue channel
+
+    # Red for positive: map [0, 1] → [0, 1]
+    rgb_img[pos_mask, 0] = reward_map[pos_mask]  # red channel
+
+    # rgb_img.flatten()[mask] to grey
+    rgb_img[~mask, :] = 0.5
+
+    return rgb_img
 
 
 def plotCtFRewardMap(
