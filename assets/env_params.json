@@ -29,7 +29,7 @@
         "K_epochs": 5,
         "target_kl": 0.01,
         "method": "top",
-        "sf_dim": 64,
+        "sf_dim": 32,
         "sf_fc_dim": 512,
         "op_policy_dim": [
             64,
@@ -126,7 +126,7 @@
         "K_epochs": 5,
         "target_kl": 0.01,
         "method": "top",
-        "sf_dim": 128,
+        "sf_dim": 64,
         "sf_fc_dim": 512,
         "op_policy_dim": [
             64,
@@ -223,7 +223,7 @@
         "K_epochs": 5,
         "target_kl": 0.01,
         "method": "top",
-        "sf_dim": 128,
+        "sf_dim": 64,
         "sf_fc_dim": 512,
         "op_policy_dim": [
             64,
