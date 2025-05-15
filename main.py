@@ -31,6 +31,7 @@ def train(args, seed, unique_id, exp_time):
         unique_id (int): This is an unique running id for the experiment
     """
     # call logger
+    seed_all(seed)
     env = call_env(args)
     logger, writer = setup_logger(args, unique_id, exp_time, seed)
 

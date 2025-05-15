@@ -27,6 +27,7 @@ def call_options(
     DIF_batch_size: int,
     grid_type: int,
     gamma: float,
+    seed:int,
     method: str = "top",
     device: torch.device = torch.device("cpu"),
 ):
@@ -79,7 +80,7 @@ def call_options(
             elif method == "cvs":
                 # Use K-Means++ to cluster V (rows)
                 kmeans = KMeans(
-                    n_clusters=num_options, init="k-means++", random_state=42
+                    n_clusters=num_options, init="k-means++", random_state=seed
                 )
                 kmeans.fit(subtask_vector)
                 centroids = kmeans.cluster_centers_
@@ -88,7 +89,7 @@ def call_options(
             elif method == "crs":
                 # Use K-Means++ to cluster V.T (columns/features)
                 kmeans = KMeans(
-                    n_clusters=num_options, init="k-means++", random_state=42
+                    n_clusters=num_options, init="k-means++", random_state=seed
                 )
                 kmeans.fit(subtask_vector @ phi_S.T)
                 cluster_labels = kmeans.labels_
@@ -98,6 +99,30 @@ def call_options(
                     crs_V[i] = np.mean(subtask_vector[cluster_labels == i], axis=0)
 
                 V = crs_V
+            elif method == "crvs":
+                outer_num_options = int(3*num_options)
+                if outer_num_options > sf_dim:
+                    raise ValueError(f"The num option should be smaller, {outer_num_options}<{sf_dim}.")
+                
+                # Use K-Means++ to cluster V.T (columns/features)
+                kmeans = KMeans(
+                    n_clusters=outer_num_options, init="k-means++", random_state=seed
+                )
+                kmeans.fit(subtask_vector @ phi_S.T)
+                cluster_labels = kmeans.labels_
+
+                crs_V = np.empty((num_options, subtask_vector.shape[-1]))
+                for i in range(num_options):
+                    crs_V[i] = np.mean(subtask_vector[cluster_labels == i], axis=0)
+
+                # Use K-Means++ to cluster V (rows)
+                kmeans = KMeans(
+                    n_clusters=num_options, init="k-means++", random_state=seed
+                )
+                kmeans.fit(crs_V)
+                centroids = kmeans.cluster_centers_
+
+                V = centroids
 
             elif method == "trs":
                 # Collect n% of top n and remainder CRS clustered
@@ -107,7 +132,7 @@ def call_options(
                 pseudo_rewards = remainder_V @ phi_S.T
 
                 kmeans = KMeans(
-                    n_clusters=num_options - n, init="k-means++", random_state=42
+                    n_clusters=num_options - n, init="k-means++", random_state=seed
                 )
                 kmeans.fit(pseudo_rewards)
                 cluster_labels = kmeans.labels_

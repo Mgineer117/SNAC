@@ -144,6 +144,7 @@ class EigenOption:
             DIF_batch_size=self.args.DIF_batch_size,
             grid_type=self.args.grid_type,
             gamma=self.args.gamma,
+            seed=self.args.running_seed,
             method=self.args.method,
             device=self.args.device,
         )

@@ -18,7 +18,7 @@ from gym_multigrid.multigrid import MultiGridEnv
 from gym_multigrid.typing import Position
 
 
-class OneRoom(MultiGridEnv):
+class Rooms(MultiGridEnv):
     """
     Environment for capture the flag with multiple agents with N blue agents and M red agents.
     """
@@ -58,24 +58,81 @@ class OneRoom(MultiGridEnv):
         ]
 
         # Define positions for goals and agents
-        self.goal_positions = [(2, 1)]
-        self.object_positions = [(4, 5)]
-        self.lava_positions = [(6, 1)]
-        self.agent_positions = [(4, 7)]
+        self.goal_positions = [(13, 2), (18, 2), (23, 2)]
+        self.agent_positions = [(2, 13), (2, 18), (2, 23)]
 
         self.grids = {}
         self.grid_imgs = {}
         # Explicit maze structure based on the image
         self.map_structure = [
-            "#########",
-            "#   #   #",
-            "#   #   #",
-            "#   #   #",
-            "#  ###  #",
-            "#       #",
-            "#       #",
-            "#       #",
-            "#########",
+            [
+            "################",
+            "#    #    #    #",
+            "#              #",
+            "#              #",
+            "#    #    #    #",
+            "##  ###  ###  ##",
+            "#    #    #    #",
+            "#              #",
+            "#              #",
+            "#    #    #    #",
+            "##  ###  ###  ##",
+            "#    #    #    #",
+            "#              #",
+            "#              #",
+            "#    #    #    #",
+            "################"],
+
+            [
+            "#####################",
+            "#    #    #    #    #",
+            "#                   #",
+            "#                   #",
+            "#    #    #    #    #",
+            "##  ###  ###  ###  ##",
+            "#    #    #    #    #",
+            "#                   #",
+            "#                   #",
+            "#    #    #    #    #",
+            "##  ###  ###  ###  ##",
+            "#    #    #    #    #",
+            "#                   #",
+            "#                   #",
+            "#    #    #    #    #",
+            "##  ###  ###  ###  ##",
+            "#    #    #    #    #",
+            "#                   #",
+            "#                   #",
+            "#    #    #    #    #",
+            "#####################"],
+            [
+            "##########################",
+            "#    #    #    #    #    #",
+            "#                        #",
+            "#                        #",
+            "#    #    #    #    #    #",
+            "##  ###  ###  ###  ###  ##",
+            "#    #    #    #    #    #",
+            "#                        #",
+            "#                        #",
+            "#    #    #    #    #    #",
+            "##  ###  ###  ###  ###  ##",
+            "#    #    #    #    #    #",
+            "#                        #",
+            "#                        #",
+            "#    #    #    #    #    #",
+            "##  ###  ###  ###  ###  ##",
+            "#    #    #    #    #    #",
+            "#                        #",
+            "#                        #",
+            "#    #    #    #    #    #",
+            "##  ###  ###  ###  ###  ##",
+            "#    #    #    #    #    #",
+            "#                        #",
+            "#                        #",
+            "#    #    #    #    #    #",
+            "##########################"]
+            
         ]
 
         super().__init__(
@@ -109,16 +166,7 @@ class OneRoom(MultiGridEnv):
         goal = Goal(self.world, index=4)
         self.put_obj(goal, *self.goal_positions[self.grid_type])
         goal.init_pos, goal.cur_pos = self.goal_positions[self.grid_type]
-
-        object = Obstacle(self.world, color="yellow")
-        self.put_obj(object, *self.object_positions[self.grid_type])
-        object.init_pos, object.cur_pos = self.object_positions[self.grid_type]
-
-        # Place the lava
-        lava = Lava(self.world)
-        self.put_obj(lava, *self.lava_positions[self.grid_type])
-        lava.init_pos, lava.cur_pos = self.lava_positions[self.grid_type]
-
+        
         # place agent
         if options["random_init_pos"]:
             coords = self.find_obj_coordinates(None)
