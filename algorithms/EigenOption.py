@@ -140,7 +140,7 @@ class EigenOption:
         self.reward_options = reward_options
         self.state_options = state_options
 
-        if self.args.env_name in ("OneRoom", "FourRooms", "Maze", "CtF"):
+        if self.args.env_name in ("OneRoom", "FourRooms", "Maze", "CtF", "Rooms"):
             images = get_reward_maps(
                 env=self.env,
                 env_name=self.args.env_name,
