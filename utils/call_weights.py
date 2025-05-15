@@ -1,36 +1,63 @@
-import numpy as np
+import random
 from math import ceil, floor
+
+import gymnasium as gym
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn as nn
-import gymnasium as gym
-import random
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from models.policy import SF_LASSO
 from sklearn.cluster import KMeans
 
+from models.policy import SF_LASSO
 from utils.buffer import TrajectoryBuffer
+from utils.call_env import call_env
 from utils.sampler import OnlineSampler
 from utils.utils import estimate_psi
 
 
-def call_options(
-    algo_name: str,
-    sf_dim: int,
-    snac_split_ratio: float,
-    temporal_balance_ratio: float,
-    num_options: int,
-    sf_network: SF_LASSO,
-    sampler: OnlineSampler,
-    buffer: TrajectoryBuffer,
-    DIF_batch_size: int,
-    grid_type: int,
-    gamma: float,
-    seed:int,
-    method: str = "top",
-    device: torch.device = torch.device("cpu"),
-):
+def call_options(sf_network: SF_LASSO, args):
+    algo_name = args.algo_name
+    sf_dim = args.sf_dim
+    snac_split_ratio = args.snac_split_ratio
+    temporal_balance_ratio = args.temporal_balance_ratio
+    num_options = args.num_options
+
+    DIF_batch_size = args.DIF_batch_size
+    grid_type = args.grid_type
+    gamma = args.gamma
+    seed = args.running_seed
+    method = args.method
+    device = args.device
+
+    extended_env = call_env(args)
+    extended_env.max_steps = int(10 * extended_env.max_steps)
+
+    sampler = OnlineSampler(
+        env=extended_env,
+        state_dim=args.s_dim,
+        action_dim=args.a_dim,
+        hc_action_dim=2 * args.num_options + 1,
+        min_option_length=args.min_option_length,
+        num_options=1,
+        episode_len=extended_env.max_steps,
+        batch_size=args.warm_batch_size,
+        min_batch_for_worker=extended_env.max_steps,
+        cpu_preserve_rate=args.cpu_preserve_rate,
+        num_cores=args.num_cores,
+        gamma=args.gamma,
+        verbose=False,
+    )
+    buffer = TrajectoryBuffer(
+        state_dim=args.s_dim,
+        action_dim=args.a_dim,
+        hc_action_dim=2 * args.num_options + 1,
+        episode_len=extended_env.max_steps,
+        min_batch_size=args.min_batch_size,
+        max_batch_size=args.max_batch_size,
+    )
+
     # required params
     if algo_name == "SNAC":
         num_r_features = floor(sf_dim * snac_split_ratio)
@@ -100,10 +127,12 @@ def call_options(
 
                 V = crs_V
             elif method == "crvs":
-                outer_num_options = int(3*num_options)
+                outer_num_options = int(3 * num_options)
                 if outer_num_options > sf_dim:
-                    raise ValueError(f"The num option should be smaller, {outer_num_options}<{sf_dim}.")
-                
+                    raise ValueError(
+                        f"The num option should be smaller, {outer_num_options}<{sf_dim}."
+                    )
+
                 # Use K-Means++ to cluster V.T (columns/features)
                 kmeans = KMeans(
                     n_clusters=outer_num_options, init="k-means++", random_state=seed
@@ -124,24 +153,46 @@ def call_options(
 
                 V = centroids
 
-            elif method == "trs":
+            elif method == "trvs":
                 # Collect n% of top n and remainder CRS clustered
                 n = ceil(temporal_balance_ratio * num_options)
                 top_n_V = subtask_vector[:n]
                 remainder_V = subtask_vector[n:]
                 pseudo_rewards = remainder_V @ phi_S.T
 
+                num_remainder_options = num_options - n
+                outer_num_options = int(3 * num_remainder_options)
+
+                if outer_num_options > sf_dim - n:
+                    raise ValueError(
+                        f"The num option should be smaller, {outer_num_options}<{sf_dim - n}."
+                    )
+
+                # Use K-Means++ to cluster V.T (columns/features)
                 kmeans = KMeans(
-                    n_clusters=num_options - n, init="k-means++", random_state=seed
+                    n_clusters=outer_num_options,
+                    init="k-means++",
+                    random_state=seed,
                 )
                 kmeans.fit(pseudo_rewards)
                 cluster_labels = kmeans.labels_
 
-                crs_V = np.empty((num_options - n, remainder_V.shape[-1]))
-                for i in range(num_options - n):
+                crs_V = np.empty((outer_num_options, remainder_V.shape[-1]))
+                for i in range(outer_num_options):
                     crs_V[i] = np.mean(remainder_V[cluster_labels == i], axis=0)
 
-                V = np.concatenate((top_n_V, crs_V), axis=0)
+                kmeans = KMeans(
+                    n_clusters=num_remainder_options,
+                    init="k-means++",
+                    random_state=seed,
+                )
+                kmeans.fit(crs_V)
+                centroids = kmeans.cluster_centers_
+
+                crvs_V = centroids
+
+                V = np.concatenate((top_n_V, crvs_V), axis=0)
+
             else:
                 raise ValueError(f"method {method} not recognized")
 
@@ -162,10 +213,15 @@ def call_options(
 
 
 def get_reward_maps(
-    env: gym.Env, env_name:str, sf_network: nn.Module, V: list, feature_dim: int, grid_type: int
-):  
+    env: gym.Env,
+    env_name: str,
+    sf_network: nn.Module,
+    V: list,
+    feature_dim: int,
+    grid_type: int,
+):
     raw_grid, pos = get_grid_and_coords(env, env_name, grid_type)
-    
+
     if env_name in ("OneRoom", "LavaRooms", "FourRooms", "Maze"):
         img = plotRoomRewardMap(
             sf_network=sf_network,
@@ -186,13 +242,12 @@ def get_reward_maps(
 
 
 def get_grid_and_coords(env, env_name, grid_type):
-    
-    
+
     obs, _ = env.reset(seed=grid_type)
     raw_grid = obs["observation"]
     env.close()
 
-    if env_name == "CtF":    
+    if env_name == "CtF":
         agent_pos = np.where(raw_grid[:, :, 1] == 1)
         enemy_pos = np.where(raw_grid[:, :, 1] == 2)
 
@@ -212,18 +267,20 @@ def get_grid_and_coords(env, env_name, grid_type):
             & (raw_grid[:, :, 1] != 2)
             & (raw_grid[:, :, 1] != 3)
             & (raw_grid[:, :, 1] != 4)
-        ) 
+        )
     else:
         agent_pos = np.where(raw_grid[:, :, 0] == 10)
 
         raw_grid[agent_pos[0], agent_pos[1], 0] = 1
 
         pos = np.where(
-            (raw_grid[:, :, 0] != 2) & (raw_grid[:, :, 0] != 8) & (raw_grid[:, :, 0] != 9)
+            (raw_grid[:, :, 0] != 2)
+            & (raw_grid[:, :, 0] != 8)
+            & (raw_grid[:, :, 0] != 9)
         )  # find idx where not wall
 
-
     return raw_grid, pos
+
 
 def plotRoomRewardMap(
     sf_network: nn.Module,
@@ -328,9 +385,7 @@ def plotRoomRewardMap(
 
     images = []
     walls = np.where(
-        (raw_grid[:, :, 0] == 2)
-        | (raw_grid[:, :, 0] == 8)
-        | (raw_grid[:, :, 0] == 9)
+        (raw_grid[:, :, 0] == 2) | (raw_grid[:, :, 0] == 8) | (raw_grid[:, :, 0] == 9)
     )
     for i in range(num_vec):
         grid = np.zeros((x_grid_dim, y_grid_dim))
@@ -359,6 +414,7 @@ def plotRoomRewardMap(
         images.append(reward_img)
         i += 1
     return images
+
 
 def plotCtFRewardMap(
     sf_network: nn.Module,
@@ -534,6 +590,7 @@ def plotCtFRewardMap(
         images.append(reward_img)
         i += 1
     return images
+
 
 def warm_buffer(
     sf_network: nn.Module,

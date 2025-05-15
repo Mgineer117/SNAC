@@ -1,21 +1,29 @@
+import random
 from itertools import chain
-from typing import Final, Literal, TypeAlias, TypedDict
-from typing import Any, Iterable, SupportsFloat, TypeVar
+from typing import (
+    Any,
+    Final,
+    Iterable,
+    Literal,
+    SupportsFloat,
+    TypeAlias,
+    TypedDict,
+    TypeVar,
+)
 
+import numpy as np
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType
-import numpy as np
-import random
 from numpy.typing import NDArray
 
+from gym_multigrid.core.agent import Agent, AgentT, MazeActions, PolicyAgent
 from gym_multigrid.core.constants import *
-from gym_multigrid.utils.window import Window
-from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, MazeActions
 from gym_multigrid.core.grid import Grid
-from gym_multigrid.core.object import Goal, Wall, Lava, Obstacle
+from gym_multigrid.core.object import Goal, Lava, Obstacle, Wall
 from gym_multigrid.core.world import RoomWorld
 from gym_multigrid.multigrid import MultiGridEnv
 from gym_multigrid.typing import Position
+from gym_multigrid.utils.window import Window
 
 
 class Rooms(MultiGridEnv):
@@ -26,9 +34,7 @@ class Rooms(MultiGridEnv):
     def __init__(
         self,
         grid_type: int = 0,
-        width=9,
-        height=9,
-        max_steps=50,
+        max_steps=200,
         see_through_walls=False,
         agent_view_size=3,
         partial_observability=False,
@@ -37,9 +43,6 @@ class Rooms(MultiGridEnv):
         tile_size=32,
     ):
         self.grid_type = grid_type
-
-        self.width = width
-        self.height = height
         self.max_steps = max_steps
         self.world = RoomWorld
         self.actions_set = MazeActions
@@ -58,82 +61,89 @@ class Rooms(MultiGridEnv):
         ]
 
         # Define positions for goals and agents
-        self.goal_positions = [(13, 2), (18, 2), (23, 2)]
-        self.agent_positions = [(2, 13), (2, 18), (2, 23)]
+        self.goal_positions = [(15, 3), (18, 2), (23, 2)]
+        self.agent_positions = [(3, 15), (2, 18), (2, 23)]
 
         self.grids = {}
         self.grid_imgs = {}
         # Explicit maze structure based on the image
         self.map_structure = [
             [
-            "################",
-            "#    #    #    #",
-            "#              #",
-            "#              #",
-            "#    #    #    #",
-            "##  ###  ###  ##",
-            "#    #    #    #",
-            "#              #",
-            "#              #",
-            "#    #    #    #",
-            "##  ###  ###  ##",
-            "#    #    #    #",
-            "#              #",
-            "#              #",
-            "#    #    #    #",
-            "################"],
-
+                "###################",
+                "#     #     #     #",
+                "#     #     #     #",
+                "#                 #",
+                "#     #     #     #",
+                "#     #     #     #",
+                "### ##### ##### ###",
+                "#     #     #     #",
+                "#     #     #     #",
+                "#                 #",
+                "#     #     #     #",
+                "#     #     #     #",
+                "### ##### ##### ###",
+                "#     #     #     #",
+                "#     #     #     #",
+                "#                 #",
+                "#     #     #     #",
+                "#     #     #     #",
+                "###################",
+            ],
             [
-            "#####################",
-            "#    #    #    #    #",
-            "#                   #",
-            "#                   #",
-            "#    #    #    #    #",
-            "##  ###  ###  ###  ##",
-            "#    #    #    #    #",
-            "#                   #",
-            "#                   #",
-            "#    #    #    #    #",
-            "##  ###  ###  ###  ##",
-            "#    #    #    #    #",
-            "#                   #",
-            "#                   #",
-            "#    #    #    #    #",
-            "##  ###  ###  ###  ##",
-            "#    #    #    #    #",
-            "#                   #",
-            "#                   #",
-            "#    #    #    #    #",
-            "#####################"],
+                "#####################",
+                "#    #    #    #    #",
+                "#                   #",
+                "#                   #",
+                "#    #    #    #    #",
+                "##  ###  ###  ###  ##",
+                "#    #    #    #    #",
+                "#                   #",
+                "#                   #",
+                "#    #    #    #    #",
+                "##  ###  ###  ###  ##",
+                "#    #    #    #    #",
+                "#                   #",
+                "#                   #",
+                "#    #    #    #    #",
+                "##  ###  ###  ###  ##",
+                "#    #    #    #    #",
+                "#                   #",
+                "#                   #",
+                "#    #    #    #    #",
+                "#####################",
+            ],
             [
-            "##########################",
-            "#    #    #    #    #    #",
-            "#                        #",
-            "#                        #",
-            "#    #    #    #    #    #",
-            "##  ###  ###  ###  ###  ##",
-            "#    #    #    #    #    #",
-            "#                        #",
-            "#                        #",
-            "#    #    #    #    #    #",
-            "##  ###  ###  ###  ###  ##",
-            "#    #    #    #    #    #",
-            "#                        #",
-            "#                        #",
-            "#    #    #    #    #    #",
-            "##  ###  ###  ###  ###  ##",
-            "#    #    #    #    #    #",
-            "#                        #",
-            "#                        #",
-            "#    #    #    #    #    #",
-            "##  ###  ###  ###  ###  ##",
-            "#    #    #    #    #    #",
-            "#                        #",
-            "#                        #",
-            "#    #    #    #    #    #",
-            "##########################"]
-            
+                "##########################",
+                "#    #    #    #    #    #",
+                "#                        #",
+                "#                        #",
+                "#    #    #    #    #    #",
+                "##  ###  ###  ###  ###  ##",
+                "#    #    #    #    #    #",
+                "#                        #",
+                "#                        #",
+                "#    #    #    #    #    #",
+                "##  ###  ###  ###  ###  ##",
+                "#    #    #    #    #    #",
+                "#                        #",
+                "#                        #",
+                "#    #    #    #    #    #",
+                "##  ###  ###  ###  ###  ##",
+                "#    #    #    #    #    #",
+                "#                        #",
+                "#                        #",
+                "#    #    #    #    #    #",
+                "##  ###  ###  ###  ###  ##",
+                "#    #    #    #    #    #",
+                "#                        #",
+                "#                        #",
+                "#    #    #    #    #    #",
+                "##########################",
+            ],
         ]
+
+        self.width = len(self.map_structure[grid_type][0])
+        self.height = len(self.map_structure[grid_type])
 
         super().__init__(
             width=self.width,
@@ -155,7 +165,7 @@ class Rooms(MultiGridEnv):
         self.grid = Grid(width, height, self.world)
 
         # Translate the maze structure into the grid
-        for y, row in enumerate(self.map_structure):
+        for y, row in enumerate(self.map_structure[self.grid_type]):
             for x, cell in enumerate(row):
                 if cell == "#":
                     self.grid.set(x, y, Wall(self.world))
@@ -166,7 +176,7 @@ class Rooms(MultiGridEnv):
         goal = Goal(self.world, index=4)
         self.put_obj(goal, *self.goal_positions[self.grid_type])
         goal.init_pos, goal.cur_pos = self.goal_positions[self.grid_type]
-        
+
         # place agent
         if options["random_init_pos"]:
             coords = self.find_obj_coordinates(None)

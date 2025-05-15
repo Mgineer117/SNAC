@@ -133,20 +133,8 @@ class EigenOption:
         self.sf_network, _ = ft.train()
 
         reward_options, state_options = call_options(
-            algo_name=self.args.algo_name,
-            sf_dim=self.args.sf_dim,
-            snac_split_ratio=self.args.snac_split_ratio,
-            temporal_balance_ratio=self.args.temporal_balance_ratio,
-            num_options=self.args.num_options,
             sf_network=self.sf_network,
-            sampler=ft.sampler,
-            buffer=ft.buffer,
-            DIF_batch_size=self.args.DIF_batch_size,
-            grid_type=self.args.grid_type,
-            gamma=self.args.gamma,
-            seed=self.args.running_seed,
-            method=self.args.method,
-            device=self.args.device,
+            args=self.args,
         )
 
         self.reward_options = reward_options
