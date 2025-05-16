@@ -462,7 +462,7 @@ class OP_Controller(BasePolicy):
             "OP_PPO/analytics/clip_fraction": np.mean(clip_fractions),
             "OP_PPO/analytics/klDivergence": target_kl[-1],
             "OP_PPO/analytics/K-epoch": k + 1,
-            f"OP_PPO/measure/avg_rewards{z}": (
+            f"OP_PPO/measure/avg_rewards": (
                 torch.sum(rewards) / torch.sum(terminals)
             ).item(),
         }
