@@ -1,13 +1,14 @@
-import numpy as np
 from math import floor
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from torch.nn import MaxPool2d, MaxUnpool2d
 from torch.distributions import MultivariateNormal
-from utils.utils import calculate_flatten_size
+from torch.nn import MaxPool2d, MaxUnpool2d
+
 from models.layers.building_blocks import MLP, Conv, DeConv
+from utils.utils import calculate_flatten_size
 
 
 class Permute(nn.Module):
@@ -242,7 +243,7 @@ class ConvNetwork(nn.Module):
 
         for fn in self.conv:
             out, info = fn(out)
-        
+
         if self.feature_dim is None:
             self.feature_dim = out.shape
 
