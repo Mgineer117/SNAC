@@ -174,25 +174,25 @@ class ConvNetwork(nn.Module):
         for layer in decoder_conv_layers:
             if layer["type"] == "conv_transpose":
                 element = DeConv(
-                    in_channels=in_channels,
-                    out_channels=layer["in_filters"],
+                    in_channels=layer["in_filters"],
+                    out_channels=layer["out_filters"],
                     kernel_size=layer["kernel_size"],
                     stride=layer["stride"],
                     padding=layer["padding"],
                     output_padding=layer["output_padding"],
                     activation=layer["activation"],
                 )
-                in_channels = layer["in_filters"]
+                # in_channels = layer["in_filters"]
             elif layer["type"] == "conv":
                 element = Conv(
-                    in_channels=in_channels,
+                    in_channels=layer["in_filters"],
                     out_channels=layer["out_filters"],
                     kernel_size=layer["kernel_size"],
                     stride=layer["stride"],
                     padding=layer["padding"],
                     activation=layer["activation"],
                 )
-                in_channels = layer["out_filters"]
+                # in_channels = layer["out_filters"]
             elif layer["type"] == "pool":
                 element = MaxUnpool2d(
                     kernel_size=layer["kernel_size"],
