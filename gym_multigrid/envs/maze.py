@@ -1,29 +1,21 @@
-import random
 from itertools import chain
-from typing import (
-    Any,
-    Final,
-    Iterable,
-    Literal,
-    SupportsFloat,
-    TypeAlias,
-    TypedDict,
-    TypeVar,
-)
+from typing import Final, Literal, TypeAlias, TypedDict
+from typing import Any, Iterable, SupportsFloat, TypeVar
 
-import numpy as np
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType
+import numpy as np
+import random
 from numpy.typing import NDArray
 
-from gym_multigrid.core.agent import Agent, AgentT, MazeActions, PolicyAgent
 from gym_multigrid.core.constants import *
+from gym_multigrid.utils.window import Window
+from gym_multigrid.core.agent import Agent, PolicyAgent, AgentT, MazeActions
 from gym_multigrid.core.grid import Grid
 from gym_multigrid.core.object import Goal, Wall
 from gym_multigrid.core.world import RoomWorld
 from gym_multigrid.multigrid import MultiGridEnv
 from gym_multigrid.typing import Position
-from gym_multigrid.utils.window import Window
 
 
 class Maze(MultiGridEnv):
@@ -73,27 +65,27 @@ class Maze(MultiGridEnv):
         self.grid_imgs = {}
         # Explicit maze structure based on the image
         self.maze_structure = [
-                "####################",
-                "#                  #",
-                "#                  #",
-                "#       ###  ###  ##",
-                "#       #      #   #",
-                "#####          #   #",
-                "#   #          #   #",
-                "#   #   #      #   #",
-                "#   #   #      #   #",
-                "#   #   ########   #",
-                "#   #      #   #   #",
-                "#   #      #       #",
-                "#          #       #",
-                "#          #   #   #",
-                "#   #      #   #####",
-                "#   #      #       #",
-                "#   ########       #",
-                "#                  #",
-                "#                  #",
-                "####################",
-            ],
+            "####################",
+            "#                  #",
+            "#                  #",
+            "#       ###  ###  ##",
+            "#       #      #   #",
+            "#####          #   #",
+            "#   #          #   #",
+            "#   #   #      #   #",
+            "#   #   #      #   #",
+            "#   #   ########   #",
+            "#   #      #   #   #",
+            "#   #      #       #",
+            "#          #       #",
+            "#          #   #   #",
+            "#   #      #   #####",
+            "#   #      #       #",
+            "#   ########       #",
+            "#                  #",
+            "#                  #",
+            "####################",
+        ]
 
         super().__init__(
             width=self.width,

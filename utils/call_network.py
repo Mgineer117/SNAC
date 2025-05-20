@@ -177,7 +177,7 @@ def get_conv_layer(args):
                 "out_filters": in_channels,  # Number of output channels
             },  # Maintains size: (9x9 -> 9x9)
         ]
-    elif args.env_name in ("CtF"):
+    elif args.env_name in ("CtF", "Maze"):
         encoder_conv_layers = [
             {
                 "type": "conv",
@@ -337,7 +337,7 @@ def get_conv_layer(args):
                 "out_filters": in_channels,  # Number of output channels
             },  # Maintains size: (9x9 -> 9x9)
         ]
-    elif args.env_name in ("Maze"):
+    elif args.env_name in ("Maze2"):
         encoder_conv_layers = [
             {
                 "type": "conv",
