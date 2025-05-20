@@ -341,16 +341,16 @@ def get_conv_layer(args):
         encoder_conv_layers = [
             {
                 "type": "conv",
-                "kernel_size": 4,
-                "stride": 2,
-                "padding": 2,
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": in_channels,  # Number of input channels
                 "out_filters": 32,
             },  # Maintain spatial size (12x12 -> 12x12)
             {
                 "type": "conv",
-                "kernel_size": 4,
+                "kernel_size": 3,
                 "stride": 2,
                 "padding": 1,
                 "activation": nn.ELU(),
@@ -359,8 +359,8 @@ def get_conv_layer(args):
             },  # Reduce spatial size (12x12 -> 6x6)
             {
                 "type": "conv",
-                "kernel_size": 4,
-                "stride": 2,
+                "kernel_size": 3,
+                "stride": 1,
                 "padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": 64,
@@ -369,7 +369,7 @@ def get_conv_layer(args):
             {
                 "type": "conv",
                 "kernel_size": 3,
-                "stride": 1,
+                "stride": 2,
                 "padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": 128,
@@ -381,7 +381,7 @@ def get_conv_layer(args):
             {
                 "type": "conv_transpose",
                 "kernel_size": 3,
-                "stride": 1,
+                "stride": 2,
                 "padding": 1,
                 "output_padding": 0,
                 "activation": nn.ELU(),
@@ -389,31 +389,29 @@ def get_conv_layer(args):
                 "out_filters": 128,
             },  # Increases size: (3x3 -> 5x5)
             {
-                "type": "conv_transpose",
-                "kernel_size": 4,
-                "stride": 2,
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
                 "padding": 1,
-                "output_padding": 0,
                 "activation": nn.ELU(),
                 "in_filters": 128,
                 "out_filters": 64,
             },  # Maintains size: (5x5 -> 5x5)
             {
                 "type": "conv_transpose",
-                "kernel_size": 4,
+                "kernel_size": 3,
                 "stride": 2,
                 "padding": 1,
-                "output_padding": 0,
+                "output_padding": 1,
                 "activation": nn.ELU(),
                 "in_filters": 64,
                 "out_filters": 32,
             },  # Increases size: (5x5 -> 9x9)
             {
-                "type": "conv_transpose",
-                "kernel_size": 4,
-                "stride": 2,
-                "padding": 2,
-                "output_padding": 0,
+                "type": "conv",
+                "kernel_size": 3,
+                "stride": 1,
+                "padding": 1,
                 "activation": nn.ELU(),  # Final activation for reconstruction
                 "in_filters": 32,
                 "out_filters": in_channels,  # Number of output channels

@@ -34,8 +34,6 @@ class Maze(MultiGridEnv):
     def __init__(
         self,
         grid_type: int = 0,
-        width=20,
-        height=20,
         max_steps=1000,
         see_through_walls=False,
         agent_view_size=7,
@@ -46,8 +44,6 @@ class Maze(MultiGridEnv):
     ):
         self.grid_type = grid_type
 
-        self.width = width
-        self.height = height
         self.max_steps = max_steps
         self.world = RoomWorld
         self.actions_set = MazeActions
@@ -66,35 +62,13 @@ class Maze(MultiGridEnv):
         ]
 
         # Define positions for goals and agents
-        self.goal_positions = [(17, 17), (25, 9)]
-        self.agent_positions = [(12, 7), (29, 1)]
+        self.goal_positions = [(25, 9)]
+        self.agent_positions = [(29, 1)]
 
         self.grids = {}
         self.grid_imgs = {}
         # Explicit maze structure based on the image
         self.maze_structure = [
-            [
-                "####################",
-                "#                  #",
-                "#                  #",
-                "#       ###  ###  ##",
-                "#       #      #   #",
-                "#####          #   #",
-                "#   #          #   #",
-                "#   #   #      #   #",
-                "#   #   #      #   #",
-                "#   #   ########   #",
-                "#   #      #   #   #",
-                "#   #      #       #",
-                "#          #       #",
-                "#          #   #   #",
-                "#   #      #   #####",
-                "#   #      #       #",
-                "#   ########       #",
-                "#                  #",
-                "#                  #",
-                "####################",
-            ],
             [
                 "##############################",
                 "#             #      #       #",
@@ -127,39 +101,10 @@ class Maze(MultiGridEnv):
                 "#                            #",
                 "##############################",
             ],
-            [
-                "##############################",
-                "#     #       #     #        #",
-                "#     #       #     #        #",
-                "#  #######  ###              #",
-                "#     #       #     #        #",
-                "#             ### ####### ####",
-                "#         #####      #       #",
-                "#     #   #   #      #       #",
-                "#######   ##  #              #",
-                "#     #       #      #       #",
-                "#     #       #      #       #",
-                "#  ####   #########  #########",
-                "#         #                  #",
-                "#         #                  #",
-                "#     #   #   ############  ##",
-                "#######  ##   #          #   #",
-                "#             #    #     #   #",
-                "#             #    #     #   #",
-                "###  ############  #######   #",
-                "#    #        #              #",
-                "#             #              #",
-                "#    #        ######  ####  ##",
-                "## ###        #    #  #      #",
-                "#    #        #       #      #",
-                "#    ##### ####       #      #",
-                "#     #       ####  #######  #",
-                "#     #       #       #      #",
-                "#     #       #              #",
-                "#     #       #              #",
-                "##############################",
-            ],
         ]
+
+        self.width = len(self.maze_structure[self.grid_type][0])
+        self.height = len(self.maze_structure[self.grid_type])
 
         super().__init__(
             width=self.width,
@@ -181,7 +126,7 @@ class Maze(MultiGridEnv):
         self.grid = Grid(width, height, self.world)
 
         # Translate the maze structure into the grid
-        for y, row in enumerate(self.maze_structure):
+        for y, row in enumerate(self.maze_structure[self.grid_type]):
             for x, cell in enumerate(row):
                 if cell == "#":
                     self.grid.set(x, y, Wall(self.world))
