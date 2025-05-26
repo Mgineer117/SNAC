@@ -2,13 +2,20 @@ import gymnasium as gym
 import safety_gymnasium as sgym
 from safety_gymnasium import __register_helper
 
+from gym_multigrid.envs.ant import Ant
 from gym_multigrid.envs.ctf import CtF
 from gym_multigrid.envs.fourrooms import FourRooms
 from gym_multigrid.envs.lavarooms import LavaRooms
 from gym_multigrid.envs.maze import Maze
 from gym_multigrid.envs.rooms import Rooms
 from utils.utils import save_dim_to_args
-from utils.wrappers import CtFWrapper, GridWrapper, GymWrapper, NavigationWrapper, AtariWrapper
+from utils.wrappers import (
+    AtariWrapper,
+    CtFWrapper,
+    GridWrapper,
+    GymWrapper,
+    NavigationWrapper,
+)
 
 
 def disc_or_cont(env, args):
@@ -69,6 +76,20 @@ def call_env(args):
     elif args.env_name == "Maze":
         # first call dummy env to find possible location for agent
         env = Maze(
+            grid_type=args.grid_type,
+            max_steps=args.episode_len,
+            tile_size=args.img_tile_size,
+            highlight_visible_cells=False,
+            partial_observability=False,
+            render_mode="rgb_array",
+        )
+        disc_or_cont(env, args)
+        save_dim_to_args(env, args)
+        args.agent_num = len(env.agents)
+        return GridWrapper(env, args)
+    elif args.env_name == "Ant":
+        # first call dummy env to find possible location for agent
+        env = Ant(
             grid_type=args.grid_type,
             max_steps=args.episode_len,
             tile_size=args.img_tile_size,
