@@ -161,7 +161,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--num-runs",
         type=int,
-        default=0,  # 0, 2
+        default=5,  # 0, 2
         help="seeds for computational stochasticity --seeds 1,3,5,7,9 # without space",
     )
 
