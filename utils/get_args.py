@@ -155,7 +155,7 @@ def get_args(verbose=True):
     parser.add_argument(
         "--seed",
         type=int,
-        default=5,  # 0, 2
+        default=51,  # 0, 2
         help="seeds for computational stochasticity --seeds 1,3,5,7,9 # without space",
     )
     parser.add_argument(
