@@ -16,16 +16,19 @@
 CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method top --num-options 6 & 
 CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method cvs --num-options 6 & 
 CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method crs --num-options 6 &  
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method crvs --num-options 6 &  
 
 
 CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method top --num-options 8 & 
 CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method cvs --num-options 8 &  
 CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method crs --num-options 8 &  
+CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method crvs --num-options 8 &  
 
 
 CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method top --num-options 10 & 
 CUDA_VISIBLE_DEVICES=3 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method cvs --num-options 10 & 
 CUDA_VISIBLE_DEVICES=3 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method crs --num-options 10 &   
+CUDA_VISIBLE_DEVICES=3 python3 main.py --env-name Ant --project SNAC --algo-name EigenOption --method crvs --num-options 10 &   
 
 
 
