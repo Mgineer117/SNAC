@@ -1,9 +1,10 @@
-nohup python3 main.py --env-name CtF --project SNAC --algo-name EigenOption --method top --gpu-idx 0 --num-options 6 &
-nohup python3 main.py --env-name CtF --project SNAC --algo-name SNAC --method trs --gpu-idx 0 --num-options 6 &
 
+nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method crs --gpu-idx 0 --num-options 4 --ctf-type strategic --episode-len 300 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 4 --ctf-type strategic --episode-len 300 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method crvs --gpu-idx 2 --num-options 4 --ctf-type strategic --episode-len 300 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name SNAC --method trs --gpu-idx 1 --num-options 4 --ctf-type strategic --episode-len 300 &
 
-nohup python3 main.py --env-name CtF --project CtF --algo-name PPO --gpu-idx 1 &
-
-nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method top --gpu-idx 0 --num-options 4 --ctf-type strategic --episode-len 300 --cpu-preserve-rate 0.5 &
-nohup python3 main.py --env-name CtF --project CtF --algo-name SNAC --method trs --gpu-idx 0 --num-options 4 --ctf-type strategic --episode-len 300 --cpu-preserve-rate 0.5 &
-nohup python3 main.py --env-name CtF --project CtF --algo-name PPO --gpu-idx 1 --ctf-type strategic --cpu-preserve-rate 0.3 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method crs --gpu-idx 0 --num-options 6 --ctf-type strategic --episode-len 300 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method cvs --gpu-idx 0 --num-options 6 --ctf-type strategic --episode-len 300 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name EigenOption --method crvs --gpu-idx 2 --num-options 6 --ctf-type strategic --episode-len 300 &
+nohup python3 main.py --env-name CtF --project CtF --algo-name SNAC --method trs --gpu-idx 1 --num-options 6 --ctf-type strategic --episode-len 300 &
