@@ -193,6 +193,25 @@ def call_options(sf_network: SF_LASSO, args):
 
                 V = np.concatenate((top_n_V, crvs_V), axis=0)
 
+            elif method == "trs":
+                # Collect n% of top n and remainder CRS clustered
+                n = ceil(temporal_balance_ratio * num_options)
+                top_n_V = subtask_vector[:n]
+                remainder_V = subtask_vector[n:]
+                pseudo_rewards = remainder_V @ phi_S.T
+
+                kmeans = KMeans(
+                    n_clusters=num_options - n, init="k-means++", random_state=42
+                )
+                kmeans.fit(pseudo_rewards)
+                cluster_labels = kmeans.labels_
+
+                crs_V = np.empty((num_options - n, remainder_V.shape[-1]))
+                for i in range(num_options - n):
+                    crs_V[i] = np.mean(remainder_V[cluster_labels == i], axis=0)
+
+                V = np.concatenate((top_n_V, crs_V), axis=0)
+
             else:
                 raise ValueError(f"method {method} not recognized")
 
