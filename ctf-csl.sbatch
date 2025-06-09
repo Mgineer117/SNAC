@@ -23,7 +23,7 @@ CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-
 sleep 300
 CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method cvs --gpu-idx 1 --num-options 4 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method crvs --gpu-idx 1 --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method top --gpu-idx 1 --num-options 4 --ctf-type regular & 
 sleep 300
 CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method trs --gpu-idx 1 --num-options 4 --ctf-type regular & 
 sleep 300
@@ -35,7 +35,7 @@ CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name CtF --project CtF-SNAC --algo-
 sleep 300
 CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method cvs --gpu-idx 1 --num-options 8 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method crvs --gpu-idx 1 --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method top --gpu-idx 1 --num-options 8 --ctf-type regular & 
 sleep 300
 CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method trs --gpu-idx 1 --num-options 8 --ctf-type regular & 
 sleep 300
