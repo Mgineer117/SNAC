@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=10
 #SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:3
+#SBATCH --gres=gpu:2
 #SBATCH --time=7-00:00:00
 #SBATCH --output=snac.o%j
 #SBATCH --mail-type=FAIL
@@ -19,27 +19,27 @@ source ~/.bashrc
 conda activate snac
 
 # === Run Experiments in Parallel ===
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method crs --gpu-idx 1 --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method crs  --num-options 4 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method cvs --gpu-idx 1 --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method cvs  --num-options 4 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method top --gpu-idx 1 --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method top  --num-options 4 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method trs --gpu-idx 1 --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method trs  --num-options 4 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --env-name CtF --project CtF-SNAC --algo-name SNAC --method trs --gpu-idx 0 --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 nohup python3 main.py --env-name CtF --project CtF-SNAC --algo-name SNAC --method trs  --num-options 4 --ctf-type regular & 
 sleep 300
 
 
-CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method crs --gpu-idx 1 --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method crs  --num-options 8 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method cvs --gpu-idx 1 --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method cvs  --num-options 8 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method top --gpu-idx 1 --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method top  --num-options 8 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=2 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method trs --gpu-idx 1 --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name CtF --project CtF-SNAC --algo-name EigenOption --method trs  --num-options 8 --ctf-type regular & 
 sleep 300
-CUDA_VISIBLE_DEVICES=2 nohup python3 main.py --env-name CtF --project CtF-SNAC --algo-name SNAC --method trs --gpu-idx 0 --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --env-name CtF --project CtF-SNAC --algo-name SNAC --method trs  --num-options 8 --ctf-type regular & 
 
 # === Wait for all background jobs to finish ===
 wait
