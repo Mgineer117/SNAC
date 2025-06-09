@@ -1,19 +1,20 @@
 import time
-import numpy as np
+from collections import deque
 from copy import deepcopy
+
 import matplotlib.cm as cm
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
 from tqdm.auto import trange
-from collections import deque
+
 from log.wandb_logger import WandbLogger
-from models.policy.hierarchicalController import HC_Controller
-from utils.sampler import OnlineSampler
-from utils.buffer import TrajectoryBuffer
 from models.evaulators.sf_evaluator import Evaluator
+from models.policy.hierarchicalController import HC_Controller
+from utils.buffer import TrajectoryBuffer
+from utils.sampler import OnlineSampler
 
 
 # model-free policy trainer
@@ -108,6 +109,7 @@ class HCTrainer:
                         step=int(pbar.n + self.init_timesteps),
                         eval_log=True,
                     )
+                    print(supp_dict)
                     self.write_image(
                         supp_dict,
                         step=int(pbar.n + self.init_timesteps),

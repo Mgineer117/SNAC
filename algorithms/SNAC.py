@@ -45,7 +45,6 @@ class SNAC:
             min_batch_size=args.min_batch_size,
             max_batch_size=args.max_batch_size,
         )
-        print(args.warm_batch_size)
         self.sampler = OnlineSampler(
             env=self.env,
             state_dim=args.s_dim,

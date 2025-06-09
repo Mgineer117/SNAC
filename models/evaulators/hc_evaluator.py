@@ -1,17 +1,18 @@
-import cv2
 import os
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 import torch
 import torch.nn as nn
-import numpy as np
-from scipy.stats import entropy
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import seaborn as sns
+from scipy.stats import entropy
+from torch.utils.tensorboard import SummaryWriter
 
-from utils.plotter import Plotter
 from log.wandb_logger import WandbLogger
 from models.evaulators.base_evaluator import Evaluator
-from torch.utils.tensorboard import SummaryWriter
+from utils.plotter import Plotter
 
 
 def add_number_to_raw_image(
@@ -195,6 +196,7 @@ class HC_Evaluator(Evaluator):
                     next_obs, rew, done, infos = env_step(
                         a, is_option=metaData["is_option"]
                     )
+                    ep_reward += rew
                     if not done:
                         for o_t in range(1, self.min_option_length):
                             # env stepping
@@ -206,14 +208,15 @@ class HC_Evaluator(Evaluator):
                                 )
                                 option_a = option_a.cpu().numpy().squeeze()
 
-                            next_obs, op_rew, done, infos = env_step(option_a)
-                            rew += self.gamma**o_t * op_rew
+                            next_obs, rew, done, infos = env_step(option_a)
+                            ep_reward += rew
                             if done or option_dict["option_termination"]:
                                 break
 
                 else:
                     ### Conventional Loop
                     next_obs, rew, done, infos = env_step(a)
+                    ep_reward += rew
 
                 obs = next_obs
 
@@ -225,8 +228,6 @@ class HC_Evaluator(Evaluator):
                     failures[num_episodes] = np.maximum(
                         failures[num_episodes], infos["failure"]
                     )
-
-                ep_reward += rew
 
                 if done:
                     dist, ep_entropy = compute_categorical_entropy(
@@ -251,16 +252,16 @@ class HC_Evaluator(Evaluator):
                         # save option indices
                         option_image = self.plotOptionIndices()
                     else:
-                        if "option_image" not in globals():
+                        if "option_image" not in locals():
                             option_image = None
 
                     if num_episodes == 0 and self.renderPlot:
                         path_render = self.plotRender()
                         self.recorded_frames = []
                     else:
-                        if "path_image" not in globals():
+                        if "path_image" not in locals():
                             path_image = None
-                        if "path_render" not in globals():
+                        if "path_render" not in locals():
                             path_render = None
 
         reward_list = [ep_info["ep_reward"] for ep_info in ep_buffer]
@@ -285,7 +286,7 @@ class HC_Evaluator(Evaluator):
             "failRate_mean": failRate_mean,
             "failRate_std": failRate_std,
         }
-
+        print(self.gridPlot, option_image)
         supp_dict = {
             "path_image": path_image,
             "path_render": path_render,
@@ -370,7 +371,7 @@ class HC_Evaluator(Evaluator):
         option_indices = self.option_indices
 
         fig, ax = plt.subplots(figsize=(8, 6))
-        ax.scatter(option_indices["x"], option_indices["y"])
+        ax.stem(option_indices["x"], option_indices["y"])
 
         # Convert figure to a NumPy array
         canvas = FigureCanvas(fig)

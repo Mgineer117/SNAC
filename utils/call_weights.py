@@ -96,11 +96,12 @@ def call_options(sf_network: SF_LASSO, args):
         subtask_vectors = {"rewards": None, "states": V_S}
 
     for key, subtask_vector in subtask_vectors.items():
-        if key == "rewards":
-            if subtask_vector is not None:
-                V = subtask_vector[:num_options]
+        if subtask_vector is None:
+            if key == "rewards":
+                reward_options = None
             else:
-                V = None
+                state_options = None
+
         else:
             if method == "top":
                 V = subtask_vector[:num_options]
@@ -215,18 +216,10 @@ def call_options(sf_network: SF_LASSO, args):
             else:
                 raise ValueError(f"method {method} not recognized")
 
-        # Include both the original and negative counterparts
-        if V is not None:
             if key == "rewards":
                 reward_options = np.concatenate((V, -V), axis=0)
             else:
                 state_options = np.concatenate((V, -V), axis=0)
-        else:
-            if key == "rewards":
-                reward_options = None
-            else:
-                # shouldn't be None
-                state_options = None
 
     return reward_options, state_options
 
