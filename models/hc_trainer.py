@@ -109,7 +109,6 @@ class HCTrainer:
                         step=int(pbar.n + self.init_timesteps),
                         eval_log=True,
                     )
-                    print(supp_dict)
                     self.write_image(
                         supp_dict,
                         step=int(pbar.n + self.init_timesteps),

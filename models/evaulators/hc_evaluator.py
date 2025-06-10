@@ -242,8 +242,6 @@ class HC_Evaluator(Evaluator):
                         }
                     )
 
-                    path_image = None
-                    option_image = None  # Default value
                     if num_episodes == 0 and self.gridPlot:
                         # final agent pos
                         self.get_agent_pos(env)
@@ -253,12 +251,18 @@ class HC_Evaluator(Evaluator):
 
                         # save option indices
                         option_image = self.plotOptionIndices()
+                    else:
+                        if "option_image" not in locals():
+                            option_image = None
+                        if "path_image" not in locals():
+                            path_image = None
 
-                    path_render = None
-                    # Plot if renderPlot is enabled on first episode
                     if num_episodes == 0 and self.renderPlot:
                         path_render = self.plotRender()
                         self.recorded_frames = []
+                    else:
+                        if "path_render" not in locals():
+                            path_render = None
 
         reward_list = [ep_info["ep_reward"] for ep_info in ep_buffer]
         length_list = [ep_info["ep_length"] for ep_info in ep_buffer]
@@ -282,7 +286,6 @@ class HC_Evaluator(Evaluator):
             "failRate_mean": failRate_mean,
             "failRate_std": failRate_std,
         }
-        print(self.gridPlot, option_image)
         supp_dict = {
             "path_image": path_image,
             "path_render": path_render,

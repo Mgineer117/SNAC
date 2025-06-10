@@ -217,9 +217,13 @@ def call_options(sf_network: SF_LASSO, args):
                 raise ValueError(f"method {method} not recognized")
 
             if key == "rewards":
-                reward_options = np.concatenate((V, -V), axis=0)
+                neg_V = -V
+                reversed_neg_V = neg_V[::-1, :]
+                reward_options = np.concatenate((V, reversed_neg_V), axis=0)
             else:
-                state_options = np.concatenate((V, -V), axis=0)
+                neg_V = -V
+                reversed_neg_V = neg_V[::-1, :]
+                state_options = np.concatenate((V, reversed_neg_V), axis=0)
 
     return reward_options, state_options
 
