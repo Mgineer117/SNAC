@@ -19,27 +19,26 @@ source ~/.bashrc
 conda activate snac
 
 # === Run Experiments in Parallel ===
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF-SNAC --algo-name EigenOption --method crs  --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method crvs  --num-options 4 & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF-SNAC --algo-name EigenOption --method cvs  --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method crs  --num-options 4 & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF-SNAC --algo-name EigenOption --method top  --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method cvs  --num-options 4 & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF-SNAC --algo-name EigenOption --method trs  --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method top  --num-options 4 & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 nohup python3 main.py --env-name Maze --project CtF-SNAC --algo-name SNAC --method trs  --num-options 4 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method trs  --num-options 4 & 
 sleep 300
 
-
-CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF-SNAC --algo-name EigenOption --method crs  --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method cvrs  --num-options 8 & 
 sleep 300
-CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF-SNAC --algo-name EigenOption --method cvs  --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method crs  --num-options 8 & 
 sleep 300
-CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF-SNAC --algo-name EigenOption --method top  --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method cvs  --num-options 8 & 
 sleep 300
-CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF-SNAC --algo-name EigenOption --method trs  --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method top  --num-options 8 & 
 sleep 300
-CUDA_VISIBLE_DEVICES=1 nohup python3 main.py --env-name Maze --project CtF-SNAC --algo-name SNAC --method trs  --num-options 8 --ctf-type regular & 
+CUDA_VISIBLE_DEVICES=1 python3 main.py --env-name Maze --project CtF --algo-name EigenOption --method trs  --num-options 8 & 
 
 # === Wait for all background jobs to finish ===
 wait
