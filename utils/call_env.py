@@ -116,7 +116,7 @@ def call_env(args):
             territory_adv_rate=1.0,
             max_steps=args.episode_len,
             battle_reward_ratio=0.25,
-            step_penalty_ratio=0.01,
+            step_penalty_ratio=0.005,
         )
         disc_or_cont(env, args)
         save_dim_to_args(env, args)
