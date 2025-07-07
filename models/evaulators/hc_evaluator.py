@@ -171,7 +171,7 @@ class HC_Evaluator(Evaluator):
         failures = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             # logging initialization
-            ep_reward = 0
+            ep_reward = []
 
             # env initialization
             options = {"random_init_pos": False}
@@ -196,7 +196,7 @@ class HC_Evaluator(Evaluator):
                     next_obs, rew, done, infos = env_step(
                         a, is_option=metaData["is_option"]
                     )
-                    ep_reward += rew
+                    ep_reward.append(rew)
                     if not done:
                         for o_t in range(1, self.min_option_length):
                             # env stepping
@@ -209,14 +209,14 @@ class HC_Evaluator(Evaluator):
                                 option_a = option_a.cpu().numpy().squeeze()
 
                             next_obs, rew, done, infos = env_step(option_a)
-                            ep_reward += rew
+                            ep_reward.append(rew)
                             if done or option_dict["option_termination"]:
                                 break
 
                 else:
                     ### Conventional Loop
                     next_obs, rew, done, infos = env_step(a)
-                    ep_reward += rew
+                    ep_reward.append(rew)
 
                 obs = next_obs
 
@@ -236,7 +236,7 @@ class HC_Evaluator(Evaluator):
 
                     ep_buffer.append(
                         {
-                            "ep_reward": ep_reward,
+                            "ep_reward": self.discounted_return(ep_reward, self.gamma),
                             "ep_length": self.external_t,
                             "ep_entropy": ep_entropy,
                         }
@@ -293,6 +293,12 @@ class HC_Evaluator(Evaluator):
         }
 
         return eval_dict, supp_dict
+
+    def discounted_return(self, rewards, gamma):
+        G = 0
+        for r in reversed(rewards):
+            G = r + gamma * G
+        return G
 
     def plotPath(self):
         grid = self.grid

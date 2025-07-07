@@ -465,7 +465,7 @@
         "state_loss_scaler": 1e-1,
         "weight_loss_scaler": 1e-8,
         "lasso_loss_scaler": 1e-5,
-        "episode_len": 100,
+        "episode_len": 200,
         "warm_batch_size": 8192,
         "sf_minibatch_size": 1024,
         "op_num_minibatch": 4,

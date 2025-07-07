@@ -1,18 +1,19 @@
-import cv2
 import os
-import torch
-import gymnasium as gym
-import torch.nn as nn
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from typing import Any, DefaultDict, Dict, List, Optional, Tuple
 
-from utils.plotter import Plotter
+import cv2
+import gymnasium as gym
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.multiprocessing as multiprocessing
+import torch.nn as nn
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from torch.utils.tensorboard import SummaryWriter
+
 from log.wandb_logger import WandbLogger
 from models.evaulators.base_evaluator import Evaluator
-import torch.multiprocessing as multiprocessing
-from torch.utils.tensorboard import SummaryWriter
-from typing import Any, DefaultDict, Dict, List, Optional, Tuple
+from utils.plotter import Plotter
 
 
 class PPO_Evaluator(Evaluator):
@@ -26,6 +27,7 @@ class PPO_Evaluator(Evaluator):
         dir: str = None,
         gridPlot: bool = True,
         renderPlot: bool = False,
+        gamma: float = 0.99,
         eval_ep_num: int = 10,
     ):
         super().__init__(
@@ -36,6 +38,7 @@ class PPO_Evaluator(Evaluator):
             eval_ep_num=eval_ep_num,
         )
         self.plotter = plotter
+        self.gamma = gamma
 
         if dir is not None:
             if gridPlot:
@@ -69,7 +72,7 @@ class PPO_Evaluator(Evaluator):
         successes = np.zeros((self.eval_ep_num,))
         for num_episodes in range(self.eval_ep_num):
             # logging initialization
-            ep_reward, ep_length = 0, 0
+            ep_reward, ep_length = [], 0
 
             # env initialization
             options = {"random_init_pos": False}
@@ -92,7 +95,7 @@ class PPO_Evaluator(Evaluator):
                     successes[num_episodes] = np.maximum(
                         successes[num_episodes], infos["success"]
                     )
-                ep_reward += rew
+                ep_reward.append(rew)
                 ep_length += 1
 
                 # Update the grid
@@ -121,7 +124,12 @@ class PPO_Evaluator(Evaluator):
                         if "path_render" not in globals():
                             path_render = None
 
-                    ep_buffer.append({"reward": ep_reward, "ep_length": ep_length})
+                    ep_buffer.append(
+                        {
+                            "reward": self.discounted_return(ep_reward, self.gamma),
+                            "ep_length": ep_length,
+                        }
+                    )
 
         reward_list = [ep_info["reward"] for ep_info in ep_buffer]
         length_list = [ep_info["ep_length"] for ep_info in ep_buffer]
@@ -142,6 +150,12 @@ class PPO_Evaluator(Evaluator):
         supp_dict = {"path_image": path_image, "path_render": path_render}
 
         return eval_dict, supp_dict
+
+    def discounted_return(self, rewards, gamma):
+        G = 0
+        for r in reversed(rewards):
+            G = r + gamma * G
+        return G
 
     def plotPath(self):
         grid = self.grid

@@ -1096,7 +1096,7 @@ class CtfMvNEnv(MultiGridEnv):
                         )
 
                 if blue_win:
-                    # reward += self.battle_reward
+                    reward += self.battle_reward
                     self.agents[self.num_blue_agents + red_agent_idx].terminated = True
                     self.agents[self.num_blue_agents + red_agent_idx].color = "red_grey"
                     self.game_stats["red_agent_defeated"][red_agent_idx] = True

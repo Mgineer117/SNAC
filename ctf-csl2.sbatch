@@ -27,7 +27,7 @@ CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-new --algo-n
 sleep 300
 CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-new --algo-name EigenOption --method trs  --num-options 8 --ctf-type regular --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-new --algo-name SNAC --method top  --num-options 8 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-new --algo-name SNAC --method trs  --num-options 8 --ctf-type regular --rendering & 
 sleep 300
 
 
@@ -39,7 +39,7 @@ CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-new --algo-n
 sleep 300
 CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-new --algo-name EigenOption --method trs  --num-options 10 --ctf-type regular --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-new --algo-name SNAC --method top  --num-options 10 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-new --algo-name SNAC --method trs  --num-options 10 --ctf-type regular --rendering & 
 
 # === Wait for all background jobs to finish ===
 wait
