@@ -399,7 +399,7 @@
         "op_mode": "ppo",
         "sf_log_interval": 150,
         "op_log_interval": 2,
-        "hc_log_interval": 50,
+        "hc_log_interval": 10,
         "oc_log_interval": 50,
         "ppo_log_interval": 50,
         "sac_log_interval": 50,
