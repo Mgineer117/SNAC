@@ -414,7 +414,7 @@
         "ppo_critic_lr": 5e-4,
         "sac_policy_lr": 3e-4,
         "sac_critic_lr": 5e-4,
-        "K_epochs": 30,
+        "K_epochs": 20,
         "target_kl": 0.01,
         "method": "top",
         "ctf_type": "regular",
