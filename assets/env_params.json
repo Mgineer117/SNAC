@@ -478,7 +478,7 @@
         "ppo_minibatch_size": 1024,
         "sac_num_minibatch": 4,
         "sac_minibatch_size": 1024,
-        "eval_episodes": 100,
+        "eval_episodes": 20,
         "max_batch_size": 10000,
         "min_batch_size": 5000,
         "DIF_batch_size": 30000,
