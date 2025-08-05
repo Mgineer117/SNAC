@@ -417,7 +417,7 @@
         "K_epochs": 20,
         "target_kl": 0.01,
         "method": "top",
-        "ctf_type": "regular",
+        "ctf_type": "strategic",
         "sf_dim": 128,
         "sf_fc_dim": 512,
         "op_policy_dim": [
@@ -465,7 +465,7 @@
         "state_loss_scaler": 1e-1,
         "weight_loss_scaler": 1e-8,
         "lasso_loss_scaler": 1e-5,
-        "episode_len": 200,
+        "episode_len": 300,
         "warm_batch_size": 8192,
         "sf_minibatch_size": 1024,
         "op_num_minibatch": 4,
