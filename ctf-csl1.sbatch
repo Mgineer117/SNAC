@@ -19,27 +19,27 @@ source ~/.bashrc
 conda activate snac
 
 # === Run Experiments in Parallel ===
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method crs  --num-options 4 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method crs  --num-options 4 --ctf-type strategic --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method cvs  --num-options 4 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method cvs  --num-options 4 --ctf-type strategic --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method top  --num-options 4 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method top  --num-options 4 --ctf-type strategic --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method trs  --num-options 4 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method trs  --num-options 4 --ctf-type strategic --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name SNAC --method trs  --num-options 4 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name SNAC --method trs  --num-options 4 --ctf-type strategic --rendering & 
 sleep 300
 
 
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method crs  --num-options 6 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method crs  --num-options 6 --ctf-type strategic --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method cvs  --num-options 6 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method cvs  --num-options 6 --ctf-type strategic --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method top  --num-options 6 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method top  --num-options 6 --ctf-type strategic --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method trs  --num-options 6 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method trs  --num-options 6 --ctf-type strategic --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name SNAC --method trs  --num-options 6 --ctf-type regular --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name SNAC --method trs  --num-options 6 --ctf-type strategic --rendering & 
 
 # === Wait for all background jobs to finish ===
 wait
