@@ -19,27 +19,27 @@ source ~/.bashrc
 conda activate snac
 
 # === Run Experiments in Parallel ===
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method crs  --num-options 8 --ctf-type strategic --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method top --snac-split-ratio 0.25 --num-options 12 --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method cvs  --num-options 8 --ctf-type strategic --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method top --snac-split-ratio 0.5 --num-options 12 --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method top  --num-options 8 --ctf-type strategic --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method top --snac-split-ratio 0.75 --num-options 12 --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method trs  --num-options 8 --ctf-type strategic --rendering & 
+
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method cvs --snac-split-ratio 0.25 --num-options 12 --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name SNAC --method trs  --num-options 8 --ctf-type strategic --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method cvs --snac-split-ratio 0.5 --num-options 12 --rendering & 
+sleep 300
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method cvs --snac-split-ratio 0.75 --num-options 12 --rendering & 
 sleep 300
 
 
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method crs  --num-options 10 --ctf-type strategic --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method crs --snac-split-ratio 0.25 --num-options 12 --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method cvs  --num-options 10 --ctf-type strategic --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method crs --snac-split-ratio 0.5 --num-options 12 --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method top  --num-options 10 --ctf-type strategic --rendering & 
+CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF --algo-name SNAC --method crs --snac-split-ratio 0.75 --num-options 12 --rendering & 
 sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name EigenOption --method trs  --num-options 10 --ctf-type strategic --rendering & 
-sleep 300
-CUDA_VISIBLE_DEVICES=0 python3 main.py --env-name CtF --project CtF-strategic --algo-name SNAC --method trs  --num-options 10 --ctf-type strategic --rendering & 
 
 # === Wait for all background jobs to finish ===
 wait
